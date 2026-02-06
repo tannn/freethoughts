@@ -168,9 +168,21 @@ export class FetchOpenAiTransport implements OpenAiTransport {
     }
 
     const payload = (parsedPayload ?? {}) as {
+      status?: string;
+      incomplete_details?: { reason?: string };
       output_text?: string;
       output?: Array<{ content?: Array<{ text?: string; type?: string }> }>;
     };
+
+    if (
+      payload.status === 'incomplete' &&
+      payload.incomplete_details?.reason === 'max_output_tokens'
+    ) {
+      throw new OpenAiTransportError(
+        400,
+        'OpenAI response incomplete: max_output_tokens was reached before any text output.'
+      );
+    }
 
     const outputText =
       payload.output_text ??

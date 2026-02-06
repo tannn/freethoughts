@@ -189,4 +189,47 @@ describe('openai runtime policy defaults', () => {
     expect(logContent).toContain('"status":200');
     expect(logContent).toContain('"responseBody"');
   });
+
+  it('fails fast on incomplete max_output_tokens responses without retrying', async () => {
+    const { dbPath } = createTempDb();
+    const settings = new AiSettingsRepository(dbPath);
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+
+    globalThis.fetch = async () => {
+      fetchCalls += 1;
+      return new Response(
+        JSON.stringify({
+          status: 'incomplete',
+          incomplete_details: { reason: 'max_output_tokens' },
+          output: [{ type: 'reasoning', summary: [] }]
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        }
+      );
+    };
+
+    try {
+      const client = new OpenAIClient(settings, { getApiKey: async () => 'key' }, new FetchOpenAiTransport(), {
+        timeoutMs: 5_000,
+        retryDelaysMs: [5, 15]
+      });
+
+      await expect(
+        client.generateProvocation({
+          requestId: 'incomplete-req',
+          prompt: 'incomplete prompt'
+        })
+      ).rejects.toMatchObject({
+        code: 'E_PROVIDER',
+        message: 'OpenAI response incomplete: max_output_tokens was reached before any text output.',
+        details: { status: 400 }
+      } satisfies Partial<AppError>);
+      expect(fetchCalls).toBe(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
