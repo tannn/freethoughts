@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AiSettingsRepository,
+  FetchOpenAiTransport,
   OpenAIClient,
   OpenAiTransportError,
   type OpenAiGenerationRequest,
@@ -8,7 +9,9 @@ import {
   type OpenAiTransport
 } from '../src/ai/index.js';
 import { AppError } from '../src/shared/ipc/errors.js';
-import { createTempDb } from './helpers/db.js';
+import { createTempDb, createTempDir } from './helpers/db.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 describe('openai runtime policy defaults', () => {
   it('retries 429/5xx with configured backoff delays', async () => {
@@ -152,5 +155,38 @@ describe('openai runtime policy defaults', () => {
       message: 'OpenAI request failed (400): model not found',
       details: { status: 400 }
     } satisfies Partial<AppError>);
+  });
+
+  it('writes OpenAI responses to the configured logfile', async () => {
+    const originalFetch = globalThis.fetch;
+    const logPath = join(createTempDir(), 'openai-responses.log');
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          output: [{ content: [{ type: 'output_text', text: 'Generated output text.' }] }]
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        }
+      );
+
+    try {
+      const transport = new FetchOpenAiTransport({ logPath });
+      await transport.generate({
+        apiKey: 'test-key',
+        model: 'gpt-4.1-mini',
+        prompt: 'Test prompt',
+        maxOutputTokens: 120,
+        signal: new AbortController().signal
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    const logContent = readFileSync(logPath, 'utf8');
+    expect(logContent).toContain('"ok":true');
+    expect(logContent).toContain('"status":200');
+    expect(logContent).toContain('"responseBody"');
   });
 });

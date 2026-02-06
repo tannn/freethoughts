@@ -1,6 +1,7 @@
 import { AppError } from '../shared/ipc/errors.js';
 import { AiSettingsRepository } from './settingsRepository.js';
 import { DEFAULT_OUTPUT_TOKEN_BUDGET } from './types.js';
+import { appendFileSync } from 'node:fs';
 
 export interface ApiKeyProvider {
   getApiKey(): Promise<string>;
@@ -29,6 +30,11 @@ export class OpenAiTransportError extends Error {
 
 export interface OpenAiTransport {
   generate(request: OpenAiGenerationRequest): Promise<OpenAiGenerationResponse>;
+}
+
+export interface FetchOpenAiTransportOptions {
+  logPath?: string;
+  maxLoggedBodyChars?: number;
 }
 
 export interface OpenAiRuntimePolicy {
@@ -86,35 +92,74 @@ const extractProviderErrorMessage = (payload: unknown): string | null => {
   return null;
 };
 
+const shortBody = (value: string, maxChars: number): string => {
+  if (value.length <= maxChars) {
+    return value;
+  }
+
+  return `${value.slice(0, maxChars)}...[truncated]`;
+};
+
 export class FetchOpenAiTransport implements OpenAiTransport {
+  private readonly logPath?: string;
+
+  private readonly maxLoggedBodyChars: number;
+
+  constructor(options: FetchOpenAiTransportOptions = {}) {
+    this.logPath = options.logPath;
+    this.maxLoggedBodyChars = options.maxLoggedBodyChars ?? 8_000;
+  }
+
   async generate(request: OpenAiGenerationRequest): Promise<OpenAiGenerationResponse> {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${request.apiKey}`
-      },
-      body: JSON.stringify({
+    let response: Response;
+    try {
+      response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${request.apiKey}`
+        },
+        body: JSON.stringify({
+          model: request.model,
+          input: request.prompt,
+          max_output_tokens: request.maxOutputTokens
+        }),
+        signal: request.signal
+      });
+    } catch (error) {
+      this.logEntry({
+        ts: new Date().toISOString(),
+        ok: false,
+        status: 0,
         model: request.model,
-        input: request.prompt,
-        max_output_tokens: request.maxOutputTokens
-      }),
-      signal: request.signal
-    });
+        maxOutputTokens: request.maxOutputTokens,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+
+    const responseText = await response.text();
+    const contentType = response.headers.get('content-type') ?? '';
+    const parsedPayload = this.tryParseJson(responseText);
 
     if (!response.ok) {
       let providerMessage: string | null = null;
-      try {
-        const contentType = response.headers.get('content-type') ?? '';
-        if (contentType.includes('application/json')) {
-          providerMessage = extractProviderErrorMessage(await response.json());
-        } else {
-          const text = (await response.text()).trim();
-          providerMessage = text ? shorten(text) : null;
-        }
-      } catch {
-        providerMessage = null;
+      if (contentType.includes('application/json')) {
+        providerMessage = extractProviderErrorMessage(parsedPayload);
+      } else {
+        const text = responseText.trim();
+        providerMessage = text ? shorten(text) : null;
       }
+
+      this.logEntry({
+        ts: new Date().toISOString(),
+        ok: false,
+        status: response.status,
+        model: request.model,
+        maxOutputTokens: request.maxOutputTokens,
+        contentType,
+        responseBody: shortBody(responseText, this.maxLoggedBodyChars)
+      });
 
       const message = providerMessage
         ? `OpenAI request failed (${response.status}): ${providerMessage}`
@@ -122,7 +167,7 @@ export class FetchOpenAiTransport implements OpenAiTransport {
       throw new OpenAiTransportError(response.status, message);
     }
 
-    const payload = (await response.json()) as {
+    const payload = (parsedPayload ?? {}) as {
       output_text?: string;
       output?: Array<{ content?: Array<{ text?: string; type?: string }> }>;
     };
@@ -132,10 +177,51 @@ export class FetchOpenAiTransport implements OpenAiTransport {
       payload.output?.flatMap((item) => item.content ?? []).find((content) => content.text)?.text;
 
     if (!outputText || !outputText.trim()) {
+      this.logEntry({
+        ts: new Date().toISOString(),
+        ok: true,
+        status: response.status,
+        model: request.model,
+        maxOutputTokens: request.maxOutputTokens,
+        contentType,
+        responseBody: shortBody(responseText, this.maxLoggedBodyChars),
+        outputTextPresent: false
+      });
       throw new OpenAiTransportError(502, 'OpenAI response did not include output text');
     }
 
+    this.logEntry({
+      ts: new Date().toISOString(),
+      ok: true,
+      status: response.status,
+      model: request.model,
+      maxOutputTokens: request.maxOutputTokens,
+      contentType,
+      responseBody: shortBody(responseText, this.maxLoggedBodyChars),
+      outputTextPresent: true
+    });
+
     return { text: outputText.trim() };
+  }
+
+  private tryParseJson(input: string): unknown {
+    try {
+      return JSON.parse(input);
+    } catch {
+      return null;
+    }
+  }
+
+  private logEntry(entry: Record<string, unknown>): void {
+    if (!this.logPath) {
+      return;
+    }
+
+    try {
+      appendFileSync(this.logPath, `${JSON.stringify(entry)}\n`, 'utf8');
+    } catch {
+      // Logging is best-effort and must not break app flow.
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FetchOpenAiTransport } from '../ai/index.js';
 import { createDefaultBusinessHandlers, registerValidatedIpcHandlers } from './ipc/index.js';
 import { MacOsKeychainApiKeyProvider } from './security/index.js';
 import {
@@ -45,6 +46,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const preloadPath = join(currentDir, '..', 'preload', 'electronPreload.cjs');
 const rendererPath = join(currentDir, '..', 'renderer', 'index.html');
 const dbPath = join(app.getPath('userData'), 'toolsforthought.sqlite');
+const openAiResponseLogPath = join(app.getPath('userData'), 'openai-responses.log');
 
 const createApiKeyProvider = (): RuntimeApiKeyProvider => {
   if (process.platform === 'darwin') {
@@ -58,7 +60,10 @@ const createRuntime = (): DesktopRuntime => {
   applyAllMigrations(dbPath);
   return new DesktopRuntime({
     dbPath,
-    apiKeyProvider: createApiKeyProvider()
+    apiKeyProvider: createApiKeyProvider(),
+    openAiTransport: new FetchOpenAiTransport({
+      logPath: openAiResponseLogPath
+    })
   });
 };
 
