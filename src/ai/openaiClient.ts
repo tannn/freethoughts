@@ -57,6 +57,35 @@ const DEFAULT_RUNTIME_POLICY: OpenAiRuntimePolicy = {
 
 const retryableStatus = (status: number): boolean => status === 429 || status >= 500;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object';
+
+const shorten = (value: string, max = 240): string => {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, max - 3)}...`;
+};
+
+const extractProviderErrorMessage = (payload: unknown): string | null => {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const maybeError = payload.error;
+  if (isRecord(maybeError) && typeof maybeError.message === 'string' && maybeError.message.trim()) {
+    return shorten(maybeError.message);
+  }
+
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return shorten(payload.message);
+  }
+
+  return null;
+};
+
 export class FetchOpenAiTransport implements OpenAiTransport {
   async generate(request: OpenAiGenerationRequest): Promise<OpenAiGenerationResponse> {
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -74,7 +103,23 @@ export class FetchOpenAiTransport implements OpenAiTransport {
     });
 
     if (!response.ok) {
-      throw new OpenAiTransportError(response.status, `OpenAI request failed (${response.status})`);
+      let providerMessage: string | null = null;
+      try {
+        const contentType = response.headers.get('content-type') ?? '';
+        if (contentType.includes('application/json')) {
+          providerMessage = extractProviderErrorMessage(await response.json());
+        } else {
+          const text = (await response.text()).trim();
+          providerMessage = text ? shorten(text) : null;
+        }
+      } catch {
+        providerMessage = null;
+      }
+
+      const message = providerMessage
+        ? `OpenAI request failed (${response.status}): ${providerMessage}`
+        : `OpenAI request failed (${response.status})`;
+      throw new OpenAiTransportError(response.status, message);
     }
 
     const payload = (await response.json()) as {
@@ -174,13 +219,20 @@ export class OpenAIClient {
         throw new AppError('E_UNAUTHORIZED', 'Invalid OpenAI API key');
       }
 
+      if (error instanceof OpenAiTransportError) {
+        throw new AppError('E_PROVIDER', error.message, {
+          status: error.status
+        });
+      }
+
       if (error instanceof AppError) {
         throw error;
       }
 
-      throw new AppError('E_PROVIDER', 'OpenAI provider request failed', {
-        message: error instanceof Error ? error.message : String(error)
-      });
+      throw new AppError(
+        'E_PROVIDER',
+        `OpenAI provider request failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     } finally {
       clearTimeout(timeout);
       this.activeControllersByRequestId.delete(input.requestId);

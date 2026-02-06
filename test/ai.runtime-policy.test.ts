@@ -129,4 +129,28 @@ describe('openai runtime policy defaults', () => {
       code: 'E_CONFLICT'
     } satisfies Partial<AppError>);
   });
+
+  it('preserves provider error details for non-retryable failures', async () => {
+    const { dbPath } = createTempDb();
+    const settings = new AiSettingsRepository(dbPath);
+
+    const transport: OpenAiTransport = {
+      async generate(): Promise<OpenAiGenerationResponse> {
+        throw new OpenAiTransportError(400, 'OpenAI request failed (400): model not found');
+      }
+    };
+
+    const client = new OpenAIClient(settings, { getApiKey: async () => 'key' }, transport);
+
+    await expect(
+      client.generateProvocation({
+        requestId: 'provider-err',
+        prompt: 'provider prompt'
+      })
+    ).rejects.toMatchObject({
+      code: 'E_PROVIDER',
+      message: 'OpenAI request failed (400): model not found',
+      details: { status: 400 }
+    } satisfies Partial<AppError>);
+  });
 });
