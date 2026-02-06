@@ -154,5 +154,21 @@ export const MIGRATIONS: Migration[] = [
     downSql: `
       DROP INDEX IF EXISTS idx_provocations_one_active_per_section_revision;
     `
+  },
+  {
+    version: 4,
+    name: 'workspace_lifecycle',
+    upSql: `
+      CREATE TABLE IF NOT EXISTS workspaces (
+        id TEXT PRIMARY KEY,
+        root_path TEXT NOT NULL UNIQUE,
+        cloud_warning_acknowledged_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      );
+    `,
+    downSql: `
+      DROP TABLE IF EXISTS workspaces;
+    `
   }
 ];

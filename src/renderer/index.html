@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.openai.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tools for Thought</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <h1>Tools for Thought</h1>
+        <p>Desktop bootstrap is running with secure preload IPC.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Runtime Status</h2>
+        <dl>
+          <div>
+            <dt>Network</dt>
+            <dd id="network-status">Loading...</dd>
+          </div>
+          <div>
+            <dt>API key</dt>
+            <dd id="api-key-status">Loading...</dd>
+          </div>
+          <div>
+            <dt>Generation model</dt>
+            <dd id="model-status">Loading...</dd>
+          </div>
+          <div>
+            <dt>Default style</dt>
+            <dd id="style-status">Loading...</dd>
+          </div>
+        </dl>
+        <button id="refresh-button" type="button">Refresh</button>
+      </section>
+
+      <section class="panel">
+        <h2>AI Settings</h2>
+        <form id="settings-form">
+          <label>
+            Generation model
+            <input id="generation-model-input" name="generationModel" type="text" required />
+          </label>
+
+          <label>
+            Default provocation style
+            <select id="provocation-style-input" name="defaultProvocationStyle">
+              <option value="skeptical">skeptical</option>
+              <option value="creative">creative</option>
+              <option value="methodological">methodological</option>
+            </select>
+          </label>
+
+          <label>
+            OpenAI API key
+            <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
+          </label>
+
+          <label class="checkbox-row">
+            <input id="clear-api-key-input" name="clearOpenAiApiKey" type="checkbox" />
+            Clear saved API key
+          </label>
+
+          <button type="submit">Save settings</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Messages</h2>
+        <pre id="message-log">Ready.</pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

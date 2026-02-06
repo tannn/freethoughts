@@ -39,7 +39,8 @@ describe('persistence migrations', () => {
       'provocations',
       'schema_migrations',
       'sections',
-      'workspace_settings'
+      'workspace_settings',
+      'workspaces'
     ]);
 
     expect(listColumns(dbPath, 'documents')).toEqual(
@@ -54,6 +55,9 @@ describe('persistence migrations', () => {
     expect(listColumns(dbPath, 'provocations')).toEqual(expect.arrayContaining(['revision_id', 'style']));
     expect(listColumns(dbPath, 'workspace_settings')).toEqual(
       expect.arrayContaining(['generation_model', 'default_provocation_style'])
+    );
+    expect(listColumns(dbPath, 'workspaces')).toEqual(
+      expect.arrayContaining(['id', 'root_path', 'cloud_warning_acknowledged_at'])
     );
 
     const sqlite = new SqliteCli(dbPath);

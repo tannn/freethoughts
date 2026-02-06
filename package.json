@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:app": "tsc -p tsconfig.app.json && node scripts/copy-app-assets.mjs",
+    "start": "npm run build:app && electron dist/main/electronMain.js",
+    "dev": "npm run start",
     "lint": "tsc --noEmit --pretty false",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -14,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "electron": "^37.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "zod": "^4.1.5"
