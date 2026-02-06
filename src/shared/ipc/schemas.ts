@@ -3,6 +3,7 @@ import type { IpcChannel } from './channels.js';
 
 const id = z.string().trim().min(1);
 const provocationStyle = z.enum(['skeptical', 'creative', 'methodological']);
+const authMode = z.enum(['api_key', 'codex_subscription']);
 
 export const IPC_SCHEMA_BY_CHANNEL: Record<IpcChannel, z.ZodTypeAny> = {
   'workspace.open': z.object({ workspacePath: z.string().trim().min(1) }).strict(),
@@ -42,5 +43,10 @@ export const IPC_SCHEMA_BY_CHANNEL: Record<IpcChannel, z.ZodTypeAny> = {
       provocationsEnabled: z.boolean().optional()
     })
     .strict(),
-  'network.status': z.object({}).strict()
+  'network.status': z.object({}).strict(),
+  'auth.status': z.object({}).strict(),
+  'auth.loginStart': z.object({}).strict(),
+  'auth.loginComplete': z.object({ correlationState: id }).strict(),
+  'auth.logout': z.object({}).strict(),
+  'auth.switchMode': z.object({ mode: authMode }).strict()
 };

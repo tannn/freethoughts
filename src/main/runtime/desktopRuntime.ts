@@ -13,14 +13,29 @@ import {
 } from '../../ai/index.js';
 import { importDocumentFromPath } from '../../ingestion/runtimeImport.js';
 import { createDocumentWithFingerprint, updateDocumentFingerprint } from '../../persistence/documents.js';
+import {
+  AuthSessionRepository,
+  AUTH_SESSION_PROVIDER,
+  type AuthSessionRecord,
+  type AuthSessionStatus
+} from '../../persistence/authSessions.js';
 import { SqliteCli } from '../../persistence/migrations/sqliteCli.js';
 import { runReimportTransaction, type ReimportSectionInput } from '../../persistence/reimportTransaction.js';
-import { WorkspaceRepository, type WorkspaceRecord } from '../../persistence/workspaces.js';
+import {
+  WorkspaceRepository,
+  type WorkspaceAuthMode,
+  type WorkspaceRecord
+} from '../../persistence/workspaces.js';
 import { NotesRepository, type NoteRecord } from '../../reader/notesRepository.js';
 import { ReassignmentService, type UnassignedNoteItem } from '../../reader/reassignment.js';
 import { getAiActionAvailability, getSourceFileStatus, type SourceFileStatus } from '../../reader/status.js';
 import { AppError } from '../../shared/ipc/errors.js';
 import { assertOnline, getNetworkStatus, type OnlineProvider } from '../network/status.js';
+import {
+  UnavailableCodexSubscriptionAuthAdapter,
+  type CodexAuthSessionState,
+  type CodexSubscriptionAuthAdapter
+} from './codexSubscriptionAuthAdapter.js';
 
 const sqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`;
 
@@ -128,6 +143,7 @@ export interface RuntimeApiKeyProvider extends ApiKeyManagementProvider, ApiKeyP
 export interface DesktopRuntimeOptions {
   dbPath: string;
   apiKeyProvider: RuntimeApiKeyProvider;
+  codexAuthAdapter?: CodexSubscriptionAuthAdapter;
   onlineProvider?: OnlineProvider;
   openAiTransport?: OpenAiTransport;
 }
@@ -147,12 +163,30 @@ export interface UpdateSettingsPayload extends UpdateAiSettingsInput {
   provocationsEnabled?: boolean;
 }
 
+export interface AuthStatusSnapshot {
+  mode: WorkspaceAuthMode;
+  codex: {
+    provider: typeof AUTH_SESSION_PROVIDER;
+    available: boolean;
+    status: AuthSessionStatus;
+    accountLabel: string | null;
+    lastValidatedAt: string | null;
+  };
+}
+
+export interface AuthLoginStartSnapshot {
+  authUrl: string;
+  correlationState: string;
+}
+
 export class DesktopRuntime {
   private readonly dbPath: string;
 
   private readonly sqlite: SqliteCli;
 
   private readonly workspaceRepository: WorkspaceRepository;
+
+  private readonly authSessionRepository: AuthSessionRepository;
 
   private readonly notesRepository: NotesRepository;
 
@@ -166,6 +200,8 @@ export class DesktopRuntime {
 
   private readonly provocationService: ProvocationService;
 
+  private readonly codexAuthAdapter: CodexSubscriptionAuthAdapter;
+
   private readonly onlineProvider?: OnlineProvider;
 
   private activeWorkspaceId: string | null = null;
@@ -174,6 +210,7 @@ export class DesktopRuntime {
     this.dbPath = options.dbPath;
     this.sqlite = new SqliteCli(this.dbPath);
     this.workspaceRepository = new WorkspaceRepository(this.dbPath);
+    this.authSessionRepository = new AuthSessionRepository(this.dbPath);
     this.notesRepository = new NotesRepository(this.dbPath);
     this.reassignmentService = new ReassignmentService(this.dbPath);
     this.settingsRepository = new AiSettingsRepository(this.dbPath);
@@ -188,6 +225,7 @@ export class DesktopRuntime {
       this.settingsRepository,
       this.openAiClient
     );
+    this.codexAuthAdapter = options.codexAuthAdapter ?? new UnavailableCodexSubscriptionAuthAdapter();
     this.onlineProvider = options.onlineProvider;
   }
 
@@ -491,6 +529,97 @@ export class DesktopRuntime {
     return getNetworkStatus(this.onlineProvider);
   }
 
+  async getAuthStatus(): Promise<AuthStatusSnapshot> {
+    const workspace = this.requireActiveWorkspace();
+    const persistedSession = this.authSessionRepository.getCodexSession(workspace.id);
+
+    if (workspace.authMode !== 'codex_subscription') {
+      return this.buildAuthStatusSnapshot(workspace, persistedSession, true);
+    }
+
+    const adapterStatus = await this.getCodexStatusFromAdapter(workspace.id);
+    if (!adapterStatus.available) {
+      return this.buildAuthStatusSnapshot(workspace, persistedSession, false);
+    }
+
+    const session = this.persistCodexSessionState(workspace.id, adapterStatus.session);
+    return this.buildAuthStatusSnapshot(workspace, session, true);
+  }
+
+  async startAuthLogin(): Promise<AuthLoginStartSnapshot> {
+    const workspace = this.requireActiveWorkspace();
+    this.requireCodexMode(workspace, 'Codex subscription login requires Codex auth mode');
+
+    const result = await this.codexAuthAdapter.loginStart({ workspaceId: workspace.id });
+    const authUrl = result.authUrl.trim();
+    const correlationState = result.correlationState.trim();
+
+    if (!authUrl || !correlationState) {
+      throw new AppError('E_PROVIDER', 'Codex auth login start returned invalid data', {
+        action: 'retry_login'
+      });
+    }
+
+    this.authSessionRepository.upsertCodexSession(workspace.id, { status: 'pending' });
+    return { authUrl, correlationState };
+  }
+
+  async completeAuthLogin(correlationState: string): Promise<AuthStatusSnapshot> {
+    const workspace = this.requireActiveWorkspace();
+    this.requireCodexMode(workspace, 'Codex subscription login completion requires Codex auth mode');
+
+    const normalizedCorrelationState = correlationState.trim();
+    if (!normalizedCorrelationState) {
+      throw new AppError('E_VALIDATION', 'correlationState is required', { field: 'correlationState' });
+    }
+
+    const adapterState = await this.codexAuthAdapter.loginComplete({
+      workspaceId: workspace.id,
+      correlationState: normalizedCorrelationState
+    });
+    const session = this.persistCodexSessionState(workspace.id, adapterState);
+
+    if (session.status === 'authenticated') {
+      return this.buildAuthStatusSnapshot(workspace, session, true);
+    }
+
+    throw this.actionableAuthStateError(session.status);
+  }
+
+  async logoutAuth(): Promise<AuthStatusSnapshot> {
+    const workspace = this.requireActiveWorkspace();
+    let adapterAvailable = true;
+
+    try {
+      await this.codexAuthAdapter.logout({ workspaceId: workspace.id });
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'E_PROVIDER') {
+        adapterAvailable = false;
+      } else {
+        throw error;
+      }
+    }
+
+    const session = this.authSessionRepository.upsertCodexSession(workspace.id, {
+      status: 'signed_out',
+      accountLabel: null,
+      lastValidatedAt: null
+    });
+
+    return this.buildAuthStatusSnapshot(workspace, session, adapterAvailable);
+  }
+
+  async switchAuthMode(mode: WorkspaceAuthMode): Promise<AuthStatusSnapshot> {
+    const workspaceId = this.requireActiveWorkspaceId();
+    const updatedWorkspace = this.workspaceRepository.updateAuthMode(workspaceId, mode);
+    if (mode === 'codex_subscription') {
+      return this.getAuthStatus();
+    }
+
+    const session = this.authSessionRepository.getCodexSession(workspaceId);
+    return this.buildAuthStatusSnapshot(updatedWorkspace, session, true);
+  }
+
   private requireActiveWorkspaceId(): string {
     if (!this.activeWorkspaceId) {
       throw new AppError('E_CONFLICT', 'No workspace is open. Open or create a workspace first.');
@@ -499,12 +628,17 @@ export class DesktopRuntime {
     return this.activeWorkspaceId;
   }
 
-  private ensureCloudWarningAcknowledged(acknowledgeCloudWarning: boolean): void {
+  private requireActiveWorkspace(): WorkspaceRecord {
     const workspaceId = this.requireActiveWorkspaceId();
     const workspace = this.workspaceRepository.getWorkspaceById(workspaceId);
     if (!workspace) {
       throw new AppError('E_NOT_FOUND', 'Active workspace not found', { workspaceId });
     }
+    return workspace;
+  }
+
+  private ensureCloudWarningAcknowledged(acknowledgeCloudWarning: boolean): void {
+    const workspace = this.requireActiveWorkspace();
 
     if (workspace.cloudWarningAcknowledgedAt) {
       return;
@@ -516,12 +650,108 @@ export class DesktopRuntime {
         'Cloud processing warning acknowledgment is required before first AI action.',
         {
           requiresCloudWarningAcknowledgment: true,
-          workspaceId
+          workspaceId: workspace.id
         }
       );
     }
 
-    this.workspaceRepository.acknowledgeCloudWarning(workspaceId);
+    this.workspaceRepository.acknowledgeCloudWarning(workspace.id);
+  }
+
+  private async getCodexStatusFromAdapter(
+    workspaceId: string
+  ): Promise<{ available: true; session: CodexAuthSessionState } | { available: false }> {
+    try {
+      const session = await this.codexAuthAdapter.getStatus({ workspaceId });
+      return { available: true, session };
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'E_PROVIDER') {
+        return { available: false };
+      }
+
+      throw error;
+    }
+  }
+
+  private persistCodexSessionState(workspaceId: string, state: CodexAuthSessionState): AuthSessionRecord {
+    const lastValidatedAt =
+      state.lastValidatedAt !== undefined
+        ? state.lastValidatedAt
+        : (state.status === 'authenticated' ? new Date().toISOString() : null);
+
+    return this.authSessionRepository.upsertCodexSession(workspaceId, {
+      status: state.status,
+      accountLabel: state.accountLabel ?? null,
+      lastValidatedAt
+    });
+  }
+
+  private buildAuthStatusSnapshot(
+    workspace: WorkspaceRecord,
+    session: AuthSessionRecord | null,
+    adapterAvailable: boolean
+  ): AuthStatusSnapshot {
+    return {
+      mode: workspace.authMode,
+      codex: {
+        provider: AUTH_SESSION_PROVIDER,
+        available: adapterAvailable,
+        status: session?.status ?? 'signed_out',
+        accountLabel: session?.accountLabel ?? null,
+        lastValidatedAt: session?.lastValidatedAt ?? null
+      }
+    };
+  }
+
+  private actionableAuthStateError(status: AuthSessionStatus): AppError {
+    if (status === 'cancelled') {
+      return new AppError('E_CONFLICT', 'Codex subscription login cancelled.', {
+        authStatus: status,
+        action: 'retry_or_switch_mode',
+        options: ['retry_login', 'switch_to_api_key']
+      });
+    }
+
+    if (status === 'expired') {
+      return new AppError('E_UNAUTHORIZED', 'Codex subscription session expired.', {
+        authStatus: status,
+        action: 'reauth',
+        options: ['sign_in_again', 'switch_to_api_key']
+      });
+    }
+
+    if (status === 'invalid') {
+      return new AppError('E_UNAUTHORIZED', 'Codex subscription session is invalid.', {
+        authStatus: status,
+        action: 'reauth',
+        options: ['sign_in_again', 'switch_to_api_key']
+      });
+    }
+
+    if (status === 'pending') {
+      return new AppError('E_CONFLICT', 'Codex subscription login is still pending completion.', {
+        authStatus: status,
+        action: 'complete_login'
+      });
+    }
+
+    return new AppError('E_UNAUTHORIZED', 'Codex subscription login required.', {
+      authStatus: status,
+      action: 'login',
+      options: ['start_login', 'switch_to_api_key']
+    });
+  }
+
+  private requireCodexMode(workspace: WorkspaceRecord, message: string): void {
+    if (workspace.authMode === 'codex_subscription') {
+      return;
+    }
+
+    throw new AppError('E_CONFLICT', message, {
+      authMode: workspace.authMode,
+      requiredAuthMode: 'codex_subscription',
+      action: 'auth.switchMode'
+    });
   }
 
   private mapReimportSections(

@@ -53,7 +53,8 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
       'note',
       'ai',
       'settings',
-      'network'
+      'network',
+      'auth'
     ]);
 
     const api = createDesktopApi(ipcRenderer);
@@ -88,8 +89,8 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
       }
     });
 
-    await api.ai.cancel({ requestId: 'req-1' });
-    expect(seen).toEqual([{ channel: 'ai.cancel', payload: { requestId: 'req-1' } }]);
+    await api.auth.switchMode({ mode: 'api_key' });
+    expect(seen).toEqual([{ channel: 'auth.switchMode', payload: { mode: 'api_key' } }]);
   });
 
   it('defines strict CSP defaults with narrow connect-src (FR-067)', () => {

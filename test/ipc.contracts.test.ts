@@ -34,7 +34,12 @@ describe('ipc contracts', () => {
       'ai.cancel',
       'settings.get',
       'settings.update',
-      'network.status'
+      'network.status',
+      'auth.status',
+      'auth.loginStart',
+      'auth.loginComplete',
+      'auth.logout',
+      'auth.switchMode'
     ];
 
     expect(IPC_CHANNELS).toEqual(expected);
@@ -97,5 +102,31 @@ describe('ipc contracts', () => {
       ok: true,
       data: { sectionId: 's1', text: 'hello' }
     });
+  });
+
+  it('enforces auth.switchMode schema before business handler execution', async () => {
+    const ipcMain = new FakeIpcMain();
+    const handlers = createDefaultBusinessHandlers();
+    let invoked = false;
+
+    handlers['auth.switchMode'] = () => {
+      invoked = true;
+      return { mode: 'codex_subscription' };
+    };
+
+    registerValidatedIpcHandlers(ipcMain, handlers);
+    const listener = ipcMain.listeners.get('auth.switchMode');
+    const result = await listener!({}, { mode: 'codex' });
+
+    expect(invoked).toBe(false);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('E_VALIDATION');
+      expect(result.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'mode' })
+        ])
+      );
+    }
   });
 });

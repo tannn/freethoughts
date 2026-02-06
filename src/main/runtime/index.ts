@@ -7,5 +7,13 @@ export {
   type SectionSnapshot,
   type SectionListSnapshot,
   type GenerateProvocationPayload,
-  type UpdateSettingsPayload
+  type UpdateSettingsPayload,
+  type AuthStatusSnapshot,
+  type AuthLoginStartSnapshot
 } from './desktopRuntime.js';
+export {
+  UnavailableCodexSubscriptionAuthAdapter,
+  type CodexSubscriptionAuthAdapter,
+  type CodexAuthSessionState,
+  type CodexLoginStartResult
+} from './codexSubscriptionAuthAdapter.js';

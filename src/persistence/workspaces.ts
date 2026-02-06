@@ -9,26 +9,41 @@ const sqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`;
 interface WorkspaceRow {
   id: string;
   root_path: string;
+  auth_mode: string;
   cloud_warning_acknowledged_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
+export const WORKSPACE_AUTH_MODES = ['api_key', 'codex_subscription'] as const;
+export type WorkspaceAuthMode = (typeof WORKSPACE_AUTH_MODES)[number];
+
 export interface WorkspaceRecord {
   id: string;
   rootPath: string;
+  authMode: WorkspaceAuthMode;
   cloudWarningAcknowledgedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-const mapWorkspaceRow = (row: WorkspaceRow): WorkspaceRecord => ({
-  id: row.id,
-  rootPath: row.root_path,
-  cloudWarningAcknowledgedAt: row.cloud_warning_acknowledged_at,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-});
+const isWorkspaceAuthMode = (value: string): value is WorkspaceAuthMode =>
+  WORKSPACE_AUTH_MODES.includes(value as WorkspaceAuthMode);
+
+const mapWorkspaceRow = (row: WorkspaceRow): WorkspaceRecord => {
+  if (!isWorkspaceAuthMode(row.auth_mode)) {
+    throw new AppError('E_INTERNAL', 'Invalid workspace auth mode in persistence');
+  }
+
+  return {
+    id: row.id,
+    rootPath: row.root_path,
+    authMode: row.auth_mode,
+    cloudWarningAcknowledgedAt: row.cloud_warning_acknowledged_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+};
 
 const trimTrailingSeparators = (pathValue: string): string => {
   const rootPath = parse(pathValue).root;
@@ -118,7 +133,7 @@ export class WorkspaceRepository {
     }
 
     const rows = this.sqlite.queryJson<WorkspaceRow>(`
-      SELECT id, root_path, cloud_warning_acknowledged_at, created_at, updated_at
+      SELECT id, root_path, auth_mode, cloud_warning_acknowledged_at, created_at, updated_at
       FROM workspaces
       WHERE id = ${sqlString(normalizedWorkspaceId)}
       LIMIT 1;
@@ -135,7 +150,7 @@ export class WorkspaceRepository {
 
   listWorkspaces(): WorkspaceRecord[] {
     const rows = this.sqlite.queryJson<WorkspaceRow>(`
-      SELECT id, root_path, cloud_warning_acknowledged_at, created_at, updated_at
+      SELECT id, root_path, auth_mode, cloud_warning_acknowledged_at, created_at, updated_at
       FROM workspaces
       ORDER BY updated_at DESC, created_at DESC, id ASC;
     `);
@@ -163,13 +178,38 @@ export class WorkspaceRepository {
     return this.requireWorkspace(workspace.id);
   }
 
+  updateAuthMode(workspaceId: string, authMode: WorkspaceAuthMode): WorkspaceRecord {
+    const workspace = this.getWorkspaceById(workspaceId);
+    if (!workspace) {
+      throw new AppError('E_NOT_FOUND', 'Workspace not found', { workspaceId });
+    }
+
+    if (!isWorkspaceAuthMode(authMode)) {
+      throw new AppError('E_VALIDATION', 'Invalid auth mode', {
+        field: 'authMode',
+        value: authMode
+      });
+    }
+
+    this.sqlite.exec(`
+      UPDATE workspaces
+      SET
+        auth_mode = ${sqlString(authMode)},
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE id = ${sqlString(workspace.id)};
+    `);
+
+    return this.requireWorkspace(workspace.id);
+  }
+
   private insertWorkspace(rootPath: string): WorkspaceRecord {
     const workspaceId = randomUUID();
     this.sqlite.exec(`
-      INSERT INTO workspaces (id, root_path)
+      INSERT INTO workspaces (id, root_path, auth_mode)
       VALUES (
         ${sqlString(workspaceId)},
-        ${sqlString(rootPath)}
+        ${sqlString(rootPath)},
+        'api_key'
       );
     `);
     return this.requireWorkspace(workspaceId);
@@ -190,7 +230,7 @@ export class WorkspaceRepository {
     }
 
     const rows = this.sqlite.queryJson<WorkspaceRow>(`
-      SELECT id, root_path, cloud_warning_acknowledged_at, created_at, updated_at
+      SELECT id, root_path, auth_mode, cloud_warning_acknowledged_at, created_at, updated_at
       FROM workspaces
       ORDER BY created_at ASC, id ASC;
     `);
@@ -226,7 +266,7 @@ export class WorkspaceRepository {
 
   private getWorkspaceByRawRootPath(rootPath: string): WorkspaceRecord | null {
     const rows = this.sqlite.queryJson<WorkspaceRow>(`
-      SELECT id, root_path, cloud_warning_acknowledged_at, created_at, updated_at
+      SELECT id, root_path, auth_mode, cloud_warning_acknowledged_at, created_at, updated_at
       FROM workspaces
       WHERE root_path = ${sqlString(rootPath)}
       LIMIT 1;

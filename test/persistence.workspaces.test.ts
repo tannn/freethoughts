@@ -13,6 +13,7 @@ describe('workspace lifecycle persistence', () => {
 
     const created = first.createWorkspace(workspaceDir);
     expect(created.rootPath).toBe(realpathSync.native(resolve(workspaceDir)));
+    expect(created.authMode).toBe('api_key');
     expect(created.cloudWarningAcknowledgedAt).toBeNull();
 
     const restarted = new WorkspaceRepository(dbPath);
@@ -20,6 +21,7 @@ describe('workspace lifecycle persistence', () => {
 
     expect(opened.id).toBe(created.id);
     expect(opened.rootPath).toBe(created.rootPath);
+    expect(opened.authMode).toBe('api_key');
     expect(opened.cloudWarningAcknowledgedAt).toBeNull();
 
     const listed = restarted.listWorkspaces();
@@ -50,6 +52,46 @@ describe('workspace lifecycle persistence', () => {
       acknowledged.cloudWarningAcknowledgedAt
     );
     expect(restarted.getWorkspaceById(workspaceB.id)?.cloudWarningAcknowledgedAt).toBeNull();
+  });
+
+  it('persists workspace auth mode updates across repository restarts', () => {
+    const { dbPath } = createTempDb();
+    const repository = new WorkspaceRepository(dbPath);
+    const workspace = repository.openWorkspace(createTempDir());
+
+    const switched = repository.updateAuthMode(workspace.id, 'codex_subscription');
+    expect(switched.authMode).toBe('codex_subscription');
+
+    const restarted = new WorkspaceRepository(dbPath);
+    const loaded = restarted.getWorkspaceById(workspace.id);
+    expect(loaded?.authMode).toBe('codex_subscription');
+
+    const switchedBack = restarted.updateAuthMode(workspace.id, 'api_key');
+    expect(switchedBack.authMode).toBe('api_key');
+  });
+
+  it('validates auth mode updates and missing workspace ids', () => {
+    const { dbPath } = createTempDb();
+    const repository = new WorkspaceRepository(dbPath);
+    const workspace = repository.openWorkspace(createTempDir());
+
+    let invalidModeError: unknown;
+    try {
+      repository.updateAuthMode(workspace.id, 'not_a_mode' as never);
+    } catch (error) {
+      invalidModeError = error;
+    }
+    expect(invalidModeError).toBeInstanceOf(AppError);
+    expect((invalidModeError as AppError).code).toBe('E_VALIDATION');
+
+    let missingWorkspaceError: unknown;
+    try {
+      repository.updateAuthMode('missing-workspace', 'api_key');
+    } catch (error) {
+      missingWorkspaceError = error;
+    }
+    expect(missingWorkspaceError).toBeInstanceOf(AppError);
+    expect((missingWorkspaceError as AppError).code).toBe('E_NOT_FOUND');
   });
 
   it('prevents duplicate workspace creation for the same root path', () => {

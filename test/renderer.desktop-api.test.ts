@@ -22,7 +22,8 @@ describe('renderer desktop preload bridge', () => {
         cancel: async () => ({ ok: true, data: null })
       },
       settings: { get: async () => ({ ok: true, data: null }) },
-      network: { status: async () => ({ ok: true, data: null }) }
+      network: { status: async () => ({ ok: true, data: null }) },
+      auth: { status: async () => ({ ok: true, data: null }) }
     };
 
     const resolved = getDesktopApi({ tft: api });

@@ -31,6 +31,7 @@ describe('persistence migrations', () => {
 
     const tables = listTables(dbPath);
     expect(tables).toEqual([
+      'auth_sessions',
       'document_revisions',
       'document_settings',
       'documents',
@@ -57,7 +58,22 @@ describe('persistence migrations', () => {
       expect.arrayContaining(['generation_model', 'default_provocation_style'])
     );
     expect(listColumns(dbPath, 'workspaces')).toEqual(
-      expect.arrayContaining(['id', 'root_path', 'cloud_warning_acknowledged_at'])
+      expect.arrayContaining(['id', 'root_path', 'auth_mode', 'cloud_warning_acknowledged_at'])
+    );
+    expect(listColumns(dbPath, 'auth_sessions')).toEqual(
+      expect.arrayContaining([
+        'id',
+        'workspace_id',
+        'provider',
+        'status',
+        'account_label',
+        'last_validated_at',
+        'created_at',
+        'updated_at'
+      ])
+    );
+    expect(listColumns(dbPath, 'auth_sessions')).not.toEqual(
+      expect.arrayContaining(['access_token', 'refresh_token', 'bearer_token', 'token'])
     );
 
     const sqlite = new SqliteCli(dbPath);

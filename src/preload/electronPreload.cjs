@@ -30,6 +30,13 @@ const api = {
   },
   network: {
     status: (payload = {}) => ipcRenderer.invoke('network.status', payload)
+  },
+  auth: {
+    status: (payload = {}) => ipcRenderer.invoke('auth.status', payload),
+    loginStart: (payload = {}) => ipcRenderer.invoke('auth.loginStart', payload),
+    loginComplete: (payload) => ipcRenderer.invoke('auth.loginComplete', payload),
+    logout: (payload = {}) => ipcRenderer.invoke('auth.logout', payload),
+    switchMode: (payload) => ipcRenderer.invoke('auth.switchMode', payload)
   }
 };
 

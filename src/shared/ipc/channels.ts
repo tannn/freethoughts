@@ -14,7 +14,12 @@ export const IPC_CHANNELS = [
   'ai.cancel',
   'settings.get',
   'settings.update',
-  'network.status'
+  'network.status',
+  'auth.status',
+  'auth.loginStart',
+  'auth.loginComplete',
+  'auth.logout',
+  'auth.switchMode'
 ] as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[number];

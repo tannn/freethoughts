@@ -17,7 +17,8 @@ export const getDesktopApi = (host: Record<string, unknown>): DesktopApi => {
     !isRecord(api.note) ||
     !isRecord(api.ai) ||
     !isRecord(api.settings) ||
-    !isRecord(api.network)
+    !isRecord(api.network) ||
+    !isRecord(api.auth)
   ) {
     throw new Error(`Desktop preload API "${PRELOAD_API_KEY}" is incomplete.`);
   }

@@ -100,6 +100,13 @@ const registerMainIpc = (runtime: DesktopRuntime): void => {
   handlers['settings.get'] = () => runtime.getSettings();
   handlers['settings.update'] = (payload) => runtime.updateSettings(payload as UpdateSettingsPayload);
   handlers['network.status'] = () => runtime.getNetworkStatus();
+  handlers['auth.status'] = () => runtime.getAuthStatus();
+  handlers['auth.loginStart'] = () => runtime.startAuthLogin();
+  handlers['auth.loginComplete'] = (payload) =>
+    runtime.completeAuthLogin((payload as { correlationState: string }).correlationState);
+  handlers['auth.logout'] = () => runtime.logoutAuth();
+  handlers['auth.switchMode'] = (payload) =>
+    runtime.switchAuthMode((payload as { mode: 'api_key' | 'codex_subscription' }).mode);
 
   registerValidatedIpcHandlers(ipcMain, handlers);
 };

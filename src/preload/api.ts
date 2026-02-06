@@ -5,6 +5,8 @@ export interface IpcRendererLike {
   invoke(channel: IpcChannel, payload: unknown): Promise<IpcEnvelope>;
 }
 
+export type AuthMode = 'api_key' | 'codex_subscription';
+
 export interface DesktopApi {
   workspace: {
     open(payload: { workspacePath: string }): Promise<IpcEnvelope>;
@@ -53,6 +55,13 @@ export interface DesktopApi {
   network: {
     status(payload?: Record<string, never>): Promise<IpcEnvelope>;
   };
+  auth: {
+    status(payload?: Record<string, never>): Promise<IpcEnvelope>;
+    loginStart(payload?: Record<string, never>): Promise<IpcEnvelope>;
+    loginComplete(payload: { correlationState: string }): Promise<IpcEnvelope>;
+    logout(payload?: Record<string, never>): Promise<IpcEnvelope>;
+    switchMode(payload: { mode: AuthMode }): Promise<IpcEnvelope>;
+  };
 }
 
 export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
@@ -85,5 +94,12 @@ export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
   },
   network: {
     status: (payload = {}) => ipcRenderer.invoke('network.status', payload)
+  },
+  auth: {
+    status: (payload = {}) => ipcRenderer.invoke('auth.status', payload),
+    loginStart: (payload = {}) => ipcRenderer.invoke('auth.loginStart', payload),
+    loginComplete: (payload) => ipcRenderer.invoke('auth.loginComplete', payload),
+    logout: (payload = {}) => ipcRenderer.invoke('auth.logout', payload),
+    switchMode: (payload) => ipcRenderer.invoke('auth.switchMode', payload)
   }
 });

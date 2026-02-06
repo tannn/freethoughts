@@ -28,7 +28,8 @@ describe('preload api boundary', () => {
       'note',
       'ai',
       'settings',
-      'network'
+      'network',
+      'auth'
     ]);
   });
 
@@ -44,17 +45,15 @@ describe('preload api boundary', () => {
 
     const api = createDesktopApi(ipcRenderer);
 
-    const response = await api.note.create({
-      documentId: 'd1',
-      sectionId: 's1',
-      text: 'note'
+    const response = await api.auth.loginComplete({
+      correlationState: 'state-1'
     });
 
-    expect(response).toEqual({ ok: true, data: { channel: 'note.create' } });
+    expect(response).toEqual({ ok: true, data: { channel: 'auth.loginComplete' } });
     expect(seen).toEqual([
       {
-        channel: 'note.create',
-        payload: { documentId: 'd1', sectionId: 's1', text: 'note' }
+        channel: 'auth.loginComplete',
+        payload: { correlationState: 'state-1' }
       }
     ]);
   });

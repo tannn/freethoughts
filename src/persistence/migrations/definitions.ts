@@ -170,5 +170,33 @@ export const MIGRATIONS: Migration[] = [
     downSql: `
       DROP TABLE IF EXISTS workspaces;
     `
+  },
+  {
+    version: 5,
+    name: 'workspace_auth_mode_and_codex_sessions',
+    upSql: `
+      ALTER TABLE workspaces
+      ADD COLUMN auth_mode TEXT NOT NULL DEFAULT 'api_key' CHECK (
+        auth_mode IN ('api_key', 'codex_subscription')
+      );
+
+      CREATE TABLE IF NOT EXISTS auth_sessions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        provider TEXT NOT NULL CHECK (provider = 'codex_chatgpt'),
+        status TEXT NOT NULL CHECK (
+          status IN ('signed_out', 'pending', 'authenticated', 'expired', 'invalid', 'cancelled')
+        ),
+        account_label TEXT,
+        last_validated_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+        UNIQUE (workspace_id, provider)
+      );
+    `,
+    downSql: `
+      DROP TABLE IF EXISTS auth_sessions;
+    `
   }
 ];
