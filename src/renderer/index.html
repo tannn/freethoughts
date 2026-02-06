@@ -11,70 +11,170 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <header class="app-header">
-        <h1>Tools for Thought</h1>
-        <p>Desktop bootstrap is running with secure preload IPC.</p>
+    <main id="workspace-screen" class="screen workspace-screen">
+      <section class="workspace-card">
+        <h1>Tools for Thought Reader</h1>
+        <p>Open or create a local workspace to start reading.</p>
+        <label>
+          Workspace path
+          <input id="workspace-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/workspace" />
+        </label>
+        <div class="workspace-actions">
+          <button id="open-workspace-button" type="button">Open Workspace</button>
+          <button id="create-workspace-button" type="button" class="secondary">Create Workspace</button>
+        </div>
+        <p id="workspace-message" class="message"></p>
+      </section>
+    </main>
+
+    <main id="app-screen" class="screen app-screen hidden">
+      <header class="top-bar">
+        <span>Workspace: <strong id="top-workspace-path">-</strong></span>
+        <span>Document: <strong id="top-document-title">-</strong></span>
+        <span id="top-unassigned-count">Unassigned Notes (0)</span>
+        <button id="refresh-network-button" type="button" class="secondary">Refresh Network</button>
       </header>
 
-      <section class="panel">
-        <h2>Runtime Status</h2>
-        <dl>
-          <div>
-            <dt>Network</dt>
-            <dd id="network-status">Loading...</dd>
-          </div>
-          <div>
-            <dt>API key</dt>
-            <dd id="api-key-status">Loading...</dd>
-          </div>
-          <div>
-            <dt>Generation model</dt>
-            <dd id="model-status">Loading...</dd>
-          </div>
-          <div>
-            <dt>Default style</dt>
-            <dd id="style-status">Loading...</dd>
-          </div>
-        </dl>
-        <button id="refresh-button" type="button">Refresh</button>
+      <section class="app-layout">
+        <aside class="left-pane">
+          <section class="panel">
+            <h2>Import Document</h2>
+            <form id="import-form">
+              <label>
+                Source file path
+                <input id="import-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/file.md" />
+              </label>
+              <button type="submit">Import</button>
+            </form>
+            <p class="hint">Accepted: .pdf (text), .txt, .md</p>
+            <p id="import-message" class="message"></p>
+          </section>
+
+          <section class="panel">
+            <h2>Documents</h2>
+            <ul id="document-list" class="nav-list"></ul>
+          </section>
+
+          <section class="panel">
+            <h2>Sections</h2>
+            <ul id="section-list" class="nav-list"></ul>
+            <button id="unassigned-nav-button" type="button" class="secondary">Unassigned Notes (0)</button>
+          </section>
+        </aside>
+
+        <section class="center-pane">
+          <section id="section-view" class="panel view">
+            <div class="section-header">
+              <h2 id="section-heading">No section selected</h2>
+              <div class="section-actions">
+                <button id="reimport-button" type="button" class="secondary">Re-import</button>
+              </div>
+            </div>
+            <pre id="section-content" class="section-content">Import a document to begin.</pre>
+          </section>
+
+          <section id="unassigned-view" class="panel view hidden">
+            <h2>Unassigned Notes</h2>
+            <p id="unassigned-summary">No unassigned notes.</p>
+            <div id="unassigned-list" class="unassigned-list"></div>
+          </section>
+        </section>
+
+        <aside class="right-pane">
+          <section class="panel">
+            <div class="tab-row">
+              <button id="notes-tab-button" type="button" class="tab active" data-tab="notes">Notes</button>
+              <button id="provocation-tab-button" type="button" class="tab" data-tab="provocation">Provocation</button>
+            </div>
+
+            <div id="notes-tab" class="tab-panel">
+              <div class="notes-toolbar">
+                <button id="new-note-button" type="button">New Note</button>
+              </div>
+              <div id="notes-list" class="notes-list"></div>
+            </div>
+
+            <div id="provocation-tab" class="tab-panel hidden">
+              <label class="toggle-row">
+                <input id="provocations-enabled-input" type="checkbox" checked />
+                Provocations enabled for this document
+              </label>
+              <label>
+                Provocation style override
+                <select id="provocation-style-override-input">
+                  <option value="">Use workspace default</option>
+                  <option value="skeptical">skeptical</option>
+                  <option value="creative">creative</option>
+                  <option value="methodological">methodological</option>
+                </select>
+              </label>
+              <p id="provocation-target" class="hint">Target: current section</p>
+              <div class="provocation-actions">
+                <button id="generate-provocation-button" type="button">Generate</button>
+                <button id="regenerate-provocation-button" type="button" class="secondary">Regenerate</button>
+                <button id="dismiss-provocation-button" type="button" class="secondary">Dismiss</button>
+                <button id="cancel-ai-button" type="button" class="secondary">Cancel</button>
+              </div>
+              <p id="provocation-message" class="message"></p>
+              <pre id="provocation-output" class="provocation-output">No active provocation.</pre>
+            </div>
+          </section>
+
+          <section class="panel settings-panel">
+            <h2>Settings</h2>
+            <form id="settings-form">
+              <label>
+                Generation model
+                <input id="generation-model-input" name="generationModel" type="text" required />
+              </label>
+              <label>
+                Workspace default style
+                <select id="default-style-input" name="defaultProvocationStyle">
+                  <option value="skeptical">skeptical</option>
+                  <option value="creative">creative</option>
+                  <option value="methodological">methodological</option>
+                </select>
+              </label>
+              <label>
+                OpenAI API key
+                <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
+              </label>
+              <label class="toggle-row">
+                <input id="clear-api-key-input" name="clearOpenAiApiKey" type="checkbox" />
+                Clear saved API key
+              </label>
+              <button type="submit">Save Settings</button>
+            </form>
+            <p id="settings-message" class="message"></p>
+          </section>
+        </aside>
       </section>
 
-      <section class="panel">
-        <h2>AI Settings</h2>
-        <form id="settings-form">
+      <footer class="status-bar">
+        <span id="network-status">Network: unknown</span>
+        <span id="source-status">Source: -</span>
+        <span id="ai-status">AI: -</span>
+        <span id="source-actions" class="status-actions"></span>
+      </footer>
+
+      <section id="reassignment-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reassignment-title">
+        <div class="modal-content">
+          <h2 id="reassignment-title">Re-import Complete</h2>
+          <p id="reassignment-count">0 notes need reassignment</p>
+          <p id="reassignment-note"></p>
+          <p id="reassignment-old-section" class="hint"></p>
           <label>
-            Generation model
-            <input id="generation-model-input" name="generationModel" type="text" required />
+            Reassign to
+            <select id="reassignment-section-select"></select>
           </label>
-
-          <label>
-            Default provocation style
-            <select id="provocation-style-input" name="defaultProvocationStyle">
-              <option value="skeptical">skeptical</option>
-              <option value="creative">creative</option>
-              <option value="methodological">methodological</option>
-            </select>
-          </label>
-
-          <label>
-            OpenAI API key
-            <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
-          </label>
-
-          <label class="checkbox-row">
-            <input id="clear-api-key-input" name="clearOpenAiApiKey" type="checkbox" />
-            Clear saved API key
-          </label>
-
-          <button type="submit">Save settings</button>
-        </form>
+          <div class="modal-actions">
+            <button id="reassignment-assign-button" type="button">Assign</button>
+            <button id="reassignment-skip-button" type="button" class="secondary">Skip for now</button>
+          </div>
+        </div>
       </section>
 
-      <section class="panel">
-        <h2>Messages</h2>
-        <pre id="message-log">Ready.</pre>
-      </section>
+      <pre id="message-log" class="message-log">Ready.</pre>
     </main>
 
     <script type="module" src="./app.js"></script>

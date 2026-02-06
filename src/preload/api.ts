@@ -32,8 +32,12 @@ export interface DesktopApi {
       sectionId: string;
       noteId?: string;
       style?: 'skeptical' | 'creative' | 'methodological';
+      confirmReplace?: boolean;
+      acknowledgeCloudWarning?: boolean;
     }): Promise<IpcEnvelope>;
-    cancel(payload: { requestId: string }): Promise<IpcEnvelope>;
+    cancel(
+      payload: { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
+    ): Promise<IpcEnvelope>;
   };
   settings: {
     get(payload?: Record<string, never>): Promise<IpcEnvelope>;
@@ -42,6 +46,8 @@ export interface DesktopApi {
       defaultProvocationStyle?: 'skeptical' | 'creative' | 'methodological';
       openAiApiKey?: string;
       clearOpenAiApiKey?: boolean;
+      documentId?: string;
+      provocationsEnabled?: boolean;
     }): Promise<IpcEnvelope>;
   };
   network: {

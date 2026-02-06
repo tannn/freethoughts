@@ -22,17 +22,24 @@ export const IPC_SCHEMA_BY_CHANNEL: Record<IpcChannel, z.ZodTypeAny> = {
       documentId: id,
       sectionId: id,
       noteId: id.optional(),
-      style: provocationStyle.optional()
+      style: provocationStyle.optional(),
+      confirmReplace: z.boolean().optional(),
+      acknowledgeCloudWarning: z.boolean().optional()
     })
     .strict(),
-  'ai.cancel': z.object({ requestId: id }).strict(),
+  'ai.cancel': z.union([
+    z.object({ requestId: id }).strict(),
+    z.object({ documentId: id, sectionId: id, dismissActive: z.literal(true) }).strict()
+  ]),
   'settings.get': z.object({}).strict(),
   'settings.update': z
     .object({
       generationModel: z.string().trim().min(1).optional(),
       defaultProvocationStyle: provocationStyle.optional(),
       openAiApiKey: z.string().trim().min(1).optional(),
-      clearOpenAiApiKey: z.boolean().optional()
+      clearOpenAiApiKey: z.boolean().optional(),
+      documentId: id.optional(),
+      provocationsEnabled: z.boolean().optional()
     })
     .strict(),
   'network.status': z.object({}).strict()

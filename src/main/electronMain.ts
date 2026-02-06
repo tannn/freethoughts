@@ -1,12 +1,6 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  AiSettingsRepository,
-  AiSettingsService,
-  type ApiKeyManagementProvider,
-  type UpdateAiSettingsInput
-} from '../ai/index.js';
 import { createDefaultBusinessHandlers, registerValidatedIpcHandlers } from './ipc/index.js';
 import { MacOsKeychainApiKeyProvider } from './security/index.js';
 import {
@@ -16,18 +10,26 @@ import {
   shouldAllowPermission,
   shouldAllowWindowOpen
 } from './window/index.js';
-import { assertOnline, getNetworkStatus } from './network/status.js';
 import { applyAllMigrations } from '../persistence/migrations/index.js';
-import { IPC_CHANNELS } from '../shared/ipc/channels.js';
 import { AppError } from '../shared/ipc/errors.js';
+import {
+  DesktopRuntime,
+  type GenerateProvocationPayload,
+  type RuntimeApiKeyProvider,
+  type UpdateSettingsPayload
+} from './runtime/index.js';
 
-class UnsupportedPlatformApiKeyProvider implements ApiKeyManagementProvider {
-  private unsupported(): never {
-    throw new AppError('E_INTERNAL', 'OpenAI API key management is only supported on macOS');
+class UnsupportedPlatformApiKeyProvider implements RuntimeApiKeyProvider {
+  private unsupported(message: string): never {
+    throw new AppError('E_INTERNAL', message);
+  }
+
+  async getApiKey(): Promise<string> {
+    throw new AppError('E_UNAUTHORIZED', 'Missing OpenAI API key');
   }
 
   setApiKey(): void {
-    this.unsupported();
+    this.unsupported('OpenAI API key management is only supported on macOS');
   }
 
   hasApiKey(): boolean {
@@ -44,7 +46,7 @@ const preloadPath = join(currentDir, '..', 'preload', 'electronPreload.cjs');
 const rendererPath = join(currentDir, '..', 'renderer', 'index.html');
 const dbPath = join(app.getPath('userData'), 'toolsforthought.sqlite');
 
-const createApiKeyProvider = (): ApiKeyManagementProvider => {
+const createApiKeyProvider = (): RuntimeApiKeyProvider => {
   if (process.platform === 'darwin') {
     return new MacOsKeychainApiKeyProvider();
   }
@@ -52,31 +54,47 @@ const createApiKeyProvider = (): ApiKeyManagementProvider => {
   return new UnsupportedPlatformApiKeyProvider();
 };
 
-const createSettingsService = (): AiSettingsService => {
+const createRuntime = (): DesktopRuntime => {
   applyAllMigrations(dbPath);
-  const settingsRepository = new AiSettingsRepository(dbPath);
-  return new AiSettingsService(settingsRepository, createApiKeyProvider());
+  return new DesktopRuntime({
+    dbPath,
+    apiKeyProvider: createApiKeyProvider()
+  });
 };
 
-const registerMainIpc = (settingsService: AiSettingsService): void => {
+const registerMainIpc = (runtime: DesktopRuntime): void => {
   const handlers = createDefaultBusinessHandlers();
-
-  for (const channel of IPC_CHANNELS) {
-    handlers[channel] = () => {
-      throw new AppError('E_CONFLICT', 'IPC channel is not wired in desktop bootstrap', { channel });
-    };
-  }
-
-  handlers['settings.get'] = () => settingsService.getSettings();
-  handlers['settings.update'] = (payload) =>
-    settingsService.updateSettings(payload as UpdateAiSettingsInput);
-  handlers['ai.generateProvocation'] = () => {
-    assertOnline();
-    throw new AppError('E_CONFLICT', 'IPC channel is not wired in desktop bootstrap', {
-      channel: 'ai.generateProvocation'
-    });
-  };
-  handlers['network.status'] = () => getNetworkStatus();
+  handlers['workspace.open'] = (payload) =>
+    runtime.openWorkspace((payload as { workspacePath: string }).workspacePath);
+  handlers['workspace.create'] = (payload) =>
+    runtime.createWorkspace((payload as { workspacePath: string }).workspacePath);
+  handlers['document.import'] = (payload) =>
+    runtime.importDocument((payload as { sourcePath: string }).sourcePath);
+  handlers['document.reimport'] = (payload) =>
+    runtime.reimportDocument((payload as { documentId: string }).documentId);
+  handlers['document.locate'] = (payload) =>
+    runtime.locateDocument(
+      (payload as { documentId: string; sourcePath: string }).documentId,
+      (payload as { documentId: string; sourcePath: string }).sourcePath
+    );
+  handlers['section.list'] = (payload) =>
+    runtime.listSections((payload as { documentId: string }).documentId);
+  handlers['section.get'] = (payload) => runtime.getSection((payload as { sectionId: string }).sectionId);
+  handlers['note.create'] = (payload) =>
+    runtime.createNote(payload as { documentId: string; sectionId: string; text: string });
+  handlers['note.update'] = (payload) => runtime.updateNote(payload as { noteId: string; text: string });
+  handlers['note.delete'] = (payload) => runtime.deleteNote(payload as { noteId: string });
+  handlers['note.reassign'] = (payload) =>
+    runtime.reassignNote(payload as { noteId: string; targetSectionId: string });
+  handlers['ai.generateProvocation'] = (payload) =>
+    runtime.generateProvocation(payload as GenerateProvocationPayload);
+  handlers['ai.cancel'] = (payload) =>
+    runtime.cancelAiRequest(
+      payload as { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
+    );
+  handlers['settings.get'] = () => runtime.getSettings();
+  handlers['settings.update'] = (payload) => runtime.updateSettings(payload as UpdateSettingsPayload);
+  handlers['network.status'] = () => runtime.getNetworkStatus();
 
   registerValidatedIpcHandlers(ipcMain, handlers);
 };
@@ -124,7 +142,7 @@ const createMainWindow = (): BrowserWindow => {
 const bootstrap = async (): Promise<void> => {
   await app.whenReady();
   configureSecurityGuards();
-  registerMainIpc(createSettingsService());
+  registerMainIpc(createRuntime());
   createMainWindow();
 
   app.on('activate', () => {
