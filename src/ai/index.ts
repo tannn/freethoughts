@@ -18,6 +18,12 @@ export {
 } from './provocationService.js';
 export { AiSettingsRepository } from './settingsRepository.js';
 export {
+  AiSettingsService,
+  type AiSettingsSnapshot,
+  type ApiKeyManagementProvider,
+  type UpdateAiSettingsInput
+} from './settingsService.js';
+export {
   DEFAULT_AI_SETTINGS,
   DEFAULT_INPUT_TOKEN_BUDGET,
   DEFAULT_OUTPUT_TOKEN_BUDGET,

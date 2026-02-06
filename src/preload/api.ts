@@ -40,6 +40,8 @@ export interface DesktopApi {
     update(payload: {
       generationModel?: string;
       defaultProvocationStyle?: 'skeptical' | 'creative' | 'methodological';
+      openAiApiKey?: string;
+      clearOpenAiApiKey?: boolean;
     }): Promise<IpcEnvelope>;
   };
   network: {

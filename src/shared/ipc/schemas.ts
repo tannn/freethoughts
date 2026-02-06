@@ -30,7 +30,9 @@ export const IPC_SCHEMA_BY_CHANNEL: Record<IpcChannel, z.ZodTypeAny> = {
   'settings.update': z
     .object({
       generationModel: z.string().trim().min(1).optional(),
-      defaultProvocationStyle: provocationStyle.optional()
+      defaultProvocationStyle: provocationStyle.optional(),
+      openAiApiKey: z.string().trim().min(1).optional(),
+      clearOpenAiApiKey: z.boolean().optional()
     })
     .strict(),
   'network.status': z.object({}).strict()
