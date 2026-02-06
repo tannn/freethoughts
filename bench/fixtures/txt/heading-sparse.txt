@@ -1,0 +1,5 @@
+This fixture intentionally has no strong heading boundaries.
+
+It exercises paragraph fallback chunking for deterministic section generation in plain text mode.
+
+Each paragraph stays concise, but enough text exists to create multiple fallback groups when needed.

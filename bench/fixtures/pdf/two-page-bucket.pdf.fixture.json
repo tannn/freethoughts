@@ -1,0 +1,29 @@
+{
+  "title": "Two Page Bucket PDF Fixture",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "text": "no headings here one one one one"
+    },
+    {
+      "pageNumber": 2,
+      "text": "still plain text two two two two"
+    },
+    {
+      "pageNumber": 3,
+      "text": "unstructured content three three three"
+    },
+    {
+      "pageNumber": 4,
+      "text": "unstructured content four four four"
+    },
+    {
+      "pageNumber": 5,
+      "text": "unstructured content five five five"
+    },
+    {
+      "pageNumber": 6,
+      "text": "unstructured content six six six"
+    }
+  ]
+}

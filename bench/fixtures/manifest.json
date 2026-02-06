@@ -1,0 +1,78 @@
+{
+  "generatedAt": "deterministic",
+  "fixtureCount": 12,
+  "fixtures": [
+    {
+      "id": "txt-discussion",
+      "type": "txt",
+      "path": "txt/discussion-notes.txt",
+      "nearLimit": false
+    },
+    {
+      "id": "txt-protocol",
+      "type": "txt",
+      "path": "txt/protocol-outline.txt",
+      "nearLimit": false
+    },
+    {
+      "id": "txt-heading-sparse",
+      "type": "txt",
+      "path": "txt/heading-sparse.txt",
+      "nearLimit": false
+    },
+    {
+      "id": "txt-near-limit",
+      "type": "txt",
+      "path": "txt/near-limit-24960.txt",
+      "nearLimit": true
+    },
+    {
+      "id": "md-research-log",
+      "type": "md",
+      "path": "md/research-log.md",
+      "nearLimit": false
+    },
+    {
+      "id": "md-outline",
+      "type": "md",
+      "path": "md/structured-outline.md",
+      "nearLimit": false
+    },
+    {
+      "id": "md-minimal",
+      "type": "md",
+      "path": "md/minimal-headings.md",
+      "nearLimit": false
+    },
+    {
+      "id": "md-near-limit",
+      "type": "md",
+      "path": "md/near-limit-24920.md",
+      "nearLimit": true
+    },
+    {
+      "id": "pdf-outline",
+      "type": "pdf",
+      "path": "pdf/outline-driven.pdf.fixture.json",
+      "nearLimit": false
+    },
+    {
+      "id": "pdf-heading-detect",
+      "type": "pdf",
+      "path": "pdf/heading-detect.pdf.fixture.json",
+      "nearLimit": false
+    },
+    {
+      "id": "pdf-bucket",
+      "type": "pdf",
+      "path": "pdf/two-page-bucket.pdf.fixture.json",
+      "nearLimit": false
+    },
+    {
+      "id": "pdf-near-limit",
+      "type": "pdf",
+      "path": "pdf/near-limit-50-pages.pdf.fixture.json",
+      "nearLimit": true
+    }
+  ]
+}
