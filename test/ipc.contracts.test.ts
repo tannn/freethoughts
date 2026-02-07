@@ -21,7 +21,9 @@ describe('ipc contracts', () => {
     const expected = [
       'workspace.open',
       'workspace.create',
+      'workspace.selectPath',
       'document.import',
+      'document.selectSource',
       'document.reimport',
       'document.locate',
       'section.list',

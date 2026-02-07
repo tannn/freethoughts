@@ -3,10 +3,12 @@ const { contextBridge, ipcRenderer } = require('electron');
 const api = {
   workspace: {
     open: (payload) => ipcRenderer.invoke('workspace.open', payload),
-    create: (payload) => ipcRenderer.invoke('workspace.create', payload)
+    create: (payload) => ipcRenderer.invoke('workspace.create', payload),
+    selectPath: (payload) => ipcRenderer.invoke('workspace.selectPath', payload)
   },
   document: {
     import: (payload) => ipcRenderer.invoke('document.import', payload),
+    selectSource: (payload = {}) => ipcRenderer.invoke('document.selectSource', payload),
     reimport: (payload) => ipcRenderer.invoke('document.reimport', payload),
     locate: (payload) => ipcRenderer.invoke('document.locate', payload)
   },

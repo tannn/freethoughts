@@ -1,7 +1,9 @@
 export const IPC_CHANNELS = [
   'workspace.open',
   'workspace.create',
+  'workspace.selectPath',
   'document.import',
+  'document.selectSource',
   'document.reimport',
   'document.locate',
   'section.list',

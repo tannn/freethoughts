@@ -4,9 +4,14 @@ import { getDesktopApi } from '../src/renderer/desktopApi.js';
 describe('renderer desktop preload bridge', () => {
   it('returns the bridge object when required namespaces exist', () => {
     const api = {
-      workspace: { open: async () => ({ ok: true, data: null }), create: async () => ({ ok: true, data: null }) },
+      workspace: {
+        open: async () => ({ ok: true, data: null }),
+        create: async () => ({ ok: true, data: null }),
+        selectPath: async () => ({ ok: true, data: null })
+      },
       document: {
         import: async () => ({ ok: true, data: null }),
+        selectSource: async () => ({ ok: true, data: null }),
         reimport: async () => ({ ok: true, data: null }),
         locate: async () => ({ ok: true, data: null })
       },

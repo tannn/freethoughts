@@ -187,8 +187,37 @@ pre {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
+  padding: 16px 18px;
   background: #fbfdf9;
+  font-family: "Iowan Old Style", "Georgia", "Times New Roman", serif;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  letter-spacing: 0.002em;
+  width: min(100%, 72ch);
+  margin: 0 auto;
+}
+
+.pdf-surface {
+  min-height: 320px;
+  max-height: calc(100vh - 260px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f6f7f2;
+}
+
+.pdf-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.pdf-fallback {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fff7e6;
 }
 
 .nav-list {

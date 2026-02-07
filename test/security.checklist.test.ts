@@ -27,7 +27,8 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
       sandbox: true,
       nodeIntegration: false,
       webSecurity: true,
-      enableRemoteModule: false
+      enableRemoteModule: false,
+      plugins: true
     });
   });
 
@@ -96,6 +97,7 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
   it('defines strict CSP defaults with narrow connect-src (FR-067)', () => {
     expect(CONTENT_SECURITY_POLICY).toContain("default-src 'self'");
     expect(CONTENT_SECURITY_POLICY).toContain("connect-src 'self' https://api.openai.com");
+    expect(CONTENT_SECURITY_POLICY).toContain("frame-src 'self' file: chrome-extension:");
   });
 
   it('denies untrusted navigation, window creation, and permissions by default (FR-068, FR-069)', () => {

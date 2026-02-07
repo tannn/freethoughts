@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.openai.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self' file: chrome-extension:; connect-src 'self' https://api.openai.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tools for Thought</title>
@@ -15,10 +15,6 @@
       <section class="workspace-card">
         <h1>Tools for Thought Reader</h1>
         <p>Open or create a local workspace to start reading.</p>
-        <label>
-          Workspace path
-          <input id="workspace-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/workspace" />
-        </label>
         <div class="workspace-actions">
           <button id="open-workspace-button" type="button">Open Workspace</button>
           <button id="create-workspace-button" type="button" class="secondary">Create Workspace</button>
@@ -40,11 +36,7 @@
           <section class="panel">
             <h2>Import Document</h2>
             <form id="import-form">
-              <label>
-                Source file path
-                <input id="import-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/file.md" />
-              </label>
-              <button type="submit">Import</button>
+              <button id="import-select-button" type="submit">Choose File</button>
             </form>
             <p class="hint">Accepted: .pdf (text), .txt, .md</p>
             <p id="import-message" class="message"></p>
@@ -69,6 +61,12 @@
               <div class="section-actions">
                 <button id="reimport-button" type="button" class="secondary">Re-import</button>
               </div>
+            </div>
+            <div id="pdf-surface" class="pdf-surface hidden">
+              <iframe id="pdf-frame" class="pdf-frame" title="PDF reader"></iframe>
+            </div>
+            <div id="pdf-fallback" class="pdf-fallback hidden">
+              <p class="hint">Native PDF view unavailable. Showing extracted section text.</p>
             </div>
             <pre id="section-content" class="section-content">Import a document to begin.</pre>
           </section>

@@ -19,11 +19,19 @@ describe('notes repository', () => {
       noteId: 'note-1',
       documentId: 'doc-1',
       sectionId: 'sec-1',
-      content: 'first draft'
+      content: 'first draft',
+      paragraphOrdinal: 2,
+      startOffset: 14,
+      endOffset: 28,
+      selectedTextExcerpt: 'highlighted text'
     });
 
     expect(created.id).toBe('note-1');
     expect(created.sectionId).toBe('sec-1');
+    expect(created.paragraphOrdinal).toBe(2);
+    expect(created.startOffset).toBe(14);
+    expect(created.endOffset).toBe(28);
+    expect(created.selectedTextExcerpt).toBe('highlighted text');
 
     const updated = repo.update('note-1', 'updated draft');
     expect(updated.content).toBe('updated draft');

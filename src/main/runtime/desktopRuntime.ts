@@ -401,13 +401,25 @@ export class DesktopRuntime {
     };
   }
 
-  createNote(payload: { documentId: string; sectionId: string; text: string }): NoteRecord {
+  createNote(payload: {
+    documentId: string;
+    sectionId: string;
+    text: string;
+    paragraphOrdinal?: number | null;
+    startOffset?: number | null;
+    endOffset?: number | null;
+    selectedTextExcerpt?: string | null;
+  }): NoteRecord {
     this.requireDocumentInActiveWorkspace(payload.documentId);
     this.assertSectionInCurrentRevision(payload.documentId, payload.sectionId);
     return this.notesRepository.create({
       documentId: payload.documentId,
       sectionId: payload.sectionId,
-      content: payload.text
+      content: payload.text,
+      paragraphOrdinal: payload.paragraphOrdinal ?? null,
+      startOffset: payload.startOffset ?? null,
+      endOffset: payload.endOffset ?? null,
+      selectedTextExcerpt: payload.selectedTextExcerpt ?? null
     });
   }
 

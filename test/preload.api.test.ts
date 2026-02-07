@@ -45,12 +45,24 @@ describe('preload api boundary', () => {
 
     const api = createDesktopApi(ipcRenderer);
 
-    const response = await api.auth.loginComplete({
+    const workspaceResponse = await api.workspace.selectPath({ mode: 'open' });
+    const documentResponse = await api.document.selectSource();
+    const authResponse = await api.auth.loginComplete({
       correlationState: 'state-1'
     });
 
-    expect(response).toEqual({ ok: true, data: { channel: 'auth.loginComplete' } });
+    expect(workspaceResponse).toEqual({ ok: true, data: { channel: 'workspace.selectPath' } });
+    expect(documentResponse).toEqual({ ok: true, data: { channel: 'document.selectSource' } });
+    expect(authResponse).toEqual({ ok: true, data: { channel: 'auth.loginComplete' } });
     expect(seen).toEqual([
+      {
+        channel: 'workspace.selectPath',
+        payload: { mode: 'open' }
+      },
+      {
+        channel: 'document.selectSource',
+        payload: {}
+      },
       {
         channel: 'auth.loginComplete',
         payload: { correlationState: 'state-1' }

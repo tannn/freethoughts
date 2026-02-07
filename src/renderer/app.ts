@@ -61,8 +61,19 @@ interface NoteRecord {
   documentId: string;
   sectionId: string | null;
   content: string;
+  paragraphOrdinal: number | null;
+  startOffset: number | null;
+  endOffset: number | null;
+  selectedTextExcerpt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface NoteSelectionAnchor {
+  paragraphOrdinal: number;
+  startOffset: number;
+  endOffset: number;
+  selectedTextExcerpt: string;
 }
 
 interface ProvocationRecord {
@@ -198,15 +209,67 @@ const requestId = (): string => {
   return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const toFileUrl = (sourcePath: string): string => {
+  if (sourcePath.startsWith('file://')) {
+    return sourcePath;
+  }
+
+  const url = new URL('file:///');
+  url.pathname = sourcePath;
+  return url.toString();
+};
+
+const normalizeSectionText = (text: string): string => text.replace(/\r\n/g, '\n');
+
+const countParagraphOrdinal = (text: string, startOffset: number): number => {
+  if (startOffset <= 0) {
+    return 0;
+  }
+  const matches = text.slice(0, startOffset).match(/\n{2,}/g);
+  return matches ? matches.length : 0;
+};
+
+const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | null => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!container.contains(range.commonAncestorContainer)) {
+    return null;
+  }
+
+  const normalizedText = normalizeSectionText(container.textContent ?? '');
+  const containerRange = document.createRange();
+  containerRange.selectNodeContents(container);
+
+  const startRange = containerRange.cloneRange();
+  startRange.setEnd(range.startContainer, range.startOffset);
+  const endRange = containerRange.cloneRange();
+  endRange.setEnd(range.endContainer, range.endOffset);
+
+  const startOffset = startRange.toString().length;
+  const endOffset = endRange.toString().length;
+  const selectedTextExcerpt = selection.toString().trim();
+
+  if (!selectedTextExcerpt) {
+    return null;
+  }
+
+  return {
+    paragraphOrdinal: countParagraphOrdinal(normalizedText, startOffset),
+    startOffset: Math.min(startOffset, endOffset),
+    endOffset: Math.max(startOffset, endOffset),
+    selectedTextExcerpt
+  };
+};
+
 const desktopApi = getDesktopApi(window as unknown as Record<string, unknown>);
 
 const elements = {
   workspaceScreen: required(document.querySelector<HTMLElement>('#workspace-screen'), 'workspace-screen'),
   appScreen: required(document.querySelector<HTMLElement>('#app-screen'), 'app-screen'),
-  workspacePathInput: required(
-    document.querySelector<HTMLInputElement>('#workspace-path-input'),
-    'workspace-path-input'
-  ),
   openWorkspaceButton: required(
     document.querySelector<HTMLButtonElement>('#open-workspace-button'),
     'open-workspace-button'
@@ -227,7 +290,6 @@ const elements = {
     'refresh-network-button'
   ),
   importForm: required(document.querySelector<HTMLFormElement>('#import-form'), 'import-form'),
-  importPathInput: required(document.querySelector<HTMLInputElement>('#import-path-input'), 'import-path-input'),
   importMessage: required(document.querySelector<HTMLParagraphElement>('#import-message'), 'import-message'),
   documentList: required(document.querySelector<HTMLUListElement>('#document-list'), 'document-list'),
   sectionList: required(document.querySelector<HTMLUListElement>('#section-list'), 'section-list'),
@@ -238,6 +300,9 @@ const elements = {
   sectionView: required(document.querySelector<HTMLElement>('#section-view'), 'section-view'),
   unassignedView: required(document.querySelector<HTMLElement>('#unassigned-view'), 'unassigned-view'),
   sectionHeading: required(document.querySelector<HTMLElement>('#section-heading'), 'section-heading'),
+  pdfSurface: required(document.querySelector<HTMLDivElement>('#pdf-surface'), 'pdf-surface'),
+  pdfFrame: required(document.querySelector<HTMLIFrameElement>('#pdf-frame'), 'pdf-frame'),
+  pdfFallback: required(document.querySelector<HTMLDivElement>('#pdf-fallback'), 'pdf-fallback'),
   sectionContent: required(document.querySelector<HTMLPreElement>('#section-content'), 'section-content'),
   reimportButton: required(document.querySelector<HTMLButtonElement>('#reimport-button'), 'reimport-button'),
   unassignedSummary: required(
@@ -360,7 +425,8 @@ const state = {
   authGuidanceOverride: null as string | null,
   networkStatus: null as NetworkStatus | null,
   activeProvocationRequestId: null as string | null,
-  reassignmentQueue: [] as UnassignedNoteItem[]
+  reassignmentQueue: [] as UnassignedNoteItem[],
+  selectionAnchor: null as NoteSelectionAnchor | null
 };
 
 const autosave = new NoteAutosaveController(async (noteId, content) => {
@@ -485,11 +551,41 @@ const renderSectionView = (): void => {
   if (!state.activeSection) {
     elements.sectionHeading.textContent = 'No section selected';
     elements.sectionContent.textContent = 'Import a document to begin.';
+    elements.sectionContent.classList.remove('hidden');
+    elements.pdfSurface.classList.add('hidden');
+    elements.pdfFallback.classList.add('hidden');
+    elements.pdfFrame.removeAttribute('src');
+    state.selectionAnchor = null;
     return;
   }
 
   elements.sectionHeading.textContent = state.activeSection.section.heading;
   elements.sectionContent.textContent = state.activeSection.section.content;
+
+  const isPdf = state.activeSection.document.fileType === 'pdf';
+  const pdfAvailable = isPdf && state.activeSection.sourceFileStatus.status === 'available';
+  elements.pdfSurface.classList.toggle('hidden', !pdfAvailable);
+  elements.pdfFallback.classList.toggle('hidden', !isPdf || pdfAvailable);
+  elements.sectionContent.classList.toggle('hidden', pdfAvailable);
+
+  if (pdfAvailable) {
+    const nextSrc = toFileUrl(state.activeSection.document.sourcePath);
+    if (elements.pdfFrame.src !== nextSrc) {
+      elements.pdfFrame.src = nextSrc;
+    }
+    state.selectionAnchor = null;
+  } else {
+    elements.pdfFrame.removeAttribute('src');
+  }
+};
+
+const updateSelectionAnchor = (): void => {
+  if (!state.activeSection) {
+    state.selectionAnchor = null;
+    return;
+  }
+
+  state.selectionAnchor = computeSelectionAnchor(elements.sectionContent);
 };
 
 const assignUnassigned = async (noteId: string, targetSectionId: string): Promise<void> => {
@@ -574,6 +670,24 @@ const renderTabs = (): void => {
   elements.provocationTab.classList.toggle('hidden', activeTab !== 'provocation');
 };
 
+const syncSelectedNoteCard = (): void => {
+  const currentSelected = elements.notesList.querySelector<HTMLElement>('.note-card.selected');
+  if (currentSelected && currentSelected.dataset.noteId !== state.selectedNoteId) {
+    currentSelected.classList.remove('selected');
+  }
+
+  if (!state.selectedNoteId) {
+    return;
+  }
+
+  const nextSelected = elements.notesList.querySelector<HTMLElement>(
+    `article.note-card[data-note-id="${state.selectedNoteId}"]`
+  );
+  if (nextSelected) {
+    nextSelected.classList.add('selected');
+  }
+};
+
 const renderNotes = (): void => {
   elements.notesList.replaceChildren();
 
@@ -584,6 +698,7 @@ const renderNotes = (): void => {
   for (const note of state.activeSection.notes) {
     const card = document.createElement('article');
     card.className = 'note-card';
+    card.dataset.noteId = note.id;
     if (note.id === state.selectedNoteId) {
       card.classList.add('selected');
     }
@@ -594,8 +709,11 @@ const renderNotes = (): void => {
     textarea.placeholder = 'Write note...';
 
     textarea.addEventListener('focus', () => {
+      if (state.selectedNoteId === note.id) {
+        return;
+      }
       state.selectedNoteId = note.id;
-      renderNotes();
+      syncSelectedNoteCard();
       renderProvocation();
     });
 
@@ -908,15 +1026,20 @@ const refreshNetworkStatus = async (): Promise<void> => {
 };
 
 const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
-  const workspacePath = elements.workspacePathInput.value.trim();
-  if (!workspacePath) {
-    throw new Error('Workspace path is required.');
+  const selectionEnvelope = (await desktopApi.workspace.selectPath({
+    mode
+  })) as Envelope<{ workspacePath: string | null }>;
+  const selection = unwrapEnvelope(selectionEnvelope);
+  if (!selection.workspacePath) {
+    return;
   }
 
   const envelope =
     mode === 'open'
-      ? ((await desktopApi.workspace.open({ workspacePath })) as Envelope<WorkspaceSnapshot>)
-      : ((await desktopApi.workspace.create({ workspacePath })) as Envelope<WorkspaceSnapshot>);
+      ? ((await desktopApi.workspace.open({ workspacePath: selection.workspacePath })) as Envelope<WorkspaceSnapshot>)
+      : ((await desktopApi.workspace.create({
+          workspacePath: selection.workspacePath
+        })) as Envelope<WorkspaceSnapshot>);
 
   const snapshot = unwrapEnvelope(envelope);
   state.workspace = snapshot.workspace;
@@ -1035,12 +1158,13 @@ const openSection = async (
 };
 
 const handleImport = async (): Promise<void> => {
-  const sourcePath = elements.importPathInput.value.trim();
-  if (!sourcePath) {
-    throw new Error('Source file path is required.');
+  const selectionEnvelope = (await desktopApi.document.selectSource()) as Envelope<{ sourcePath: string | null }>;
+  const selection = unwrapEnvelope(selectionEnvelope);
+  if (!selection.sourcePath) {
+    return;
   }
 
-  const envelope = (await desktopApi.document.import({ sourcePath })) as Envelope<DocumentSnapshot>;
+  const envelope = (await desktopApi.document.import({ sourcePath: selection.sourcePath })) as Envelope<DocumentSnapshot>;
   const snapshot = unwrapEnvelope(envelope);
 
   upsertDocument(snapshot.document);
@@ -1049,7 +1173,6 @@ const handleImport = async (): Promise<void> => {
   state.unassignedNotes = snapshot.unassignedNotes;
   state.activeSectionByDocument.set(snapshot.document.id, snapshot.firstSectionId);
 
-  elements.importPathInput.value = '';
   elements.importMessage.textContent = '';
 
   await openDocument(snapshot.document.id);
@@ -1111,13 +1234,24 @@ const handleNewNote = async (): Promise<void> => {
     return;
   }
 
+  const selection = state.selectionAnchor ?? computeSelectionAnchor(elements.sectionContent);
+
   const envelope = (await desktopApi.note.create({
     documentId: state.activeSection.document.id,
     sectionId: state.activeSection.section.id,
-    text: ''
+    text: '',
+    ...(selection
+      ? {
+          paragraphOrdinal: selection.paragraphOrdinal,
+          startOffset: selection.startOffset,
+          endOffset: selection.endOffset,
+          selectedTextExcerpt: selection.selectedTextExcerpt
+        }
+      : {})
   })) as Envelope<NoteRecord>;
 
   const created = unwrapEnvelope(envelope);
+  state.selectionAnchor = null;
   state.selectedNoteId = created.id;
   await openSection(state.activeSection.section.id, { preserveView: true });
 };
@@ -1383,6 +1517,13 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
 };
 
 const wireEvents = (): void => {
+  elements.sectionContent.addEventListener('mouseup', () => {
+    updateSelectionAnchor();
+  });
+  elements.sectionContent.addEventListener('keyup', () => {
+    updateSelectionAnchor();
+  });
+
   elements.openWorkspaceButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
       await openWorkspace('open');
