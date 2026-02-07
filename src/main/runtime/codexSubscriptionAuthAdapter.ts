@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, readFileSync, accessSync, constants as fsConstants } from 'node:fs';
+import { delimiter, join } from 'node:path';
 import { homedir } from 'node:os';
 import { AppError } from '../../shared/ipc/errors.js';
 import type { AuthSessionStatus } from '../../persistence/authSessions.js';
@@ -44,6 +44,7 @@ export interface CodexCliSubscriptionAuthAdapterOptions {
   authFilePath?: string;
   loginUrl?: string;
   codexCommand?: string;
+  logPath?: string;
   readFileSyncImpl?: typeof readFileSync;
   execFileSyncImpl?: ExecFileSyncLike;
   now?: () => Date;
@@ -57,6 +58,7 @@ const unavailableDetails = {
 const CODEX_DEFAULT_LOGIN_URL = 'https://chatgpt.com/auth/login';
 const DEFAULT_CODEX_COMMAND = 'codex';
 const DEFAULT_CODEX_AUTH_PATH = join(homedir(), '.codex', 'auth.json');
+const DEFAULT_CODEX_COMMAND_CANDIDATES = ['/opt/homebrew/bin/codex', '/usr/local/bin/codex'] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object';
@@ -119,6 +121,47 @@ const normalizeIsoTimestampOrNow = (value: unknown, now: () => Date): string => 
   return now().toISOString();
 };
 
+const sanitizeForLog = (message: string): string =>
+  message
+    .replaceAll(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, 'Bearer [REDACTED]')
+    .replaceAll(/sk-[A-Za-z0-9_-]+/g, 'sk-[REDACTED]');
+
+const isExecutable = (candidate: string): boolean => {
+  try {
+    accessSync(candidate, fsConstants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const resolveCodexCommand = (requested?: string): string => {
+  const normalizedRequested = requested?.trim();
+  if (normalizedRequested) {
+    return normalizedRequested;
+  }
+
+  for (const candidate of DEFAULT_CODEX_COMMAND_CANDIDATES) {
+    if (isExecutable(candidate)) {
+      return candidate;
+    }
+  }
+
+  const rawPath = process.env.PATH ?? '';
+  for (const part of rawPath.split(delimiter)) {
+    const directory = part.trim();
+    if (!directory) {
+      continue;
+    }
+    const candidate = `${directory}/codex`;
+    if (isExecutable(candidate)) {
+      return candidate;
+    }
+  }
+
+  return DEFAULT_CODEX_COMMAND;
+};
+
 export class UnavailableCodexSubscriptionAuthAdapter implements CodexSubscriptionAuthAdapter {
   private unavailable(message: string): never {
     throw new AppError('E_PROVIDER', message, unavailableDetails);
@@ -161,15 +204,22 @@ export class CodexCliSubscriptionAuthAdapter implements CodexSubscriptionAuthAda
 
   private readonly now: () => Date;
 
+  private readonly logPath?: string;
+
   private readonly pendingCorrelationStates = new Set<string>();
 
   constructor(options: CodexCliSubscriptionAuthAdapterOptions = {}) {
     this.authFilePath = options.authFilePath ?? DEFAULT_CODEX_AUTH_PATH;
     this.loginUrl = options.loginUrl ?? CODEX_DEFAULT_LOGIN_URL;
-    this.codexCommand = options.codexCommand ?? DEFAULT_CODEX_COMMAND;
+    this.codexCommand = resolveCodexCommand(options.codexCommand);
+    this.logPath = options.logPath;
     this.readFileSyncImpl = options.readFileSyncImpl ?? readFileSync;
     this.execFileSyncImpl = options.execFileSyncImpl ?? execFileSync;
     this.now = options.now ?? (() => new Date());
+    this.log('adapter_init', {
+      codexCommand: this.codexCommand,
+      authFilePath: this.authFilePath
+    });
   }
 
   async loginStart(_input: { workspaceId: string }): Promise<CodexLoginStartResult> {
@@ -238,6 +288,7 @@ export class CodexCliSubscriptionAuthAdapter implements CodexSubscriptionAuthAda
         stdio: ['ignore', 'pipe', 'pipe']
       });
     } catch {
+      this.log('logout_failed', { codexCommand: this.codexCommand });
       throw new AppError('E_PROVIDER', 'Codex auth runtime unavailable', {
         action: 'switch_to_api_key'
       });
@@ -250,7 +301,11 @@ export class CodexCliSubscriptionAuthAdapter implements CodexSubscriptionAuthAda
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe']
       });
-    } catch {
+    } catch (error) {
+      this.log('status_check_failed', {
+        codexCommand: this.codexCommand,
+        error: sanitizeForLog(error instanceof Error ? error.message : String(error))
+      });
       throw new AppError('E_PROVIDER', 'Codex auth runtime unavailable', {
         action: 'switch_to_api_key'
       });
@@ -311,6 +366,22 @@ export class CodexCliSubscriptionAuthAdapter implements CodexSubscriptionAuthAda
       return isRecord(parsed) ? (parsed as CodexAuthJson) : null;
     } catch {
       return null;
+    }
+  }
+
+  private log(event: string, details: Record<string, unknown>): void {
+    if (!this.logPath) {
+      return;
+    }
+
+    try {
+      appendFileSync(
+        this.logPath,
+        `${JSON.stringify({ ts: new Date().toISOString(), scope: 'codex_auth', event, ...details })}\n`,
+        'utf8'
+      );
+    } catch {
+      // Logging is best-effort and must never break auth flow.
     }
   }
 }

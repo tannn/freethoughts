@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  type CodexAppServerGenerationTransport,
+  type CodexAppServerTurnCompletion,
   FetchOpenAiTransport,
   type OpenAiGenerationRequest,
   type OpenAiGenerationResponse,
@@ -39,6 +41,28 @@ class StaticApiKeyProvider implements RuntimeApiKeyProvider {
 class StaticTransport implements OpenAiTransport {
   async generate(_request: OpenAiGenerationRequest): Promise<OpenAiGenerationResponse> {
     return { text: 'stable provocation output' };
+  }
+}
+
+class StaticCodexGenerationTransport implements CodexAppServerGenerationTransport {
+  async initialize(): Promise<void> {
+    // no-op
+  }
+
+  async startSession(): Promise<{ threadId: string }> {
+    return { threadId: 'thread-1' };
+  }
+
+  async sendTurn(): Promise<{ turnId: string }> {
+    return { turnId: 'turn-1' };
+  }
+
+  async waitForTurnCompletion(): Promise<CodexAppServerTurnCompletion> {
+    return { turnStatus: 'completed', outputText: 'stable codex output' };
+  }
+
+  async cancelTurn(): Promise<void> {
+    // no-op
   }
 }
 
@@ -166,7 +190,8 @@ describe('dual-auth security and privacy checklist', () => {
         lastValidatedAt: '2026-02-06T12:20:00.000Z'
       }),
       onlineProvider: { isOnline: () => true },
-      openAiTransport: new StaticTransport()
+      openAiTransport: new StaticTransport(),
+      codexAppServerTransport: new StaticCodexGenerationTransport()
     });
 
     runtime.openWorkspace(workspaceDir);

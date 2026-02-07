@@ -642,7 +642,7 @@ const getAuthGuidance = (auth: AuthStatusSnapshot | null): string => {
   }
 
   if (!auth.codex.available) {
-    return 'Codex login runtime unavailable. Switch to API key mode.';
+    return 'Codex App Server runtime unavailable or inaccessible. Switch to API key mode.';
   }
 
   if (auth.codex.status === 'cancelled') {
@@ -682,7 +682,11 @@ const authGuidanceFromError = (error: EnvelopeError): string => {
   }
 
   if (typeof error.details.action === 'string' && error.details.action === 'switch_to_api_key') {
-    return 'Codex login runtime unavailable. Switch to API key mode.';
+    const reason = typeof error.details.reason === 'string' ? error.details.reason : '';
+    if (reason === 'permission_denied') {
+      return 'Codex login lacks required generation permission. Switch to API key mode.';
+    }
+    return 'Codex App Server runtime unavailable or inaccessible. Switch to API key mode.';
   }
 
   return '';
@@ -770,7 +774,7 @@ const deriveAiAvailability = (): AiAvailability => {
       return {
         enabled: false,
         reason: 'auth-unavailable',
-        message: 'Codex login runtime unavailable. Switch to API key mode.'
+        message: 'Codex App Server runtime unavailable or inaccessible. Switch to API key mode.'
       };
     }
 

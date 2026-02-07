@@ -19,3 +19,7 @@ export {
   type CodexAuthSessionState,
   type CodexLoginStartResult
 } from './codexSubscriptionAuthAdapter.js';
+export {
+  CodexCliAppServerTransport,
+  type CodexCliAppServerTransportOptions
+} from './codexAppServerTransport.js';

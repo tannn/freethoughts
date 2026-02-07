@@ -2,6 +2,11 @@ import { AppError } from '../shared/ipc/errors.js';
 import { AiSettingsRepository } from './settingsRepository.js';
 import { DEFAULT_OUTPUT_TOKEN_BUDGET } from './types.js';
 import { appendFileSync } from 'node:fs';
+import type {
+  GenerationRequest,
+  GenerationResult,
+  ProvocationGenerationClient
+} from './generationClient.js';
 
 export interface ApiKeyProvider {
   getApiKey(): Promise<string>;
@@ -41,18 +46,6 @@ export interface OpenAiRuntimePolicy {
   timeoutMs: number;
   retryDelaysMs: readonly number[];
   outputTokenBudget: number;
-}
-
-export interface GenerateProvocationInput {
-  requestId: string;
-  prompt: string;
-  modelOverride?: string;
-  maxOutputTokens?: number;
-}
-
-export interface GenerateProvocationResult {
-  text: string;
-  model: string;
 }
 
 const DEFAULT_RUNTIME_POLICY: OpenAiRuntimePolicy = {
@@ -237,7 +230,7 @@ export class FetchOpenAiTransport implements OpenAiTransport {
   }
 }
 
-export class OpenAIClient {
+export class OpenAIClient implements ProvocationGenerationClient {
   private readonly activeControllersByRequestId = new Map<string, AbortController>();
 
   private readonly runtimePolicy: OpenAiRuntimePolicy;
@@ -270,7 +263,7 @@ export class OpenAIClient {
     return true;
   }
 
-  async generateProvocation(input: GenerateProvocationInput): Promise<GenerateProvocationResult> {
+  async generateProvocation(input: GenerationRequest): Promise<GenerationResult> {
     const settings = this.settingsRepository.getWorkspaceSettings();
     const model = input.modelOverride?.trim() || settings.generationModel;
 

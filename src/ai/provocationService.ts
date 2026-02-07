@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { SqliteCli } from '../persistence/migrations/sqliteCli.js';
 import { AppError } from '../shared/ipc/errors.js';
 import { buildDeterministicProvocationContext, type ContextSection } from './contextAssembly.js';
-import { OpenAIClient } from './openaiClient.js';
 import { AiSettingsRepository } from './settingsRepository.js';
 import { DEFAULT_OUTPUT_TOKEN_BUDGET, type ProvocationStyle } from './types.js';
+import type { ProvocationGenerationClient } from './generationClient.js';
 
 const sqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`;
 const ACTIVE_PROVOCATION_UNIQUE_INDEX = 'idx_provocations_one_active_per_section_revision';
@@ -89,7 +89,7 @@ export class ProvocationService {
   constructor(
     dbPath: string,
     private readonly settingsRepository: AiSettingsRepository,
-    private readonly openAiClient: OpenAIClient,
+    private readonly generationClient: ProvocationGenerationClient,
     private readonly createProvocationId: () => string = () => `prov-${randomUUID()}`
   ) {
     this.sqlite = new SqliteCli(dbPath);
@@ -134,7 +134,7 @@ export class ProvocationService {
       noteSnippet
     });
 
-    const generated = await this.openAiClient.generateProvocation({
+    const generated = await this.generationClient.generateProvocation({
       requestId: input.requestId,
       prompt,
       maxOutputTokens: DEFAULT_OUTPUT_TOKEN_BUDGET
@@ -206,7 +206,7 @@ export class ProvocationService {
   }
 
   cancel(requestId: string): boolean {
-    return this.openAiClient.cancel(requestId);
+    return this.generationClient.cancel(requestId);
   }
 
   private persistActiveProvocation(input: {

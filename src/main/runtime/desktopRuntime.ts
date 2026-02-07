@@ -4,10 +4,13 @@ import { extname, resolve } from 'node:path';
 import {
   AiSettingsRepository,
   AiSettingsService,
+  CodexAppServerClient,
   OpenAIClient,
   ProvocationService,
+  RoutedProvocationGenerationClient,
   type ApiKeyManagementProvider,
   type ApiKeyProvider,
+  type CodexAppServerGenerationTransport,
   type OpenAiTransport,
   type UpdateAiSettingsInput
 } from '../../ai/index.js';
@@ -144,6 +147,7 @@ export interface DesktopRuntimeOptions {
   dbPath: string;
   apiKeyProvider: RuntimeApiKeyProvider;
   codexAuthAdapter?: CodexSubscriptionAuthAdapter;
+  codexAppServerTransport?: CodexAppServerGenerationTransport;
   onlineProvider?: OnlineProvider;
   openAiTransport?: OpenAiTransport;
 }
@@ -200,6 +204,8 @@ export class DesktopRuntime {
 
   private readonly openAiClient: OpenAIClient;
 
+  private readonly codexAppServerClient: CodexAppServerClient;
+
   private readonly provocationService: ProvocationService;
 
   private readonly codexAuthAdapter: CodexSubscriptionAuthAdapter;
@@ -220,15 +226,21 @@ export class DesktopRuntime {
     this.settingsService = new AiSettingsService(this.settingsRepository, this.apiKeyProvider);
     this.openAiClient = new OpenAIClient(
       this.settingsRepository,
-      {
-        getApiKey: async () => this.resolveApiKeyForActiveAuthMode()
-      },
+      this.apiKeyProvider,
       options.openAiTransport
+    );
+    this.codexAppServerClient = new CodexAppServerClient({
+      settingsRepository: this.settingsRepository,
+      transport: options.codexAppServerTransport
+    });
+    const generationClient = new RoutedProvocationGenerationClient(
+      () => this.resolveGenerationClientForActiveWorkspace(),
+      [this.openAiClient, this.codexAppServerClient]
     );
     this.provocationService = new ProvocationService(
       this.dbPath,
       this.settingsRepository,
-      this.openAiClient
+      generationClient
     );
     this.codexAuthAdapter = options.codexAuthAdapter ?? new UnavailableCodexSubscriptionAuthAdapter();
     this.onlineProvider = options.onlineProvider;
@@ -443,37 +455,18 @@ export class DesktopRuntime {
         actions: sourceStatus.actions
       });
     }
-
-    try {
-      return this.provocationService.generate({
-        requestId: payload.requestId,
-        documentId: payload.documentId,
-        sectionId: payload.sectionId,
-        noteId: payload.noteId,
-        style: payload.style,
-        confirmReplace: payload.confirmReplace
-      });
-    } catch (error) {
-      if (
-        workspace.authMode === 'codex_subscription' &&
-        error instanceof AppError &&
-        error.code === 'E_UNAUTHORIZED' &&
-        this.isMissingResponsesScopeError(error)
-      ) {
-        throw new AppError(
-          'E_UNAUTHORIZED',
-          'Codex subscription login lacks required OpenAI scope api.responses.write. Switch to API key mode.',
-          {
-            authMode: workspace.authMode,
-            requiredScope: 'api.responses.write',
-            action: 'switch_to_api_key',
-            options: ['switch_to_api_key']
-          }
-        );
-      }
-
-      throw error;
+    if (workspace.authMode === 'codex_subscription') {
+      await this.ensureCodexGenerationReady(workspace.id);
     }
+
+    return this.provocationService.generate({
+      requestId: payload.requestId,
+      documentId: payload.documentId,
+      sectionId: payload.sectionId,
+      noteId: payload.noteId,
+      style: payload.style,
+      confirmReplace: payload.confirmReplace
+    });
   }
 
   cancelAiRequest(
@@ -706,43 +699,23 @@ export class DesktopRuntime {
     }
   }
 
-  private async resolveApiKeyForActiveAuthMode(): Promise<string> {
+  private resolveGenerationClientForActiveWorkspace() {
     const workspace = this.requireActiveWorkspace();
-    if (workspace.authMode === 'api_key') {
-      return this.apiKeyProvider.getApiKey();
-    }
+    return workspace.authMode === 'codex_subscription'
+      ? this.codexAppServerClient
+      : this.openAiClient;
+  }
 
-    const adapterStatus = await this.getCodexStatusFromAdapter(workspace.id);
+  private async ensureCodexGenerationReady(workspaceId: string): Promise<void> {
+    const adapterStatus = await this.getCodexStatusFromAdapter(workspaceId);
     if (!adapterStatus.available) {
       throw this.authRuntimeUnavailableError();
     }
 
-    const session = this.persistCodexSessionState(workspace.id, adapterStatus.session);
+    const session = this.persistCodexSessionState(workspaceId, adapterStatus.session);
     if (session.status !== 'authenticated') {
       throw this.actionableAuthStateError(session.status);
     }
-
-    let token: string;
-    try {
-      token = await this.codexAuthAdapter.getAccessToken({ workspaceId: workspace.id });
-    } catch (error) {
-      if (error instanceof AppError && error.code === 'E_PROVIDER') {
-        throw this.authRuntimeUnavailableError();
-      }
-
-      throw error;
-    }
-
-    const normalizedToken = token.trim();
-    if (!normalizedToken) {
-      throw new AppError('E_UNAUTHORIZED', 'Codex subscription login required.', {
-        authStatus: 'signed_out',
-        action: 'login',
-        options: ['start_login', 'switch_to_api_key']
-      });
-    }
-
-    return normalizedToken;
   }
 
   private persistCodexSessionState(workspaceId: string, state: CodexAuthSessionState): AuthSessionRecord {
@@ -819,15 +792,6 @@ export class DesktopRuntime {
       action: 'switch_to_api_key',
       options: ['switch_to_api_key']
     });
-  }
-
-  private isMissingResponsesScopeError(error: AppError): boolean {
-    if (!error.details || typeof error.details !== 'object') {
-      return false;
-    }
-
-    const requiredScope = (error.details as Record<string, unknown>).requiredScope;
-    return requiredScope === 'api.responses.write';
   }
 
   private requireCodexMode(workspace: WorkspaceRecord, message: string): void {

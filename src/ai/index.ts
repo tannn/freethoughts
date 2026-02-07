@@ -1,11 +1,39 @@
 export { buildDeterministicProvocationContext, type ContextSection } from './contextAssembly.js';
 export {
+  CodexAppServerClient,
+  CodexAppServerTransportError,
+  UnavailableCodexAppServerTransport,
+  type CodexAppServerClientOptions,
+  type CodexAppServerGenerationTransport,
+  type CodexAppServerTransportErrorKind,
+  type CodexAppServerTurnCompletion
+} from './codexAppServerClient.js';
+export type {
+  CodexAppServerInitializeParams,
+  CodexAppServerJsonRpcError,
+  CodexAppServerJsonRpcErrorEnvelope,
+  CodexAppServerJsonRpcId,
+  CodexAppServerJsonRpcNotification,
+  CodexAppServerJsonRpcRequest,
+  CodexAppServerJsonRpcSuccess,
+  CodexAppServerProtocolNotification,
+  CodexAppServerProtocolRequest,
+  CodexAppServerProtocolResponse,
+  CodexAppServerThreadStartParams,
+  CodexAppServerTurnInterruptParams,
+  CodexAppServerTurnStartParams
+} from './codexAppServerProtocol.js';
+export {
+  RoutedProvocationGenerationClient,
+  type GenerationRequest,
+  type GenerationResult,
+  type ProvocationGenerationClient
+} from './generationClient.js';
+export {
   FetchOpenAiTransport,
   OpenAIClient,
   OpenAiTransportError,
   type ApiKeyProvider,
-  type GenerateProvocationInput as OpenAiGenerateProvocationInput,
-  type GenerateProvocationResult,
   type OpenAiGenerationRequest,
   type OpenAiGenerationResponse,
   type OpenAiRuntimePolicy,

@@ -14,6 +14,7 @@ import {
 import { applyAllMigrations } from '../persistence/migrations/index.js';
 import { AppError } from '../shared/ipc/errors.js';
 import {
+  CodexCliAppServerTransport,
   CodexCliSubscriptionAuthAdapter,
   DesktopRuntime,
   type GenerateProvocationPayload,
@@ -48,6 +49,7 @@ const preloadPath = join(currentDir, '..', 'preload', 'electronPreload.cjs');
 const rendererPath = join(currentDir, '..', 'renderer', 'index.html');
 const dbPath = join(app.getPath('userData'), 'toolsforthought.sqlite');
 const openAiResponseLogPath = join(app.getPath('userData'), 'openai-responses.log');
+const codexRuntimeLogPath = join(app.getPath('userData'), 'codex-runtime.log');
 
 const createApiKeyProvider = (): RuntimeApiKeyProvider => {
   if (process.platform === 'darwin') {
@@ -62,7 +64,12 @@ const createRuntime = (): DesktopRuntime => {
   return new DesktopRuntime({
     dbPath,
     apiKeyProvider: createApiKeyProvider(),
-    codexAuthAdapter: new CodexCliSubscriptionAuthAdapter(),
+    codexAuthAdapter: new CodexCliSubscriptionAuthAdapter({
+      logPath: codexRuntimeLogPath
+    }),
+    codexAppServerTransport: new CodexCliAppServerTransport({
+      logPath: codexRuntimeLogPath
+    }),
     openAiTransport: new FetchOpenAiTransport({
       logPath: openAiResponseLogPath
     })

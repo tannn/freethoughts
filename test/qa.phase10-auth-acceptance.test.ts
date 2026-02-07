@@ -1,7 +1,13 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { type OpenAiGenerationRequest, type OpenAiGenerationResponse, type OpenAiTransport } from '../src/ai/index.js';
+import {
+  type CodexAppServerGenerationTransport,
+  type CodexAppServerTurnCompletion,
+  type OpenAiGenerationRequest,
+  type OpenAiGenerationResponse,
+  type OpenAiTransport
+} from '../src/ai/index.js';
 import { DesktopRuntime, type RuntimeApiKeyProvider } from '../src/main/runtime/index.js';
 import { AppError } from '../src/shared/ipc/errors.js';
 import {
@@ -55,6 +61,33 @@ class RecordingTransport implements OpenAiTransport {
   }
 }
 
+class RecordingCodexTransport implements CodexAppServerGenerationTransport {
+  readonly prompts: string[] = [];
+
+  async initialize(): Promise<void> {
+    // no-op
+  }
+
+  async startSession(): Promise<{ threadId: string }> {
+    return { threadId: 'thread-1' };
+  }
+
+  async sendTurn(input: {
+    params: { input: Array<{ type: 'text'; text: string }> };
+  }): Promise<{ turnId: string }> {
+    this.prompts.push(input.params.input[0]?.text ?? '');
+    return { turnId: `turn-${this.prompts.length}` };
+  }
+
+  async waitForTurnCompletion(): Promise<CodexAppServerTurnCompletion> {
+    return { turnStatus: 'completed', outputText: 'provocation-codex-appserver' };
+  }
+
+  async cancelTurn(): Promise<void> {
+    // no-op
+  }
+}
+
 class MutableCodexAdapter implements CodexSubscriptionAuthAdapter {
   statusCalls = 0;
 
@@ -103,6 +136,7 @@ class MutableCodexAdapter implements CodexSubscriptionAuthAdapter {
 const setupRuntime = (options?: { online?: boolean }): {
   runtime: DesktopRuntime;
   transport: RecordingTransport;
+  codexTransport: RecordingCodexTransport;
   apiKeyProvider: RecordingApiKeyProvider;
   codexAdapter: MutableCodexAdapter;
   documentId: string;
@@ -117,6 +151,7 @@ const setupRuntime = (options?: { online?: boolean }): {
 
   const onlineState = { value: options?.online ?? true };
   const transport = new RecordingTransport();
+  const codexTransport = new RecordingCodexTransport();
   const apiKeyProvider = new RecordingApiKeyProvider('api-mode-key');
   const codexAdapter = new MutableCodexAdapter();
 
@@ -127,7 +162,8 @@ const setupRuntime = (options?: { online?: boolean }): {
     onlineProvider: {
       isOnline: () => onlineState.value
     },
-    openAiTransport: transport
+    openAiTransport: transport,
+    codexAppServerTransport: codexTransport
   });
 
   runtime.openWorkspace(workspaceDir);
@@ -140,6 +176,7 @@ const setupRuntime = (options?: { online?: boolean }): {
   return {
     runtime,
     transport,
+    codexTransport,
     apiKeyProvider,
     codexAdapter,
     documentId: imported.document.id,
@@ -150,7 +187,8 @@ const setupRuntime = (options?: { online?: boolean }): {
 
 describe('phase 10 dual-auth acceptance harness', () => {
   it('covers API key mode, Codex mode, switch, logout, and expired-session recovery', async () => {
-    const { runtime, transport, apiKeyProvider, codexAdapter, documentId, sectionId } = setupRuntime();
+    const { runtime, transport, codexTransport, apiKeyProvider, codexAdapter, documentId, sectionId } =
+      setupRuntime();
 
     await runtime.generateProvocation({
       requestId: 'req-api-1',
@@ -202,7 +240,6 @@ describe('phase 10 dual-auth acceptance harness', () => {
       accountLabel: 'reader@example.com',
       lastValidatedAt: '2026-02-06T12:12:00.000Z'
     };
-    codexAdapter.accessToken = 'codex-mode-token-recovered';
 
     const started = await runtime.startAuthLogin();
     expect(started.authUrl).toContain('codex-login');
@@ -227,10 +264,9 @@ describe('phase 10 dual-auth acceptance harness', () => {
 
     expect(transport.seenApiKeys).toEqual([
       'api-mode-key',
-      'codex-mode-token',
-      'codex-mode-token-recovered',
       'api-mode-key'
     ]);
+    expect(codexTransport.prompts.length).toBe(2);
 
     expect(apiKeyProvider.getCalls).toBe(2);
     expect(apiKeyProvider.setCalls).toBe(0);
@@ -238,7 +274,9 @@ describe('phase 10 dual-auth acceptance harness', () => {
   });
 
   it('keeps cloud-warning and offline gates enforced in both auth modes', async () => {
-    const { runtime, documentId, sectionId, codexAdapter, onlineState } = setupRuntime({ online: false });
+    const { runtime, codexTransport, documentId, sectionId, codexAdapter, onlineState } = setupRuntime({
+      online: false
+    });
 
     await expect(
       runtime.generateProvocation({
@@ -285,5 +323,6 @@ describe('phase 10 dual-auth acceptance harness', () => {
       acknowledgeCloudWarning: true,
       confirmReplace: true
     });
+    expect(codexTransport.prompts.length).toBe(1);
   });
 });
