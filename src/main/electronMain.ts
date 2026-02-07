@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron';
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FetchOpenAiTransport } from '../ai/index.js';
@@ -14,6 +14,7 @@ import {
 import { applyAllMigrations } from '../persistence/migrations/index.js';
 import { AppError } from '../shared/ipc/errors.js';
 import {
+  CodexCliSubscriptionAuthAdapter,
   DesktopRuntime,
   type GenerateProvocationPayload,
   type RuntimeApiKeyProvider,
@@ -61,6 +62,7 @@ const createRuntime = (): DesktopRuntime => {
   return new DesktopRuntime({
     dbPath,
     apiKeyProvider: createApiKeyProvider(),
+    codexAuthAdapter: new CodexCliSubscriptionAuthAdapter(),
     openAiTransport: new FetchOpenAiTransport({
       logPath: openAiResponseLogPath
     })
@@ -101,7 +103,15 @@ const registerMainIpc = (runtime: DesktopRuntime): void => {
   handlers['settings.update'] = (payload) => runtime.updateSettings(payload as UpdateSettingsPayload);
   handlers['network.status'] = () => runtime.getNetworkStatus();
   handlers['auth.status'] = () => runtime.getAuthStatus();
-  handlers['auth.loginStart'] = () => runtime.startAuthLogin();
+  handlers['auth.loginStart'] = async () => {
+    const loginStart = await runtime.startAuthLogin();
+    try {
+      await shell.openExternal(loginStart.authUrl);
+    } catch {
+      // URL is still returned for manual launch if external open fails.
+    }
+    return loginStart;
+  };
   handlers['auth.loginComplete'] = (payload) =>
     runtime.completeAuthLogin((payload as { correlationState: string }).correlationState);
   handlers['auth.logout'] = () => runtime.logoutAuth();

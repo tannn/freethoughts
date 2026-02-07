@@ -68,6 +68,10 @@ class MockCodexAdapter implements CodexSubscriptionAuthAdapter {
     return this.statusResult;
   }
 
+  async getAccessToken(): Promise<string> {
+    return 'codex-access-token';
+  }
+
   async logout(): Promise<void> {
     this.logoutCalls += 1;
   }

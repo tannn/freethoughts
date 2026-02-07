@@ -314,6 +314,22 @@ export class OpenAIClient {
       }
 
       if (error instanceof OpenAiTransportError && error.status === 401) {
+        const normalizedMessage = error.message.toLowerCase();
+        const missingScope =
+          normalizedMessage.includes('missing scopes') ||
+          normalizedMessage.includes('api.responses.write');
+
+        if (missingScope) {
+          throw new AppError(
+            'E_UNAUTHORIZED',
+            'Credentials are missing required OpenAI scope api.responses.write.',
+            {
+              requiredScope: 'api.responses.write',
+              action: 'switch_to_api_key'
+            }
+          );
+        }
+
         throw new AppError('E_UNAUTHORIZED', 'Invalid OpenAI API key');
       }
 

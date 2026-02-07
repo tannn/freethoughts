@@ -12,7 +12,9 @@ export {
   type AuthLoginStartSnapshot
 } from './desktopRuntime.js';
 export {
+  CodexCliSubscriptionAuthAdapter,
   UnavailableCodexSubscriptionAuthAdapter,
+  type CodexCliSubscriptionAuthAdapterOptions,
   type CodexSubscriptionAuthAdapter,
   type CodexAuthSessionState,
   type CodexLoginStartResult

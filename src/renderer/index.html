@@ -124,6 +124,30 @@
             <h2>Settings</h2>
             <form id="settings-form">
               <label>
+                Auth mode
+                <select id="auth-mode-input" name="authMode">
+                  <option value="api_key">API key</option>
+                  <option value="codex_subscription">Codex subscription login</option>
+                </select>
+              </label>
+              <p id="auth-status-message" class="hint">Auth status: unknown</p>
+              <p id="auth-guidance" class="hint"></p>
+              <label>
+                Login correlation state
+                <input
+                  id="auth-correlation-state-input"
+                  name="authCorrelationState"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Set by Start Codex Sign-In"
+                />
+              </label>
+              <div class="auth-actions">
+                <button id="auth-login-start-button" type="button" class="secondary">Start Codex Sign-In</button>
+                <button id="auth-login-complete-button" type="button" class="secondary">Complete Sign-In</button>
+                <button id="auth-logout-button" type="button" class="secondary">Sign Out</button>
+              </div>
+              <label>
                 Generation model
                 <input id="generation-model-input" name="generationModel" type="text" required />
               </label>

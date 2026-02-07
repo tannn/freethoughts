@@ -261,6 +261,7 @@ pre {
 .note-actions,
 .unassigned-actions,
 .provocation-actions,
+.auth-actions,
 .modal-actions,
 .notes-toolbar {
   display: flex;

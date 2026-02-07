@@ -4,6 +4,8 @@ import { getDesktopApi } from './desktopApi.js';
 type ProvocationStyle = 'skeptical' | 'creative' | 'methodological';
 type RightPaneTab = 'notes' | 'provocation';
 type CenterView = 'section' | 'unassigned';
+type AuthMode = 'api_key' | 'codex_subscription';
+type AuthSessionStatus = 'signed_out' | 'pending' | 'authenticated' | 'expired' | 'invalid' | 'cancelled';
 
 type SourceFileStatus =
   | {
@@ -77,8 +79,19 @@ interface ProvocationRecord {
 
 interface AiAvailability {
   enabled: boolean;
-  reason: 'ok' | 'offline' | 'provocations-disabled';
+  reason: 'ok' | 'offline' | 'provocations-disabled' | 'auth-unavailable';
   message: string;
+}
+
+interface AuthStatusSnapshot {
+  mode: AuthMode;
+  codex: {
+    provider: 'codex_chatgpt';
+    available: boolean;
+    status: AuthSessionStatus;
+    accountLabel: string | null;
+    lastValidatedAt: string | null;
+  };
 }
 
 interface WorkspaceSnapshot {
@@ -120,6 +133,7 @@ interface SettingsSnapshot {
   generationModel: string;
   defaultProvocationStyle: ProvocationStyle;
   apiKeyConfigured: boolean;
+  auth: AuthStatusSnapshot;
   documentSettings?: {
     documentId: string;
     provocationsEnabled: boolean;
@@ -268,6 +282,28 @@ const elements = {
   ),
   provocationOutput: required(document.querySelector<HTMLPreElement>('#provocation-output'), 'provocation-output'),
   settingsForm: required(document.querySelector<HTMLFormElement>('#settings-form'), 'settings-form'),
+  authModeInput: required(document.querySelector<HTMLSelectElement>('#auth-mode-input'), 'auth-mode-input'),
+  authStatusMessage: required(
+    document.querySelector<HTMLParagraphElement>('#auth-status-message'),
+    'auth-status-message'
+  ),
+  authGuidance: required(document.querySelector<HTMLParagraphElement>('#auth-guidance'), 'auth-guidance'),
+  authCorrelationStateInput: required(
+    document.querySelector<HTMLInputElement>('#auth-correlation-state-input'),
+    'auth-correlation-state-input'
+  ),
+  authLoginStartButton: required(
+    document.querySelector<HTMLButtonElement>('#auth-login-start-button'),
+    'auth-login-start-button'
+  ),
+  authLoginCompleteButton: required(
+    document.querySelector<HTMLButtonElement>('#auth-login-complete-button'),
+    'auth-login-complete-button'
+  ),
+  authLogoutButton: required(
+    document.querySelector<HTMLButtonElement>('#auth-logout-button'),
+    'auth-logout-button'
+  ),
   generationModelInput: required(
     document.querySelector<HTMLInputElement>('#generation-model-input'),
     'generation-model-input'
@@ -320,6 +356,8 @@ const state = {
   activeSectionByDocument: new Map<string, string | null>(),
   selectedNoteId: null as string | null,
   settings: null as SettingsSnapshot | null,
+  authCorrelationState: '' as string,
+  authGuidanceOverride: null as string | null,
   networkStatus: null as NetworkStatus | null,
   activeProvocationRequestId: null as string | null,
   reassignmentQueue: [] as UnassignedNoteItem[]
@@ -594,12 +632,106 @@ const renderNotes = (): void => {
   }
 };
 
+const getAuthGuidance = (auth: AuthStatusSnapshot | null): string => {
+  if (!auth) {
+    return '';
+  }
+
+  if (auth.mode === 'api_key') {
+    return 'Using OpenAI API key mode.';
+  }
+
+  if (!auth.codex.available) {
+    return 'Codex login runtime unavailable. Switch to API key mode.';
+  }
+
+  if (auth.codex.status === 'cancelled') {
+    return 'Codex login cancelled. Retry login or switch to API key mode.';
+  }
+
+  if (auth.codex.status === 'expired') {
+    return 'Codex session expired. Sign in again or switch to API key mode.';
+  }
+
+  if (auth.codex.status === 'invalid') {
+    return 'Codex session invalid. Sign in again or switch to API key mode.';
+  }
+
+  if (auth.codex.status === 'pending') {
+    return 'Complete sign-in in browser, then click "Complete Sign-In".';
+  }
+
+  if (auth.codex.status === 'signed_out') {
+    return 'Sign in to Codex or switch to API key mode.';
+  }
+
+  return '';
+};
+
+const authGuidanceFromError = (error: EnvelopeError): string => {
+  if (!isRecord(error.details)) {
+    return '';
+  }
+
+  const authStatus = typeof error.details.authStatus === 'string' ? error.details.authStatus : null;
+  if (authStatus === 'cancelled') {
+    return 'Codex login cancelled. Retry login or switch to API key mode.';
+  }
+  if (authStatus === 'expired' || authStatus === 'invalid') {
+    return 'Codex session expired or invalid. Sign in again or switch to API key mode.';
+  }
+
+  if (typeof error.details.action === 'string' && error.details.action === 'switch_to_api_key') {
+    return 'Codex login runtime unavailable. Switch to API key mode.';
+  }
+
+  return '';
+};
+
+const renderAuthSettings = (): void => {
+  const auth = state.settings?.auth ?? null;
+  if (!auth) {
+    elements.authStatusMessage.textContent = 'Auth status: unknown';
+    elements.authGuidance.textContent = state.authGuidanceOverride ?? '';
+    elements.authLoginStartButton.disabled = true;
+    elements.authLoginCompleteButton.disabled = true;
+    elements.authLogoutButton.disabled = true;
+    return;
+  }
+
+  elements.authModeInput.value = auth.mode;
+  elements.authCorrelationStateInput.value = state.authCorrelationState;
+
+  if (auth.mode === 'api_key') {
+    elements.authCorrelationStateInput.disabled = true;
+    elements.apiKeyInput.disabled = false;
+    elements.clearApiKeyInput.disabled = false;
+    elements.authStatusMessage.textContent = `Auth status: API key mode (${state.settings?.apiKeyConfigured ? 'configured' : 'missing key'})`;
+    elements.authLoginStartButton.disabled = true;
+    elements.authLoginCompleteButton.disabled = true;
+    elements.authLogoutButton.disabled = true;
+  } else {
+    elements.authCorrelationStateInput.disabled = false;
+    elements.apiKeyInput.disabled = true;
+    elements.clearApiKeyInput.disabled = true;
+    const accountLabel = auth.codex.accountLabel ? ` (${auth.codex.accountLabel})` : '';
+    elements.authStatusMessage.textContent = `Auth status: Codex ${auth.codex.status}${accountLabel}`;
+    elements.authLoginStartButton.disabled = !auth.codex.available;
+    elements.authLoginCompleteButton.disabled =
+      !auth.codex.available || elements.authCorrelationStateInput.value.trim().length === 0;
+    elements.authLogoutButton.disabled = !auth.codex.available || auth.codex.status === 'signed_out';
+  }
+
+  elements.authGuidance.textContent = state.authGuidanceOverride ?? getAuthGuidance(auth);
+};
+
 const deriveAiAvailability = (): AiAvailability => {
   const activeDocument = getActiveDocument();
   const online =
     state.networkStatus?.online ??
     (state.activeSection ? state.activeSection.aiAvailability.reason !== 'offline' : true);
   const provocationsEnabled = activeDocument?.provocationsEnabled ?? true;
+  const auth = state.settings?.auth ?? null;
 
   if (!online) {
     return {
@@ -615,6 +747,40 @@ const deriveAiAvailability = (): AiAvailability => {
       reason: 'provocations-disabled',
       message: 'Provocations are disabled for this document.'
     };
+  }
+
+  if (!auth) {
+    return {
+      enabled: false,
+      reason: 'auth-unavailable',
+      message: 'Auth status unavailable.'
+    };
+  }
+
+  if (auth.mode === 'api_key' && !state.settings?.apiKeyConfigured) {
+    return {
+      enabled: false,
+      reason: 'auth-unavailable',
+      message: 'OpenAI API key required in API key mode.'
+    };
+  }
+
+  if (auth.mode === 'codex_subscription') {
+    if (!auth.codex.available) {
+      return {
+        enabled: false,
+        reason: 'auth-unavailable',
+        message: 'Codex login runtime unavailable. Switch to API key mode.'
+      };
+    }
+
+    if (auth.codex.status !== 'authenticated') {
+      return {
+        enabled: false,
+        reason: 'auth-unavailable',
+        message: getAuthGuidance(auth)
+      };
+    }
   }
 
   return {
@@ -726,6 +892,10 @@ const refreshSettings = async (): Promise<void> => {
 
   elements.generationModelInput.value = settings.generationModel;
   elements.defaultStyleInput.value = settings.defaultProvocationStyle;
+  if (settings.auth.mode === 'api_key') {
+    state.authCorrelationState = '';
+  }
+  renderAuthSettings();
 };
 
 const refreshNetworkStatus = async (): Promise<void> => {
@@ -956,7 +1126,7 @@ const handleProvocationToggle = async (): Promise<void> => {
   const envelope = (await desktopApi.settings.update({
     documentId: state.activeDocumentId,
     provocationsEnabled: elements.provocationsEnabledInput.checked
-  })) as Envelope<SettingsSnapshot>;
+  })) as Envelope<unknown>;
 
   unwrapEnvelope(envelope);
   await refreshActiveDocumentLists();
@@ -1082,8 +1252,9 @@ const handleCancelAi = async (): Promise<void> => {
 const handleSettingsSave = async (): Promise<void> => {
   const model = elements.generationModelInput.value.trim();
   const defaultStyle = elements.defaultStyleInput.value as ProvocationStyle;
-  const apiKey = elements.apiKeyInput.value.trim();
-  const clearOpenAiApiKey = elements.clearApiKeyInput.checked;
+  const authMode = state.settings?.auth.mode ?? 'api_key';
+  const apiKey = authMode === 'api_key' ? elements.apiKeyInput.value.trim() : '';
+  const clearOpenAiApiKey = authMode === 'api_key' ? elements.clearApiKeyInput.checked : false;
 
   if (clearOpenAiApiKey && apiKey) {
     throw new Error('Choose either a new API key or "Clear saved API key", not both.');
@@ -1094,12 +1265,90 @@ const handleSettingsSave = async (): Promise<void> => {
     defaultProvocationStyle: defaultStyle,
     ...(apiKey ? { openAiApiKey: apiKey } : {}),
     ...(clearOpenAiApiKey ? { clearOpenAiApiKey: true } : {})
-  })) as Envelope<SettingsSnapshot>;
+  })) as Envelope<unknown>;
 
   unwrapEnvelope(envelope);
   elements.apiKeyInput.value = '';
   elements.clearApiKeyInput.checked = false;
+  state.authGuidanceOverride = null;
   await refreshSettings();
+};
+
+const handleAuthModeSwitch = async (): Promise<void> => {
+  const mode = elements.authModeInput.value as AuthMode;
+  const envelope = (await desktopApi.auth.switchMode({ mode })) as Envelope<AuthStatusSnapshot>;
+  const auth = unwrapEnvelope(envelope);
+
+  state.settings = state.settings
+    ? {
+        ...state.settings,
+        auth
+      }
+    : null;
+
+  if (mode === 'api_key') {
+    state.authCorrelationState = '';
+  }
+  state.authGuidanceOverride = null;
+  renderAuthSettings();
+  renderProvocation();
+  renderStatusBar();
+};
+
+const handleAuthLoginStart = async (): Promise<void> => {
+  const envelope = (await desktopApi.auth.loginStart({})) as Envelope<{
+    authUrl: string;
+    correlationState: string;
+  }>;
+  const started = unwrapEnvelope(envelope);
+  state.authCorrelationState = started.correlationState;
+  state.authGuidanceOverride = 'Browser sign-in started. Complete sign-in, then click "Complete Sign-In".';
+  await refreshSettings();
+  appendLog(`Codex sign-in URL: ${started.authUrl}`);
+};
+
+const handleAuthLoginComplete = async (): Promise<void> => {
+  const correlationState = elements.authCorrelationStateInput.value.trim();
+  if (!correlationState) {
+    throw new Error('Correlation state is required to complete Codex sign-in.');
+  }
+
+  try {
+    const envelope = (await desktopApi.auth.loginComplete({
+      correlationState
+    })) as Envelope<AuthStatusSnapshot>;
+    const auth = unwrapEnvelope(envelope);
+    state.authCorrelationState = '';
+    state.authGuidanceOverride = null;
+    state.settings = state.settings
+      ? {
+          ...state.settings,
+          auth
+        }
+      : null;
+    renderAuthSettings();
+    renderProvocation();
+    renderStatusBar();
+  } catch (error) {
+    await refreshSettings();
+    throw error;
+  }
+};
+
+const handleAuthLogout = async (): Promise<void> => {
+  const envelope = (await desktopApi.auth.logout({})) as Envelope<AuthStatusSnapshot>;
+  const auth = unwrapEnvelope(envelope);
+  state.authCorrelationState = '';
+  state.authGuidanceOverride = null;
+  state.settings = state.settings
+    ? {
+        ...state.settings,
+        auth
+      }
+    : null;
+  renderAuthSettings();
+  renderProvocation();
+  renderStatusBar();
 };
 
 const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => {
@@ -1112,6 +1361,13 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     appendLog(message);
+    if (error instanceof EnvelopeError) {
+      const authGuidance = authGuidanceFromError(error);
+      if (authGuidance) {
+        state.authGuidanceOverride = authGuidance;
+        renderAuthSettings();
+      }
+    }
 
     if (getActiveDocument()) {
       elements.importMessage.textContent = message;
@@ -1203,6 +1459,39 @@ const wireEvents = (): void => {
     void withUiErrorHandling(handleCancelAi);
   });
 
+  elements.authModeInput.addEventListener('change', () => {
+    void withUiErrorHandling(async () => {
+      await handleAuthModeSwitch();
+      appendLog(`Auth mode switched to ${elements.authModeInput.value}.`);
+    });
+  });
+
+  elements.authLoginStartButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleAuthLoginStart();
+      appendLog('Codex sign-in started.');
+    });
+  });
+
+  elements.authLoginCompleteButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleAuthLoginComplete();
+      appendLog('Codex sign-in completed.');
+    });
+  });
+
+  elements.authLogoutButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleAuthLogout();
+      appendLog('Codex sign-out complete.');
+    });
+  });
+
+  elements.authCorrelationStateInput.addEventListener('input', () => {
+    state.authCorrelationState = elements.authCorrelationStateInput.value;
+    renderAuthSettings();
+  });
+
   elements.settingsForm.addEventListener('submit', (event) => {
     event.preventDefault();
     void withUiErrorHandling(async () => {
@@ -1238,6 +1527,7 @@ const bootstrap = async (): Promise<void> => {
   renderSectionView();
   renderUnassignedView();
   renderNotes();
+  renderAuthSettings();
   renderProvocation();
   renderStatusBar();
   renderReassignmentModal();
