@@ -50,6 +50,7 @@ export interface DesktopApi {
     cancel(
       payload: { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
     ): Promise<IpcEnvelope>;
+    deleteProvocation(payload: { provocationId: string }): Promise<IpcEnvelope>;
   };
   settings: {
     get(payload?: Record<string, never>): Promise<IpcEnvelope>;
@@ -98,7 +99,8 @@ export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
   },
   ai: {
     generateProvocation: (payload) => ipcRenderer.invoke('ai.generateProvocation', payload),
-    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload)
+    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload),
+    deleteProvocation: (payload) => ipcRenderer.invoke('ai.deleteProvocation', payload)
   },
   settings: {
     get: (payload = {}) => ipcRenderer.invoke('settings.get', payload),

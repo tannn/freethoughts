@@ -115,7 +115,7 @@ describe('re-import transaction', () => {
     const provocation = sqlite.queryJson<{ is_active: number }>(
       "SELECT is_active FROM provocations WHERE id = 'prov-1'"
     );
-    expect(provocation).toEqual([{ is_active: 0 }]);
+    expect(provocation).toEqual([{ is_active: 1 }]);
   });
 
   it('rolls back full re-import state when any step fails', () => {

@@ -34,6 +34,7 @@ describe('ipc contracts', () => {
       'note.reassign',
       'ai.generateProvocation',
       'ai.cancel',
+      'ai.deleteProvocation',
       'settings.get',
       'settings.update',
       'network.status',

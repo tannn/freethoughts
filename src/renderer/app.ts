@@ -128,6 +128,7 @@ interface SectionSnapshot {
   };
   notes: NoteRecord[];
   activeProvocation: ProvocationRecord | null;
+  provocations: ProvocationRecord[];
   aiAvailability: AiAvailability;
   sourceFileStatus: SourceFileStatus;
 }
@@ -1282,16 +1283,12 @@ const readProvocationStyle = (): ProvocationStyle | undefined => {
   return value as ProvocationStyle;
 };
 
-const generateProvocation = async (initial: {
-  confirmReplace?: boolean;
-  acknowledgeCloudWarning?: boolean;
-} = {}): Promise<void> => {
+const generateProvocation = async (initial: { acknowledgeCloudWarning?: boolean } = {}): Promise<void> => {
   const section = state.activeSection;
   if (!section) {
     return;
   }
 
-  let confirmReplace = initial.confirmReplace ?? false;
   let acknowledgeCloudWarning = initial.acknowledgeCloudWarning ?? false;
 
   while (true) {
@@ -1306,7 +1303,6 @@ const generateProvocation = async (initial: {
         sectionId: section.section.id,
         noteId: state.selectedNoteId ?? undefined,
         style: readProvocationStyle(),
-        confirmReplace,
         acknowledgeCloudWarning
       })) as Envelope<ProvocationRecord>;
 
@@ -1316,20 +1312,6 @@ const generateProvocation = async (initial: {
       return;
     } catch (error) {
       if (error instanceof EnvelopeError) {
-        if (
-          error.code === 'E_CONFLICT' &&
-          isRecord(error.details) &&
-          error.details.requiresConfirmation === true &&
-          !confirmReplace
-        ) {
-          const accepted = window.confirm('Replace current provocation for this section?');
-          if (accepted) {
-            confirmReplace = true;
-            continue;
-          }
-          return;
-        }
-
         if (
           error.code === 'E_CONFLICT' &&
           isRecord(error.details) &&
@@ -1362,11 +1344,14 @@ const handleDismissProvocation = async (): Promise<void> => {
     return;
   }
 
-  const envelope = (await desktopApi.ai.cancel({
-    documentId: state.activeSection.document.id,
-    sectionId: state.activeSection.section.id,
-    dismissActive: true
-  })) as Envelope<{ dismissed: boolean }>;
+  const activeProvocation = state.activeSection.activeProvocation;
+  if (!activeProvocation) {
+    return;
+  }
+
+  const envelope = (await desktopApi.ai.deleteProvocation({
+    provocationId: activeProvocation.id
+  })) as Envelope<{ provocationId: string; deleted: boolean }>;
 
   unwrapEnvelope(envelope);
   await openSection(state.activeSection.section.id, { preserveView: true });
@@ -1592,7 +1577,7 @@ const wireEvents = (): void => {
 
   elements.regenerateProvocationButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
-      await generateProvocation({ confirmReplace: true });
+      await generateProvocation();
     });
   });
 

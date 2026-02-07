@@ -44,6 +44,7 @@ export const IPC_SCHEMA_BY_CHANNEL: Record<IpcChannel, z.ZodTypeAny> = {
     z.object({ requestId: id }).strict(),
     z.object({ documentId: id, sectionId: id, dismissActive: z.literal(true) }).strict()
   ]),
+  'ai.deleteProvocation': z.object({ provocationId: id }).strict(),
   'settings.get': z.object({}).strict(),
   'settings.update': z
     .object({

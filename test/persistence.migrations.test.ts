@@ -90,13 +90,7 @@ describe('persistence migrations', () => {
       FROM pragma_index_list('provocations')
       WHERE name = 'idx_provocations_one_active_per_section_revision';
     `);
-    expect(indexRows).toEqual([
-      {
-        name: 'idx_provocations_one_active_per_section_revision',
-        unique: 1,
-        partial: 1
-      }
-    ]);
+    expect(indexRows).toEqual([]);
   });
 
   it('rolls migrations down cleanly', () => {

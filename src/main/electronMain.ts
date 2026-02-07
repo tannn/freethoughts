@@ -138,6 +138,8 @@ const registerMainIpc = (runtime: DesktopRuntime): void => {
     runtime.cancelAiRequest(
       payload as { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
     );
+  handlers['ai.deleteProvocation'] = (payload) =>
+    runtime.deleteProvocation(payload as { provocationId: string });
   handlers['settings.get'] = () => runtime.getSettings();
   handlers['settings.update'] = (payload) => runtime.updateSettings(payload as UpdateSettingsPayload);
   handlers['network.status'] = () => runtime.getNetworkStatus();
@@ -193,7 +195,7 @@ const createMainWindow = (): BrowserWindow => {
     height: 820,
     minWidth: 980,
     minHeight: 680,
-    title: 'Tools for Thought',
+    title: 'Free Thought',
     webPreferences: {
       ...MAIN_WINDOW_WEB_PREFERENCES,
       preload: preloadPath

@@ -227,5 +227,17 @@ export const MIGRATIONS: Migration[] = [
       DROP TABLE notes;
       ALTER TABLE notes_restore RENAME TO notes;
     `
+  },
+  {
+    version: 7,
+    name: 'provocation_history_unlocked',
+    upSql: `
+      DROP INDEX IF EXISTS idx_provocations_one_active_per_section_revision;
+    `,
+    downSql: `
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provocations_one_active_per_section_revision
+      ON provocations(document_id, section_id, revision_id)
+      WHERE is_active = 1;
+    `
   }
 ];
