@@ -121,11 +121,12 @@ pre {
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   min-height: 100vh;
+  position: relative;
 }
 
 .top-bar {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -134,15 +135,52 @@ pre {
   backdrop-filter: blur(4px);
 }
 
+.top-bar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.outline-backdrop {
+  position: absolute;
+  inset: 54px 0 0 0;
+  background: rgba(17, 34, 26, 0.35);
+  z-index: 10;
+}
+
+.outline-drawer {
+  position: absolute;
+  top: 64px;
+  left: 10px;
+  width: min(360px, calc(100vw - 20px));
+  max-height: calc(100vh - 130px);
+  overflow: auto;
+  z-index: 11;
+  display: grid;
+  gap: 10px;
+}
+
+.drawer-header-panel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
 .app-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 300px) minmax(320px, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 360px);
   gap: 10px;
   padding: 10px;
   min-height: 0;
 }
 
-.left-pane,
 .center-pane,
 .right-pane {
   min-height: 0;
@@ -150,7 +188,6 @@ pre {
   gap: 10px;
 }
 
-.left-pane,
 .right-pane {
   grid-auto-rows: min-content;
   align-content: start;
@@ -187,8 +224,86 @@ pre {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
+  padding: 16px 18px;
   background: #fbfdf9;
+  font-family: "Iowan Old Style", "Georgia", "Times New Roman", serif;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  letter-spacing: 0.002em;
+  width: min(100%, 72ch);
+  margin: 0 auto;
+}
+
+.pdf-surface {
+  min-height: 320px;
+  max-height: calc(100vh - 260px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #f6f7f2;
+}
+
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  background: #f0f2e9;
+}
+
+.pdf-viewport {
+  height: 100%;
+  overflow: auto;
+  padding: 14px;
+}
+
+.pdf-document {
+  display: grid;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pdf-page {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.pdf-canvas {
+  display: block;
+}
+
+.pdf-text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.22;
+  line-height: 1;
+}
+
+.pdf-text-layer span {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  transform-origin: 0 0;
+  cursor: text;
+}
+
+.pdf-text-layer ::selection {
+  background: rgba(36, 76, 135, 0.35);
+}
+
+.pdf-fallback {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fff7e6;
 }
 
 .nav-list {
@@ -258,6 +373,15 @@ pre {
   border-color: var(--accent);
 }
 
+.note-card-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.note-anchor {
+  margin: 0;
+}
+
 .note-actions,
 .unassigned-actions,
 .provocation-actions,
@@ -272,6 +396,24 @@ pre {
 .note-text {
   min-height: 70px;
   resize: vertical;
+}
+
+.note-delete-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #c9d6c7;
+  background: #ffffff;
+  color: var(--danger);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0;
+}
+
+.note-delete-button:hover {
+  background: #fff4f4;
+  border-color: #e2b8b8;
 }
 
 .provocation-output {
@@ -325,6 +467,7 @@ pre {
   display: grid;
   place-items: center;
   padding: 16px;
+  z-index: 30;
 }
 
 .modal-content {
@@ -339,6 +482,26 @@ pre {
 
 .modal-content h2 {
   margin: 0;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-modal-content {
+  width: min(640px, 100%);
+}
+
+#settings-form {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-modal-content .modal-actions {
+  justify-content: flex-end;
 }
 
 .message {
@@ -360,6 +523,19 @@ pre {
 
   .top-bar {
     grid-template-columns: 1fr;
+  }
+
+  .top-bar-actions {
+    justify-content: flex-start;
+  }
+
+  .outline-backdrop {
+    inset: 108px 0 0 0;
+  }
+
+  .outline-drawer {
+    top: 118px;
+    width: calc(100vw - 20px);
   }
 
   .section-content {

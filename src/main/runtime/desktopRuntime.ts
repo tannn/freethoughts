@@ -123,6 +123,7 @@ export interface SectionSnapshot {
   section: SectionDetail;
   notes: NoteRecord[];
   activeProvocation: ReturnType<ProvocationService['getActive']>;
+  provocations: ReturnType<ProvocationService['listHistory']>;
   aiAvailability: ReturnType<typeof getAiActionAvailability>;
   sourceFileStatus: SourceFileStatus;
 }
@@ -383,6 +384,7 @@ export class DesktopRuntime {
     const notes = this.notesRepository.listBySection(document.id, section.id);
     const network = getNetworkStatus(this.onlineProvider);
     const aiAvailability = getAiActionAvailability(network.online, documentSummary.provocationsEnabled);
+    const provocationHistory = this.provocationService.listHistory(section.document_id, section.id);
 
     return {
       document: documentSummary,
@@ -395,19 +397,32 @@ export class DesktopRuntime {
         anchorKey: section.anchor_key
       },
       notes,
-      activeProvocation: this.provocationService.getActive(section.document_id, section.id),
+      activeProvocation: provocationHistory[0] ?? null,
+      provocations: provocationHistory,
       aiAvailability,
       sourceFileStatus: getSourceFileStatus(document.source_path)
     };
   }
 
-  createNote(payload: { documentId: string; sectionId: string; text: string }): NoteRecord {
+  createNote(payload: {
+    documentId: string;
+    sectionId: string;
+    text: string;
+    paragraphOrdinal?: number | null;
+    startOffset?: number | null;
+    endOffset?: number | null;
+    selectedTextExcerpt?: string | null;
+  }): NoteRecord {
     this.requireDocumentInActiveWorkspace(payload.documentId);
     this.assertSectionInCurrentRevision(payload.documentId, payload.sectionId);
     return this.notesRepository.create({
       documentId: payload.documentId,
       sectionId: payload.sectionId,
-      content: payload.text
+      content: payload.text,
+      paragraphOrdinal: payload.paragraphOrdinal ?? null,
+      startOffset: payload.startOffset ?? null,
+      endOffset: payload.endOffset ?? null,
+      selectedTextExcerpt: payload.selectedTextExcerpt ?? null
     });
   }
 
@@ -486,6 +501,19 @@ export class DesktopRuntime {
       requestId: payload.requestId,
       cancelled: this.provocationService.cancel(payload.requestId)
     };
+  }
+
+  deleteProvocation(payload: { provocationId: string }): { provocationId: string; deleted: boolean } {
+    const provocation = this.provocationService.getById(payload.provocationId);
+    if (!provocation || !provocation.isActive) {
+      throw new AppError('E_NOT_FOUND', 'Provocation not found', {
+        provocationId: payload.provocationId
+      });
+    }
+
+    this.requireDocumentInActiveWorkspace(provocation.documentId);
+    const deleted = this.provocationService.deleteById(payload.provocationId);
+    return { provocationId: payload.provocationId, deleted };
   }
 
   async getSettings() {

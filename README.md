@@ -1,6 +1,6 @@
 # freethoughts
 
-Tools for Thought Reader v0 workspace.
+Free Thought v0 workspace.
 
 ## Run the desktop app
 

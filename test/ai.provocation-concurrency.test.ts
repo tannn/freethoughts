@@ -7,7 +7,6 @@ import {
   type OpenAiGenerationResponse,
   type OpenAiTransport
 } from '../src/ai/index.js';
-import { AppError } from '../src/shared/ipc/errors.js';
 import { createTempDb, seedDocumentRevision } from './helpers/db.js';
 
 class BarrierTransport implements OpenAiTransport {
@@ -52,8 +51,8 @@ class StaticTransport implements OpenAiTransport {
   }
 }
 
-describe('provocation active-state concurrency hardening', () => {
-  it('enforces one active provocation per section/revision during concurrent generation', async () => {
+describe('provocation history concurrency', () => {
+  it('allows concurrent generation to persist additive history entries', async () => {
     const seeded = createTempDb();
     seedDocumentRevision(seeded.sqlite, {
       documentId: 'doc-race',
@@ -96,12 +95,8 @@ describe('provocation active-state concurrency hardening', () => {
       (result): result is PromiseRejectedResult => result.status === 'rejected'
     );
 
-    expect(fulfilled).toHaveLength(1);
-    expect(rejected).toHaveLength(1);
-    expect(rejected[0].reason).toMatchObject({
-      code: 'E_CONFLICT',
-      details: { requiresConfirmation: true }
-    } satisfies Partial<AppError>);
+    expect(fulfilled).toHaveLength(2);
+    expect(rejected).toHaveLength(0);
 
     const rows = seeded.sqlite.queryJson<{ id: string; is_active: number }>(`
       SELECT id, is_active
@@ -111,40 +106,20 @@ describe('provocation active-state concurrency hardening', () => {
         AND revision_id = 'rev-1';
     `);
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.is_active).toBe(1);
-    expect(service.getActive('doc-race', 'sec-1')?.id).toBe(fulfilled[0].value.id);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.is_active)).toEqual([1, 1]);
+    const active = service.getActive('doc-race', 'sec-1');
+    expect(active).not.toBeNull();
+    expect(fulfilled.map((result) => result.value.id)).toContain(active?.id);
   });
 
-  it('uses transactional replace/insert so failed replacement keeps prior active provocation', async () => {
+  it('deletes only the targeted provocation in history', async () => {
     const seeded = createTempDb();
     seedDocumentRevision(seeded.sqlite, {
       documentId: 'doc-replace',
       revisionId: 'rev-1',
       sections: [{ id: 'sec-1', anchorKey: 'intro#1', heading: 'Intro', orderIndex: 0, content: 'alpha beta' }]
     });
-    seeded.sqlite.exec(`
-      INSERT INTO provocations (
-        id,
-        document_id,
-        section_id,
-        revision_id,
-        request_id,
-        style,
-        output_text,
-        is_active
-      ) VALUES (
-        'prov-fixed',
-        'doc-replace',
-        'sec-1',
-        'rev-1',
-        'req-initial',
-        'skeptical',
-        'original',
-        1
-      );
-    `);
-
     const settings = new AiSettingsRepository(seeded.dbPath);
     const client = new OpenAIClient(
       settings,
@@ -154,32 +129,23 @@ describe('provocation active-state concurrency hardening', () => {
       async () => Promise.resolve(),
       () => 0
     );
-    const service = new ProvocationService(
-      seeded.dbPath,
-      settings,
-      client,
-      () => 'prov-fixed'
-    );
+    const service = new ProvocationService(seeded.dbPath, settings, client);
 
-    await expect(
-      service.generate({
-        requestId: 'req-replace',
-        documentId: 'doc-replace',
-        sectionId: 'sec-1',
-        confirmReplace: true
-      })
-    ).rejects.toMatchObject({ code: 'E_INTERNAL' } satisfies Partial<AppError>);
+    const first = await service.generate({
+      requestId: 'req-1',
+      documentId: 'doc-replace',
+      sectionId: 'sec-1'
+    });
+    const second = await service.generate({
+      requestId: 'req-2',
+      documentId: 'doc-replace',
+      sectionId: 'sec-1'
+    });
 
-    const rows = seeded.sqlite.queryJson<{ id: string; is_active: number; output_text: string }>(`
-      SELECT id, is_active, output_text
-      FROM provocations
-      WHERE document_id = 'doc-replace'
-        AND section_id = 'sec-1'
-        AND revision_id = 'rev-1'
-      ORDER BY id ASC;
-    `);
+    const deleted = service.deleteById(first.id);
+    expect(deleted).toBe(true);
 
-    expect(rows).toEqual([{ id: 'prov-fixed', is_active: 1, output_text: 'original' }]);
-    expect(service.getActive('doc-replace', 'sec-1')?.id).toBe('prov-fixed');
+    const remaining = service.listHistory('doc-replace', 'sec-1');
+    expect(remaining.map((row) => row.id)).toEqual([second.id]);
   });
 });

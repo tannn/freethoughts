@@ -102,7 +102,7 @@ describe('phase 8 desktop runtime integration', () => {
     expect(notesAfterReassign).toContain(createdNote.id);
   });
 
-  it('enforces cloud-warning ack, replacement confirmation, dismiss, offline gating, and document provocation toggle', async () => {
+  it('enforces cloud-warning ack, delete, offline gating, and document provocation toggle', async () => {
     const seeded = createTempDb();
     const workspaceDir = createTempDir();
     const sourcePath = join(workspaceDir, 'provocation.md');
@@ -155,25 +155,16 @@ describe('phase 8 desktop runtime integration', () => {
     });
     expect(first.style).toBe('creative');
 
-    await expect(
-      runtime.generateProvocation({
-        requestId: 'req-3',
-        documentId: imported.document.id,
-        sectionId
-      })
-    ).rejects.toMatchObject({ code: 'E_CONFLICT' } satisfies Partial<AppError>);
-
-    const replaced = await runtime.generateProvocation({
-      requestId: 'req-4',
+    const second = await runtime.generateProvocation({
+      requestId: 'req-3',
       documentId: imported.document.id,
       sectionId,
-      style: 'skeptical',
-      confirmReplace: true
+      style: 'skeptical'
     });
-    expect(replaced.style).toBe('skeptical');
+    expect(second.style).toBe('skeptical');
 
-    runtime.cancelAiRequest({ documentId: imported.document.id, sectionId, dismissActive: true });
-    expect(runtime.getSection(sectionId).activeProvocation).toBeNull();
+    runtime.deleteProvocation({ provocationId: second.id });
+    expect(runtime.getSection(sectionId).activeProvocation?.id).toBe(first.id);
 
     runtime.updateSettings({ documentId: imported.document.id, provocationsEnabled: false });
 

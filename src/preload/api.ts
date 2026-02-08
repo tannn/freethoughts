@@ -11,9 +11,11 @@ export interface DesktopApi {
   workspace: {
     open(payload: { workspacePath: string }): Promise<IpcEnvelope>;
     create(payload: { workspacePath: string }): Promise<IpcEnvelope>;
+    selectPath(payload: { mode: 'open' | 'create' }): Promise<IpcEnvelope>;
   };
   document: {
     import(payload: { sourcePath: string }): Promise<IpcEnvelope>;
+    selectSource(payload?: Record<string, never>): Promise<IpcEnvelope>;
     reimport(payload: { documentId: string }): Promise<IpcEnvelope>;
     locate(payload: { documentId: string; sourcePath: string }): Promise<IpcEnvelope>;
   };
@@ -22,7 +24,15 @@ export interface DesktopApi {
     get(payload: { sectionId: string }): Promise<IpcEnvelope>;
   };
   note: {
-    create(payload: { documentId: string; sectionId: string; text: string }): Promise<IpcEnvelope>;
+    create(payload: {
+      documentId: string;
+      sectionId: string;
+      text: string;
+      paragraphOrdinal?: number | null;
+      startOffset?: number | null;
+      endOffset?: number | null;
+      selectedTextExcerpt?: string | null;
+    }): Promise<IpcEnvelope>;
     update(payload: { noteId: string; text: string }): Promise<IpcEnvelope>;
     delete(payload: { noteId: string }): Promise<IpcEnvelope>;
     reassign(payload: { noteId: string; targetSectionId: string }): Promise<IpcEnvelope>;
@@ -40,6 +50,7 @@ export interface DesktopApi {
     cancel(
       payload: { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
     ): Promise<IpcEnvelope>;
+    deleteProvocation(payload: { provocationId: string }): Promise<IpcEnvelope>;
   };
   settings: {
     get(payload?: Record<string, never>): Promise<IpcEnvelope>;
@@ -67,10 +78,12 @@ export interface DesktopApi {
 export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
   workspace: {
     open: (payload) => ipcRenderer.invoke('workspace.open', payload),
-    create: (payload) => ipcRenderer.invoke('workspace.create', payload)
+    create: (payload) => ipcRenderer.invoke('workspace.create', payload),
+    selectPath: (payload) => ipcRenderer.invoke('workspace.selectPath', payload)
   },
   document: {
     import: (payload) => ipcRenderer.invoke('document.import', payload),
+    selectSource: (payload = {}) => ipcRenderer.invoke('document.selectSource', payload),
     reimport: (payload) => ipcRenderer.invoke('document.reimport', payload),
     locate: (payload) => ipcRenderer.invoke('document.locate', payload)
   },
@@ -86,7 +99,8 @@ export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
   },
   ai: {
     generateProvocation: (payload) => ipcRenderer.invoke('ai.generateProvocation', payload),
-    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload)
+    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload),
+    deleteProvocation: (payload) => ipcRenderer.invoke('ai.deleteProvocation', payload)
   },
   settings: {
     get: (payload = {}) => ipcRenderer.invoke('settings.get', payload),

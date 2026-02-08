@@ -22,7 +22,7 @@ class StaticTransport implements OpenAiTransport {
 }
 
 describe('provocation generation flow', () => {
-  it('supports section and note targets with one-active-per-section replacement rules', async () => {
+  it('supports section and note targets with additive provocation history', async () => {
     const seeded = createTempDb();
     seedDocumentRevision(seeded.sqlite, {
       documentId: 'doc-1',
@@ -64,32 +64,26 @@ describe('provocation generation flow', () => {
     expect(first.isActive).toBe(true);
     expect(service.getActive('doc-1', 'sec-2')?.id).toBe(first.id);
 
-    await expect(
-      service.generate({
-        requestId: 'req-2',
-        documentId: 'doc-1',
-        sectionId: 'sec-2',
-        noteId: 'note-1'
-      })
-    ).rejects.toMatchObject({ code: 'E_CONFLICT' } satisfies Partial<AppError>);
-
     const second = await service.generate({
-      requestId: 'req-3',
+      requestId: 'req-2',
       documentId: 'doc-1',
       sectionId: 'sec-2',
       noteId: 'note-1',
-      style: 'skeptical',
-      confirmReplace: true
+      style: 'skeptical'
     });
 
     expect(second.style).toBe('skeptical');
     expect(second.id).not.toBe(first.id);
 
+    const history = service.listHistory('doc-1', 'sec-2');
+    expect(history.map((entry) => entry.id)).toEqual([second.id, first.id]);
+
     const active = service.getActive('doc-1', 'sec-2');
     expect(active?.id).toBe(second.id);
 
-    service.dismiss('doc-1', 'sec-2');
-    expect(service.getActive('doc-1', 'sec-2')).toBeNull();
+    expect(service.deleteById(second.id)).toBe(true);
+    const remaining = service.listHistory('doc-1', 'sec-2');
+    expect(remaining.map((entry) => entry.id)).toEqual([first.id]);
 
     expect(transport.prompts[0]).toContain('[Active] B');
     expect(transport.prompts[0]).toContain('[Previous] A');

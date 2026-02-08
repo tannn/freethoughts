@@ -53,6 +53,14 @@ describe('persistence migrations', () => {
     expect(listColumns(dbPath, 'sections')).toEqual(
       expect.arrayContaining(['revision_id', 'anchor_key'])
     );
+    expect(listColumns(dbPath, 'notes')).toEqual(
+      expect.arrayContaining([
+        'paragraph_ordinal',
+        'start_offset',
+        'end_offset',
+        'selected_text_excerpt'
+      ])
+    );
     expect(listColumns(dbPath, 'provocations')).toEqual(expect.arrayContaining(['revision_id', 'style']));
     expect(listColumns(dbPath, 'workspace_settings')).toEqual(
       expect.arrayContaining(['generation_model', 'default_provocation_style'])
@@ -82,13 +90,7 @@ describe('persistence migrations', () => {
       FROM pragma_index_list('provocations')
       WHERE name = 'idx_provocations_one_active_per_section_revision';
     `);
-    expect(indexRows).toEqual([
-      {
-        name: 'idx_provocations_one_active_per_section_revision',
-        unique: 1,
-        partial: 1
-      }
-    ]);
+    expect(indexRows).toEqual([]);
   });
 
   it('rolls migrations down cleanly', () => {

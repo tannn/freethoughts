@@ -198,5 +198,46 @@ export const MIGRATIONS: Migration[] = [
     downSql: `
       DROP TABLE IF EXISTS auth_sessions;
     `
+  },
+  {
+    version: 6,
+    name: 'note_selection_anchors',
+    upSql: `
+      ALTER TABLE notes ADD COLUMN paragraph_ordinal INTEGER;
+      ALTER TABLE notes ADD COLUMN start_offset INTEGER;
+      ALTER TABLE notes ADD COLUMN end_offset INTEGER;
+      ALTER TABLE notes ADD COLUMN selected_text_excerpt TEXT;
+    `,
+    downSql: `
+      CREATE TABLE IF NOT EXISTS notes_restore (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        section_id TEXT,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+        FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE SET NULL
+      );
+
+      INSERT INTO notes_restore (id, document_id, section_id, content, created_at, updated_at)
+      SELECT id, document_id, section_id, content, created_at, updated_at
+      FROM notes;
+
+      DROP TABLE notes;
+      ALTER TABLE notes_restore RENAME TO notes;
+    `
+  },
+  {
+    version: 7,
+    name: 'provocation_history_unlocked',
+    upSql: `
+      DROP INDEX IF EXISTS idx_provocations_one_active_per_section_revision;
+    `,
+    downSql: `
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provocations_one_active_per_section_revision
+      ON provocations(document_id, section_id, revision_id)
+      WHERE is_active = 1;
+    `
   }
 ];

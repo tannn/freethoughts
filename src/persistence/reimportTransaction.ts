@@ -187,11 +187,6 @@ export const buildReimportTransactionSql = (input: ReimportTransactionInput): st
     )
       AND status = 'open';
 
-    UPDATE provocations
-    SET is_active = 0
-    WHERE document_id = ${sqlString(input.documentId)}
-      AND revision_id <> ${sqlString(input.revisionId)};
-
     UPDATE documents
     SET
       source_path = ${sqlString(input.sourcePath)},

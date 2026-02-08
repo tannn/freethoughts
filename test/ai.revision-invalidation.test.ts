@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { AiSettingsRepository, OpenAIClient, ProvocationService } from '../src/ai/index.js';
 import { createTempDb } from './helpers/db.js';
 
-describe('revision-scoped provocation invalidation', () => {
-  it('invalidates prior revision outputs while preserving current revision outputs', () => {
+describe('revision-scoped provocation history', () => {
+  it('keeps prior revision outputs while listing only the current revision', () => {
     const seeded = createTempDb();
 
     seeded.sqlite.exec(`
@@ -80,8 +80,8 @@ describe('revision-scoped provocation invalidation', () => {
 
     const service = new ProvocationService(seeded.dbPath, settings, client);
 
-    const invalidated = service.invalidateSupersededRevisions('doc-1', 'rev-2');
-    expect(invalidated).toBe(1);
+    const currentHistory = service.listHistory('doc-1', 'sec-r2');
+    expect(currentHistory.map((entry) => entry.id)).toEqual(['prov-new']);
 
     const rows = seeded.sqlite.queryJson<{ id: string; is_active: number }>(`
       SELECT id, is_active
@@ -92,7 +92,7 @@ describe('revision-scoped provocation invalidation', () => {
 
     expect(rows).toEqual([
       { id: 'prov-new', is_active: 1 },
-      { id: 'prov-old', is_active: 0 }
+      { id: 'prov-old', is_active: 1 }
     ]);
   });
 });

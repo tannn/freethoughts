@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { FetchOpenAiTransport } from '../ai/index.js';
 import { createDefaultBusinessHandlers, registerValidatedIpcHandlers } from './ipc/index.js';
 import { MacOsKeychainApiKeyProvider } from './security/index.js';
@@ -8,6 +8,7 @@ import {
   CONTENT_SECURITY_POLICY,
   MAIN_WINDOW_WEB_PREFERENCES,
   isTrustedNavigation,
+  shouldAttachContentSecurityPolicy,
   shouldAllowPermission,
   shouldAllowWindowOpen
 } from './window/index.js';
@@ -47,6 +48,7 @@ class UnsupportedPlatformApiKeyProvider implements RuntimeApiKeyProvider {
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const preloadPath = join(currentDir, '..', 'preload', 'electronPreload.cjs');
 const rendererPath = join(currentDir, '..', 'renderer', 'index.html');
+const rendererDocumentUrl = pathToFileURL(rendererPath).toString();
 const dbPath = join(app.getPath('userData'), 'toolsforthought.sqlite');
 const openAiResponseLogPath = join(app.getPath('userData'), 'openai-responses.log');
 const codexRuntimeLogPath = join(app.getPath('userData'), 'codex-runtime.log');
@@ -78,12 +80,42 @@ const createRuntime = (): DesktopRuntime => {
 
 const registerMainIpc = (runtime: DesktopRuntime): void => {
   const handlers = createDefaultBusinessHandlers();
+  const getMainWindow = (): BrowserWindow => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (!window) {
+      throw new AppError('E_INTERNAL', 'Main window not available for selection.');
+    }
+    return window;
+  };
+
   handlers['workspace.open'] = (payload) =>
     runtime.openWorkspace((payload as { workspacePath: string }).workspacePath);
   handlers['workspace.create'] = (payload) =>
     runtime.createWorkspace((payload as { workspacePath: string }).workspacePath);
+  handlers['workspace.selectPath'] = async (payload) => {
+    const { mode } = payload as { mode: 'open' | 'create' };
+    const selection = await dialog.showOpenDialog(getMainWindow(), {
+      title: mode === 'open' ? 'Open Workspace' : 'Create Workspace',
+      properties: mode === 'open' ? ['openDirectory'] : ['openDirectory', 'createDirectory']
+    });
+
+    return {
+      workspacePath: selection.canceled ? null : (selection.filePaths[0] ?? null)
+    };
+  };
   handlers['document.import'] = (payload) =>
     runtime.importDocument((payload as { sourcePath: string }).sourcePath);
+  handlers['document.selectSource'] = async () => {
+    const selection = await dialog.showOpenDialog(getMainWindow(), {
+      title: 'Import Document',
+      properties: ['openFile'],
+      filters: [{ name: 'Documents', extensions: ['pdf', 'txt', 'md'] }]
+    });
+
+    return {
+      sourcePath: selection.canceled ? null : (selection.filePaths[0] ?? null)
+    };
+  };
   handlers['document.reimport'] = (payload) =>
     runtime.reimportDocument((payload as { documentId: string }).documentId);
   handlers['document.locate'] = (payload) =>
@@ -106,6 +138,8 @@ const registerMainIpc = (runtime: DesktopRuntime): void => {
     runtime.cancelAiRequest(
       payload as { requestId: string } | { documentId: string; sectionId: string; dismissActive: true }
     );
+  handlers['ai.deleteProvocation'] = (payload) =>
+    runtime.deleteProvocation(payload as { provocationId: string });
   handlers['settings.get'] = () => runtime.getSettings();
   handlers['settings.update'] = (payload) => runtime.updateSettings(payload as UpdateSettingsPayload);
   handlers['network.status'] = () => runtime.getNetworkStatus();
@@ -146,7 +180,11 @@ const configureSecurityGuards = (): void => {
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = details.responseHeaders ?? {};
-    responseHeaders['Content-Security-Policy'] = [CONTENT_SECURITY_POLICY];
+    if (
+      shouldAttachContentSecurityPolicy(details.url, details.resourceType, rendererDocumentUrl)
+    ) {
+      responseHeaders['Content-Security-Policy'] = [CONTENT_SECURITY_POLICY];
+    }
     callback({ responseHeaders });
   });
 };
@@ -157,7 +195,7 @@ const createMainWindow = (): BrowserWindow => {
     height: 820,
     minWidth: 980,
     minHeight: 680,
-    title: 'Tools for Thought',
+    title: 'Free Thought',
     webPreferences: {
       ...MAIN_WINDOW_WEB_PREFERENCES,
       preload: preloadPath

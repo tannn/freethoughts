@@ -20,6 +20,21 @@ declare module 'electron' {
     static getAllWindows(): BrowserWindow[];
   }
 
+  export interface OpenDialogOptions {
+    title?: string;
+    properties?: Array<'openFile' | 'openDirectory' | 'createDirectory'>;
+    filters?: Array<{ name: string; extensions: string[] }>;
+  }
+
+  export interface OpenDialogReturnValue {
+    canceled: boolean;
+    filePaths: string[];
+  }
+
+  export interface Dialog {
+    showOpenDialog(browserWindow: BrowserWindow, options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
+  }
+
   export interface IpcMain {
     handle(
       channel: string,
@@ -28,6 +43,7 @@ declare module 'electron' {
   }
 
   export const ipcMain: IpcMain;
+  export const dialog: Dialog;
 
   export interface Session {
     setPermissionRequestHandler(

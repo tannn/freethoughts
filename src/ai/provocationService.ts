@@ -7,18 +7,6 @@ import { DEFAULT_OUTPUT_TOKEN_BUDGET, type ProvocationStyle } from './types.js';
 import type { ProvocationGenerationClient } from './generationClient.js';
 
 const sqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`;
-const ACTIVE_PROVOCATION_UNIQUE_INDEX = 'idx_provocations_one_active_per_section_revision';
-
-const isActiveProvocationUniqueViolation = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes(ACTIVE_PROVOCATION_UNIQUE_INDEX) ||
-    message.includes(
-      'UNIQUE constraint failed: provocations.document_id, provocations.section_id, provocations.revision_id'
-    )
-  );
-};
-
 interface DbProvocationRow {
   id: string;
   document_id: string;
@@ -108,18 +96,6 @@ export class ProvocationService {
       this.assertNoteTarget(input.documentId, input.sectionId, input.noteId);
     }
 
-    const existingActive = this.getActiveInRevision(input.documentId, input.sectionId, currentRevisionId);
-    if (existingActive && !input.confirmReplace) {
-      throw new AppError(
-        'E_CONFLICT',
-        'An active provocation already exists for this section. Replace confirmation is required.',
-        {
-          requiresConfirmation: true,
-          existingProvocationId: existingActive.id
-        }
-      );
-    }
-
     const workspaceSettings = this.settingsRepository.getWorkspaceSettings();
     const style = input.style ?? workspaceSettings.defaultProvocationStyle;
 
@@ -148,8 +124,7 @@ export class ProvocationService {
       revisionId: currentRevisionId,
       requestId: input.requestId,
       style,
-      outputText: generated.text,
-      deactivateExistingActive: Boolean(input.confirmReplace)
+      outputText: generated.text
     });
 
     const created = this.getById(id);
@@ -161,19 +136,42 @@ export class ProvocationService {
   }
 
   async regenerate(input: Omit<GenerateProvocationInput, 'confirmReplace'>): Promise<ProvocationRecord> {
-    return this.generate({ ...input, confirmReplace: true });
+    return this.generate(input);
   }
 
   dismiss(documentId: string, sectionId: string): void {
     const currentRevisionId = this.getCurrentRevisionId(documentId);
+    const active = this.getActiveInRevision(documentId, sectionId, currentRevisionId);
+    if (!active) {
+      return;
+    }
+    this.deleteById(active.id);
+  }
+
+  deleteById(provocationId: string): boolean {
+    const rows = this.sqlite.queryJson<{ is_active: number }>(`
+      SELECT is_active
+      FROM provocations
+      WHERE id = ${sqlString(provocationId)}
+      LIMIT 1;
+    `);
+
+    const current = rows[0];
+    if (!current) {
+      throw new AppError('E_NOT_FOUND', 'Provocation not found', { provocationId });
+    }
+
+    if (current.is_active !== 1) {
+      return false;
+    }
+
     this.sqlite.exec(`
       UPDATE provocations
       SET is_active = 0
-      WHERE document_id = ${sqlString(documentId)}
-        AND section_id = ${sqlString(sectionId)}
-        AND revision_id = ${sqlString(currentRevisionId)}
+      WHERE id = ${sqlString(provocationId)}
         AND is_active = 1;
     `);
+    return true;
   }
 
   getActive(documentId: string, sectionId: string): ProvocationRecord | null {
@@ -181,28 +179,9 @@ export class ProvocationService {
     return this.getActiveInRevision(documentId, sectionId, currentRevisionId);
   }
 
-  invalidateSupersededRevisions(documentId: string, currentRevisionId: string): number {
-    const toInvalidateRows = this.sqlite.queryJson<{ count: number }>(`
-      SELECT COUNT(*) AS count
-      FROM provocations
-      WHERE document_id = ${sqlString(documentId)}
-        AND revision_id <> ${sqlString(currentRevisionId)}
-        AND is_active = 1;
-    `);
-    const toInvalidate = toInvalidateRows[0]?.count ?? 0;
-
-    if (toInvalidate === 0) {
-      return 0;
-    }
-
-    this.sqlite.exec(`
-      UPDATE provocations
-      SET is_active = 0
-      WHERE document_id = ${sqlString(documentId)}
-        AND revision_id <> ${sqlString(currentRevisionId)}
-        AND is_active = 1;
-    `);
-    return toInvalidate;
+  listHistory(documentId: string, sectionId: string): ProvocationRecord[] {
+    const currentRevisionId = this.getCurrentRevisionId(documentId);
+    return this.listActiveInRevision(documentId, sectionId, currentRevisionId);
   }
 
   cancel(requestId: string): boolean {
@@ -217,23 +196,10 @@ export class ProvocationService {
     requestId: string;
     style: ProvocationStyle;
     outputText: string;
-    deactivateExistingActive: boolean;
   }): void {
-    const deactivateSql = input.deactivateExistingActive
-      ? `
-      UPDATE provocations
-      SET is_active = 0
-      WHERE document_id = ${sqlString(input.documentId)}
-        AND section_id = ${sqlString(input.sectionId)}
-        AND revision_id = ${sqlString(input.revisionId)}
-        AND is_active = 1;
-    `
-      : '';
-
     try {
       this.sqlite.exec(`
         BEGIN IMMEDIATE;
-        ${deactivateSql}
         INSERT INTO provocations (
           id,
           document_id,
@@ -256,22 +222,6 @@ export class ProvocationService {
         COMMIT;
       `);
     } catch (error) {
-      if (isActiveProvocationUniqueViolation(error)) {
-        const existingActive = this.getActiveInRevision(
-          input.documentId,
-          input.sectionId,
-          input.revisionId
-        );
-        throw new AppError(
-          'E_CONFLICT',
-          'An active provocation already exists for this section. Replace confirmation is required.',
-          {
-            requiresConfirmation: true,
-            existingProvocationId: existingActive?.id
-          }
-        );
-      }
-
       throw new AppError('E_INTERNAL', 'Failed to persist generated provocation', {
         message: error instanceof Error ? error.message : String(error)
       });
@@ -393,6 +343,17 @@ export class ProvocationService {
     sectionId: string,
     revisionId: string
   ): ProvocationRecord | null {
+    const rows = this.listActiveInRevision(documentId, sectionId, revisionId, 1);
+    return rows[0] ?? null;
+  }
+
+  private listActiveInRevision(
+    documentId: string,
+    sectionId: string,
+    revisionId: string,
+    limit?: number
+  ): ProvocationRecord[] {
+    const limitClause = limit ? `\n      LIMIT ${limit}` : '';
     const rows = this.sqlite.queryJson<DbProvocationRow>(`
       SELECT id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at
       FROM provocations
@@ -400,14 +361,13 @@ export class ProvocationService {
         AND section_id = ${sqlString(sectionId)}
         AND revision_id = ${sqlString(revisionId)}
         AND is_active = 1
-      ORDER BY created_at DESC
-      LIMIT 1;
+      ORDER BY created_at DESC, rowid DESC${limitClause};
     `);
 
-    return rows[0] ? mapProvocationRow(rows[0]) : null;
+    return rows.map((row) => mapProvocationRow(row));
   }
 
-  private getById(id: string): ProvocationRecord | null {
+  getById(id: string): ProvocationRecord | null {
     const rows = this.sqlite.queryJson<DbProvocationRow>(`
       SELECT id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at
       FROM provocations

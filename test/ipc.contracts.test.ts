@@ -21,7 +21,9 @@ describe('ipc contracts', () => {
     const expected = [
       'workspace.open',
       'workspace.create',
+      'workspace.selectPath',
       'document.import',
+      'document.selectSource',
       'document.reimport',
       'document.locate',
       'section.list',
@@ -32,6 +34,7 @@ describe('ipc contracts', () => {
       'note.reassign',
       'ai.generateProvocation',
       'ai.cancel',
+      'ai.deleteProvocation',
       'settings.get',
       'settings.update',
       'network.status',

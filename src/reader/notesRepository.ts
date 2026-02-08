@@ -7,6 +7,10 @@ export interface NoteRecord {
   documentId: string;
   sectionId: string | null;
   content: string;
+  paragraphOrdinal: number | null;
+  startOffset: number | null;
+  endOffset: number | null;
+  selectedTextExcerpt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,17 +20,29 @@ interface DbNoteRow {
   document_id: string;
   section_id: string | null;
   content: string;
+  paragraph_ordinal: number | null;
+  start_offset: number | null;
+  end_offset: number | null;
+  selected_text_excerpt: string | null;
   created_at: string;
   updated_at: string;
 }
 
 const sqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`;
+const sqlNullableString = (value: string | null | undefined): string =>
+  value === null || value === undefined ? 'NULL' : sqlString(value);
+const sqlNullableNumber = (value: number | null | undefined): string =>
+  value === null || value === undefined ? 'NULL' : `${value}`;
 
 const mapNoteRow = (row: DbNoteRow): NoteRecord => ({
   id: row.id,
   documentId: row.document_id,
   sectionId: row.section_id,
   content: row.content,
+  paragraphOrdinal: row.paragraph_ordinal,
+  startOffset: row.start_offset,
+  endOffset: row.end_offset,
+  selectedTextExcerpt: row.selected_text_excerpt,
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
@@ -36,6 +52,10 @@ export interface CreateNoteInput {
   sectionId: string;
   content: string;
   noteId?: string;
+  paragraphOrdinal?: number | null;
+  startOffset?: number | null;
+  endOffset?: number | null;
+  selectedTextExcerpt?: string | null;
 }
 
 export class NotesRepository {
@@ -49,12 +69,25 @@ export class NotesRepository {
     const noteId = input.noteId ?? `note-${randomUUID()}`;
 
     this.sqlite.exec(`
-      INSERT INTO notes (id, document_id, section_id, content)
+      INSERT INTO notes (
+        id,
+        document_id,
+        section_id,
+        content,
+        paragraph_ordinal,
+        start_offset,
+        end_offset,
+        selected_text_excerpt
+      )
       VALUES (
         ${sqlString(noteId)},
         ${sqlString(input.documentId)},
         ${sqlString(input.sectionId)},
-        ${sqlString(input.content)}
+        ${sqlString(input.content)},
+        ${sqlNullableNumber(input.paragraphOrdinal)},
+        ${sqlNullableNumber(input.startOffset)},
+        ${sqlNullableNumber(input.endOffset)},
+        ${sqlNullableString(input.selectedTextExcerpt)}
       );
     `);
 
@@ -89,7 +122,17 @@ export class NotesRepository {
 
   getById(noteId: string): NoteRecord | null {
     const rows = this.sqlite.queryJson<DbNoteRow>(`
-      SELECT id, document_id, section_id, content, created_at, updated_at
+      SELECT
+        id,
+        document_id,
+        section_id,
+        content,
+        paragraph_ordinal,
+        start_offset,
+        end_offset,
+        selected_text_excerpt,
+        created_at,
+        updated_at
       FROM notes
       WHERE id = ${sqlString(noteId)}
       LIMIT 1;
@@ -100,7 +143,17 @@ export class NotesRepository {
 
   listBySection(documentId: string, sectionId: string): NoteRecord[] {
     const rows = this.sqlite.queryJson<DbNoteRow>(`
-      SELECT id, document_id, section_id, content, created_at, updated_at
+      SELECT
+        id,
+        document_id,
+        section_id,
+        content,
+        paragraph_ordinal,
+        start_offset,
+        end_offset,
+        selected_text_excerpt,
+        created_at,
+        updated_at
       FROM notes
       WHERE document_id = ${sqlString(documentId)}
         AND section_id = ${sqlString(sectionId)}

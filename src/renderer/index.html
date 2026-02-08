@@ -4,21 +4,17 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.openai.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self' file: chrome-extension:; connect-src 'self' https://api.openai.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tools for Thought</title>
+    <title>Free Thought</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main id="workspace-screen" class="screen workspace-screen">
       <section class="workspace-card">
-        <h1>Tools for Thought Reader</h1>
+        <h1>Free Thought</h1>
         <p>Open or create a local workspace to start reading.</p>
-        <label>
-          Workspace path
-          <input id="workspace-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/workspace" />
-        </label>
         <div class="workspace-actions">
           <button id="open-workspace-button" type="button">Open Workspace</button>
           <button id="create-workspace-button" type="button" class="secondary">Create Workspace</button>
@@ -32,36 +28,44 @@
         <span>Workspace: <strong id="top-workspace-path">-</strong></span>
         <span>Document: <strong id="top-document-title">-</strong></span>
         <span id="top-unassigned-count">Unassigned Notes (0)</span>
-        <button id="refresh-network-button" type="button" class="secondary">Refresh Network</button>
+        <div class="top-bar-actions">
+          <button id="outline-toggle-button" type="button" class="secondary" aria-expanded="false">Outline</button>
+          <button id="settings-open-button" type="button" class="secondary">Gear</button>
+          <button id="refresh-network-button" type="button" class="secondary">Refresh Network</button>
+        </div>
       </header>
 
+      <section id="outline-backdrop" class="outline-backdrop hidden" aria-hidden="true"></section>
+      <aside id="outline-drawer" class="outline-drawer hidden" aria-hidden="true">
+        <section class="panel drawer-header-panel">
+          <div class="drawer-header">
+            <h2>Outline</h2>
+            <button id="outline-close-button" type="button" class="secondary">Close</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Import Document</h2>
+          <form id="import-form">
+            <button id="import-select-button" type="submit">Choose File</button>
+          </form>
+          <p class="hint">Accepted: .pdf (text), .txt, .md</p>
+          <p id="import-message" class="message"></p>
+        </section>
+
+        <section class="panel">
+          <h2>Documents</h2>
+          <ul id="document-list" class="nav-list"></ul>
+        </section>
+
+        <section class="panel">
+          <h2>Sections</h2>
+          <ul id="section-list" class="nav-list"></ul>
+          <button id="unassigned-nav-button" type="button" class="secondary">Unassigned Notes (0)</button>
+        </section>
+      </aside>
+
       <section class="app-layout">
-        <aside class="left-pane">
-          <section class="panel">
-            <h2>Import Document</h2>
-            <form id="import-form">
-              <label>
-                Source file path
-                <input id="import-path-input" type="text" autocomplete="off" placeholder="/absolute/path/to/file.md" />
-              </label>
-              <button type="submit">Import</button>
-            </form>
-            <p class="hint">Accepted: .pdf (text), .txt, .md</p>
-            <p id="import-message" class="message"></p>
-          </section>
-
-          <section class="panel">
-            <h2>Documents</h2>
-            <ul id="document-list" class="nav-list"></ul>
-          </section>
-
-          <section class="panel">
-            <h2>Sections</h2>
-            <ul id="section-list" class="nav-list"></ul>
-            <button id="unassigned-nav-button" type="button" class="secondary">Unassigned Notes (0)</button>
-          </section>
-        </aside>
-
         <section class="center-pane">
           <section id="section-view" class="panel view">
             <div class="section-header">
@@ -69,6 +73,20 @@
               <div class="section-actions">
                 <button id="reimport-button" type="button" class="secondary">Re-import</button>
               </div>
+            </div>
+            <div id="pdf-surface" class="pdf-surface hidden">
+              <div class="pdf-toolbar">
+                <button id="pdf-zoom-out-button" type="button" class="secondary" aria-label="Zoom out">-</button>
+                <button id="pdf-zoom-reset-button" type="button" class="secondary">100%</button>
+                <button id="pdf-zoom-in-button" type="button" class="secondary" aria-label="Zoom in">+</button>
+                <span id="pdf-zoom-label" class="hint">Zoom: 100%</span>
+              </div>
+              <div class="pdf-viewport">
+                <div id="pdf-document" class="pdf-document"></div>
+              </div>
+            </div>
+            <div id="pdf-fallback" class="pdf-fallback hidden">
+              <p class="hint">Native PDF view unavailable. Showing extracted section text.</p>
             </div>
             <pre id="section-content" class="section-content">Import a document to begin.</pre>
           </section>
@@ -90,7 +108,11 @@
             <div id="notes-tab" class="tab-panel">
               <div class="notes-toolbar">
                 <button id="new-note-button" type="button">New Note</button>
+                <button id="new-note-from-selection-button" type="button" class="secondary">
+                  New Note from Selection
+                </button>
               </div>
+              <p id="note-selection-preview" class="hint">Select text in the section reader to anchor a new note.</p>
               <div id="notes-list" class="notes-list"></div>
             </div>
 
@@ -119,58 +141,6 @@
               <pre id="provocation-output" class="provocation-output">No active provocation.</pre>
             </div>
           </section>
-
-          <section class="panel settings-panel">
-            <h2>Settings</h2>
-            <form id="settings-form">
-              <label>
-                Auth mode
-                <select id="auth-mode-input" name="authMode">
-                  <option value="api_key">API key</option>
-                  <option value="codex_subscription">Codex subscription login</option>
-                </select>
-              </label>
-              <p id="auth-status-message" class="hint">Auth status: unknown</p>
-              <p id="auth-guidance" class="hint"></p>
-              <label>
-                Login correlation state
-                <input
-                  id="auth-correlation-state-input"
-                  name="authCorrelationState"
-                  type="text"
-                  autocomplete="off"
-                  placeholder="Set by Start Codex Sign-In"
-                />
-              </label>
-              <div class="auth-actions">
-                <button id="auth-login-start-button" type="button" class="secondary">Start Codex Sign-In</button>
-                <button id="auth-login-complete-button" type="button" class="secondary">Complete Sign-In</button>
-                <button id="auth-logout-button" type="button" class="secondary">Sign Out</button>
-              </div>
-              <label>
-                Generation model
-                <input id="generation-model-input" name="generationModel" type="text" required />
-              </label>
-              <label>
-                Workspace default style
-                <select id="default-style-input" name="defaultProvocationStyle">
-                  <option value="skeptical">skeptical</option>
-                  <option value="creative">creative</option>
-                  <option value="methodological">methodological</option>
-                </select>
-              </label>
-              <label>
-                OpenAI API key
-                <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
-              </label>
-              <label class="toggle-row">
-                <input id="clear-api-key-input" name="clearOpenAiApiKey" type="checkbox" />
-                Clear saved API key
-              </label>
-              <button type="submit">Save Settings</button>
-            </form>
-            <p id="settings-message" class="message"></p>
-          </section>
         </aside>
       </section>
 
@@ -180,6 +150,66 @@
         <span id="ai-status">AI: -</span>
         <span id="source-actions" class="status-actions"></span>
       </footer>
+
+      <section id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
+        <div class="modal-content settings-modal-content">
+          <div class="modal-header">
+            <h2 id="settings-title">Settings</h2>
+            <button id="settings-close-button" type="button" class="secondary">Close</button>
+          </div>
+          <form id="settings-form">
+            <label>
+              Auth mode
+              <select id="auth-mode-input" name="authMode">
+                <option value="api_key">API key</option>
+                <option value="codex_subscription">Codex subscription login</option>
+              </select>
+            </label>
+            <p id="auth-status-message" class="hint">Auth status: unknown</p>
+            <p id="auth-guidance" class="hint"></p>
+            <label>
+              Login correlation state
+              <input
+                id="auth-correlation-state-input"
+                name="authCorrelationState"
+                type="text"
+                autocomplete="off"
+                placeholder="Set by Start Codex Sign-In"
+              />
+            </label>
+            <div class="auth-actions">
+              <button id="auth-login-start-button" type="button" class="secondary">Start Codex Sign-In</button>
+              <button id="auth-login-complete-button" type="button" class="secondary">Complete Sign-In</button>
+              <button id="auth-logout-button" type="button" class="secondary">Sign Out</button>
+            </div>
+            <label>
+              Generation model
+              <input id="generation-model-input" name="generationModel" type="text" required />
+            </label>
+            <label>
+              Workspace default style
+              <select id="default-style-input" name="defaultProvocationStyle">
+                <option value="skeptical">skeptical</option>
+                <option value="creative">creative</option>
+                <option value="methodological">methodological</option>
+              </select>
+            </label>
+            <label>
+              OpenAI API key
+              <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
+            </label>
+            <label class="toggle-row">
+              <input id="clear-api-key-input" name="clearOpenAiApiKey" type="checkbox" />
+              Clear saved API key
+            </label>
+            <div class="modal-actions">
+              <button id="settings-cancel-button" type="button" class="secondary">Cancel</button>
+              <button id="settings-save-button" type="submit">Save Settings</button>
+            </div>
+          </form>
+          <p id="settings-message" class="message"></p>
+        </div>
+      </section>
 
       <section id="reassignment-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reassignment-title">
         <div class="modal-content">

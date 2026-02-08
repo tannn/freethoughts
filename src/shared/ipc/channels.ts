@@ -1,7 +1,9 @@
 export const IPC_CHANNELS = [
   'workspace.open',
   'workspace.create',
+  'workspace.selectPath',
   'document.import',
+  'document.selectSource',
   'document.reimport',
   'document.locate',
   'section.list',
@@ -12,6 +14,7 @@ export const IPC_CHANNELS = [
   'note.reassign',
   'ai.generateProvocation',
   'ai.cancel',
+  'ai.deleteProvocation',
   'settings.get',
   'settings.update',
   'network.status',
