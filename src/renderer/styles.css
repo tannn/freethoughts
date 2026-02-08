@@ -287,6 +287,15 @@ pre {
   border-color: var(--accent);
 }
 
+.note-card-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.note-anchor {
+  margin: 0;
+}
+
 .note-actions,
 .unassigned-actions,
 .provocation-actions,
@@ -301,6 +310,24 @@ pre {
 .note-text {
   min-height: 70px;
   resize: vertical;
+}
+
+.note-delete-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #c9d6c7;
+  background: #ffffff;
+  color: var(--danger);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0;
+}
+
+.note-delete-button:hover {
+  background: #fff4f4;
+  border-color: #e2b8b8;
 }
 
 .provocation-output {

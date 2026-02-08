@@ -266,6 +266,61 @@ const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | n
   };
 };
 
+const trimExcerpt = (text: string, maxLength: number): string =>
+  text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
+
+const isPdfDocumentWithNativeSurface = (): boolean =>
+  Boolean(
+    state.activeSection &&
+      state.activeSection.document.fileType === 'pdf' &&
+      state.activeSection.sourceFileStatus.status === 'available'
+  );
+
+const isPdfAnchorModeEnabled = (): boolean =>
+  Boolean(state.activeSection && state.pdfAnchorModeByDocument.get(state.activeSection.document.id) === true);
+
+const isNativePdfSelectionUnsupported = (): boolean =>
+  isPdfDocumentWithNativeSurface() && !isPdfAnchorModeEnabled();
+
+const renderSelectionAnchorAffordance = (): void => {
+  if (!state.activeSection) {
+    elements.newNoteFromSelectionButton.disabled = true;
+    elements.togglePdfAnchorModeButton.classList.add('hidden');
+    elements.noteSelectionPreview.textContent = 'Open a section to create notes.';
+    return;
+  }
+
+  if (isPdfDocumentWithNativeSurface()) {
+    elements.togglePdfAnchorModeButton.classList.remove('hidden');
+    elements.togglePdfAnchorModeButton.textContent = isPdfAnchorModeEnabled()
+      ? 'Return to Native PDF View'
+      : 'Anchor from Extracted Text';
+  } else {
+    elements.togglePdfAnchorModeButton.classList.add('hidden');
+  }
+
+  if (isNativePdfSelectionUnsupported()) {
+    elements.newNoteFromSelectionButton.disabled = true;
+    elements.noteSelectionPreview.textContent =
+      'Selection anchors are unavailable in native PDF view. Click "Anchor from Extracted Text" to create a selection-anchored note.';
+    return;
+  }
+
+  if (!state.selectionAnchor) {
+    elements.newNoteFromSelectionButton.disabled = true;
+    elements.noteSelectionPreview.textContent = isPdfAnchorModeEnabled()
+      ? 'Anchor mode enabled. Select extracted text in the section reader to anchor a new note.'
+      : 'Select text in the section reader to anchor a new note.';
+    return;
+  }
+
+  const anchor = state.selectionAnchor;
+  elements.newNoteFromSelectionButton.disabled = false;
+  elements.noteSelectionPreview.textContent = `Selection anchor: paragraph ${
+    anchor.paragraphOrdinal + 1
+  }, chars ${anchor.startOffset}-${anchor.endOffset}, "${trimExcerpt(anchor.selectedTextExcerpt, 100)}"`;
+};
+
 const desktopApi = getDesktopApi(window as unknown as Record<string, unknown>);
 
 const elements = {
@@ -319,6 +374,18 @@ const elements = {
   notesTab: required(document.querySelector<HTMLDivElement>('#notes-tab'), 'notes-tab'),
   provocationTab: required(document.querySelector<HTMLDivElement>('#provocation-tab'), 'provocation-tab'),
   newNoteButton: required(document.querySelector<HTMLButtonElement>('#new-note-button'), 'new-note-button'),
+  newNoteFromSelectionButton: required(
+    document.querySelector<HTMLButtonElement>('#new-note-from-selection-button'),
+    'new-note-from-selection-button'
+  ),
+  togglePdfAnchorModeButton: required(
+    document.querySelector<HTMLButtonElement>('#toggle-pdf-anchor-mode-button'),
+    'toggle-pdf-anchor-mode-button'
+  ),
+  noteSelectionPreview: required(
+    document.querySelector<HTMLParagraphElement>('#note-selection-preview'),
+    'note-selection-preview'
+  ),
   notesList: required(document.querySelector<HTMLDivElement>('#notes-list'), 'notes-list'),
   provocationsEnabledInput: required(
     document.querySelector<HTMLInputElement>('#provocations-enabled-input'),
@@ -420,6 +487,7 @@ const state = {
   selectedTabByDocument: new Map<string, RightPaneTab>(),
   centerViewByDocument: new Map<string, CenterView>(),
   activeSectionByDocument: new Map<string, string | null>(),
+  pdfAnchorModeByDocument: new Map<string, boolean>(),
   selectedNoteId: null as string | null,
   settings: null as SettingsSnapshot | null,
   authCorrelationState: '' as string,
@@ -557,6 +625,7 @@ const renderSectionView = (): void => {
     elements.pdfFallback.classList.add('hidden');
     elements.pdfFrame.removeAttribute('src');
     state.selectionAnchor = null;
+    renderSelectionAnchorAffordance();
     return;
   }
 
@@ -565,11 +634,12 @@ const renderSectionView = (): void => {
 
   const isPdf = state.activeSection.document.fileType === 'pdf';
   const pdfAvailable = isPdf && state.activeSection.sourceFileStatus.status === 'available';
-  elements.pdfSurface.classList.toggle('hidden', !pdfAvailable);
+  const pdfAnchorMode = pdfAvailable && isPdfAnchorModeEnabled();
+  elements.pdfSurface.classList.toggle('hidden', !pdfAvailable || pdfAnchorMode);
   elements.pdfFallback.classList.toggle('hidden', !isPdf || pdfAvailable);
-  elements.sectionContent.classList.toggle('hidden', pdfAvailable);
+  elements.sectionContent.classList.toggle('hidden', pdfAvailable && !pdfAnchorMode);
 
-  if (pdfAvailable) {
+  if (pdfAvailable && !pdfAnchorMode) {
     const nextSrc = toFileUrl(state.activeSection.document.sourcePath);
     if (elements.pdfFrame.src !== nextSrc) {
       elements.pdfFrame.src = nextSrc;
@@ -578,15 +648,25 @@ const renderSectionView = (): void => {
   } else {
     elements.pdfFrame.removeAttribute('src');
   }
+
+  renderSelectionAnchorAffordance();
 };
 
 const updateSelectionAnchor = (): void => {
   if (!state.activeSection) {
     state.selectionAnchor = null;
+    renderSelectionAnchorAffordance();
+    return;
+  }
+
+  if (isNativePdfSelectionUnsupported()) {
+    state.selectionAnchor = null;
+    renderSelectionAnchorAffordance();
     return;
   }
 
   state.selectionAnchor = computeSelectionAnchor(elements.sectionContent);
+  renderSelectionAnchorAffordance();
 };
 
 const assignUnassigned = async (noteId: string, targetSectionId: string): Promise<void> => {
@@ -693,8 +773,11 @@ const renderNotes = (): void => {
   elements.notesList.replaceChildren();
 
   if (!state.activeSection) {
+    renderSelectionAnchorAffordance();
     return;
   }
+
+  renderSelectionAnchorAffordance();
 
   for (const note of state.activeSection.notes) {
     const card = document.createElement('article');
@@ -703,6 +786,28 @@ const renderNotes = (): void => {
     if (note.id === state.selectedNoteId) {
       card.classList.add('selected');
     }
+
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'note-card-header';
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'note-delete-button';
+    deleteButton.textContent = 'x';
+    deleteButton.setAttribute('aria-label', 'Delete note');
+    deleteButton.title = 'Delete note';
+    deleteButton.addEventListener('click', () => {
+      void withUiErrorHandling(async () => {
+        const envelope = (await desktopApi.note.delete({ noteId: note.id })) as Envelope<{ noteId: string }>;
+        unwrapEnvelope(envelope);
+        if (state.activeSection) {
+          await openSection(state.activeSection.section.id, { preserveView: true });
+        }
+      });
+    });
+
+    cardHeader.append(deleteButton);
+    card.append(cardHeader);
 
     const textarea = document.createElement('textarea');
     textarea.className = 'note-text';
@@ -728,25 +833,22 @@ const renderNotes = (): void => {
 
     card.append(textarea);
 
-    const actions = document.createElement('div');
-    actions.className = 'note-actions';
+    if (note.selectedTextExcerpt || note.paragraphOrdinal !== null) {
+      const anchorMeta = document.createElement('p');
+      anchorMeta.className = 'note-anchor hint';
 
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.className = 'secondary';
-    deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', () => {
-      void withUiErrorHandling(async () => {
-        const envelope = (await desktopApi.note.delete({ noteId: note.id })) as Envelope<{ noteId: string }>;
-        unwrapEnvelope(envelope);
-        if (state.activeSection) {
-          await openSection(state.activeSection.section.id, { preserveView: true });
-        }
-      });
-    });
+      const segments = [`Anchor paragraph ${note.paragraphOrdinal !== null ? note.paragraphOrdinal + 1 : '?'}`];
+      if (note.startOffset !== null && note.endOffset !== null) {
+        segments.push(`chars ${note.startOffset}-${note.endOffset}`);
+      }
+      if (note.selectedTextExcerpt) {
+        segments.push(`"${trimExcerpt(note.selectedTextExcerpt, 80)}"`);
+      }
 
-    actions.append(deleteButton);
-    card.append(actions);
+      anchorMeta.textContent = segments.join(' | ');
+      card.append(anchorMeta);
+    }
+
     elements.notesList.append(card);
   }
 };
@@ -1051,6 +1153,8 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   state.activeSection = null;
   state.selectedNoteId = null;
   state.reassignmentQueue = [];
+  state.selectionAnchor = null;
+  state.pdfAnchorModeByDocument.clear();
 
   renderWorkspaceMode(true);
   updateTopBar();
@@ -1120,6 +1224,7 @@ const openDocument = async (documentId: string): Promise<void> => {
   } else {
     state.activeSection = null;
     state.selectedNoteId = null;
+    state.selectionAnchor = null;
     renderSectionView();
     renderNotes();
     renderProvocation();
@@ -1139,6 +1244,7 @@ const openSection = async (
   state.activeSection = snapshot;
   state.activeDocumentId = snapshot.document.id;
   state.activeSectionByDocument.set(snapshot.document.id, sectionId);
+  state.selectionAnchor = null;
   upsertDocument(snapshot.document);
 
   if (!snapshot.notes.some((note) => note.id === state.selectedNoteId)) {
@@ -1235,20 +1341,52 @@ const handleNewNote = async (): Promise<void> => {
     return;
   }
 
+  const envelope = (await desktopApi.note.create({
+    documentId: state.activeSection.document.id,
+    sectionId: state.activeSection.section.id,
+    text: ''
+  })) as Envelope<NoteRecord>;
+
+  const created = unwrapEnvelope(envelope);
+  state.selectionAnchor = null;
+  state.selectedNoteId = created.id;
+  await openSection(state.activeSection.section.id, { preserveView: true });
+};
+
+const handleTogglePdfAnchorMode = (): void => {
+  if (!state.activeSection || !isPdfDocumentWithNativeSurface()) {
+    return;
+  }
+
+  const documentId = state.activeSection.document.id;
+  const nextEnabled = !isPdfAnchorModeEnabled();
+  state.pdfAnchorModeByDocument.set(documentId, nextEnabled);
+  state.selectionAnchor = null;
+  renderSectionView();
+};
+
+const handleNewNoteFromSelection = async (): Promise<void> => {
+  if (!state.activeSection) {
+    return;
+  }
+
+  if (isNativePdfSelectionUnsupported()) {
+    throw new Error('Selection anchors are unavailable in native PDF mode. Use "New Note" for section notes.');
+  }
+
   const selection = state.selectionAnchor ?? computeSelectionAnchor(elements.sectionContent);
+  if (!selection) {
+    throw new Error('Select text in the section reader before creating a note from selection.');
+  }
 
   const envelope = (await desktopApi.note.create({
     documentId: state.activeSection.document.id,
     sectionId: state.activeSection.section.id,
     text: '',
-    ...(selection
-      ? {
-          paragraphOrdinal: selection.paragraphOrdinal,
-          startOffset: selection.startOffset,
-          endOffset: selection.endOffset,
-          selectedTextExcerpt: selection.selectedTextExcerpt
-        }
-      : {})
+    paragraphOrdinal: selection.paragraphOrdinal,
+    startOffset: selection.startOffset,
+    endOffset: selection.endOffset,
+    selectedTextExcerpt: selection.selectedTextExcerpt
   })) as Envelope<NoteRecord>;
 
   const created = unwrapEnvelope(envelope);
@@ -1562,6 +1700,18 @@ const wireEvents = (): void => {
   elements.newNoteButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
       await handleNewNote();
+    });
+  });
+
+  elements.newNoteFromSelectionButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleNewNoteFromSelection();
+    });
+  });
+
+  elements.togglePdfAnchorModeButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      handleTogglePdfAnchorMode();
     });
   });
 

@@ -88,7 +88,14 @@
             <div id="notes-tab" class="tab-panel">
               <div class="notes-toolbar">
                 <button id="new-note-button" type="button">New Note</button>
+                <button id="new-note-from-selection-button" type="button" class="secondary">
+                  New Note from Selection
+                </button>
+                <button id="toggle-pdf-anchor-mode-button" type="button" class="secondary hidden">
+                  Anchor from Extracted Text
+                </button>
               </div>
+              <p id="note-selection-preview" class="hint">Select text in the section reader to anchor a new note.</p>
               <div id="notes-list" class="notes-list"></div>
             </div>
 
