@@ -1,0 +1,8 @@
+1. Baseline capture
+Record current note quality and section navigation speed.
+
+2. Prompt cadence
+Add one provocation request every second section.
+
+3. Review cycle
+Compare differences in note specificity and uncertainty handling.

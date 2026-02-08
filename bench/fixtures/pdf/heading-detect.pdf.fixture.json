@@ -1,0 +1,37 @@
+{
+  "title": "Heading Detect PDF Fixture",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "text": "DOCUMENT CONTEXT\nalpha alpha alpha alpha"
+    },
+    {
+      "pageNumber": 2,
+      "text": "METHOD REVIEW\nbeta beta beta beta beta"
+    },
+    {
+      "pageNumber": 3,
+      "text": "RESULT NOTES\ngamma gamma gamma gamma"
+    },
+    {
+      "pageNumber": 4,
+      "text": "LIMITATIONS:\ndelta delta delta delta"
+    },
+    {
+      "pageNumber": 5,
+      "text": "NEXT QUESTIONS\nepsilon epsilon epsilon"
+    },
+    {
+      "pageNumber": 6,
+      "text": "CLOSING\nzeta zeta zeta zeta"
+    },
+    {
+      "pageNumber": 7,
+      "text": "ADDITIONAL TABLES\neta eta eta eta eta"
+    },
+    {
+      "pageNumber": 8,
+      "text": "FINAL SUMMARY\ntheta theta theta theta"
+    }
+  ]
+}
