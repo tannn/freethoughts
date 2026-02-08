@@ -737,10 +737,6 @@ const elements = {
   workspaceMessage: required(document.querySelector<HTMLParagraphElement>('#workspace-message'), 'workspace-message'),
   topWorkspacePath: required(document.querySelector<HTMLElement>('#top-workspace-path'), 'top-workspace-path'),
   topDocumentTitle: required(document.querySelector<HTMLElement>('#top-document-title'), 'top-document-title'),
-  topUnassignedCount: required(
-    document.querySelector<HTMLElement>('#top-unassigned-count'),
-    'top-unassigned-count'
-  ),
   outlineToggleButton: required(
     document.querySelector<HTMLButtonElement>('#outline-toggle-button'),
     'outline-toggle-button'
@@ -1056,7 +1052,6 @@ const updateTopBar = (): void => {
   elements.topWorkspacePath.textContent = state.workspace?.rootPath ?? '-';
   const activeDocument = getActiveDocument();
   elements.topDocumentTitle.textContent = activeDocument?.title ?? '-';
-  elements.topUnassignedCount.textContent = `Unassigned Notes (${state.unassignedNotes.length})`;
   elements.unassignedNavButton.textContent = `Unassigned Notes (${state.unassignedNotes.length})`;
 };
 
@@ -1332,17 +1327,14 @@ const updateSelectionAnchor = (options: { openPopoverOnSelection?: boolean } = {
     state.pdfSelectionMappingFailed = mappedAnchor === null;
     state.selectionPopoverAnchorRect = selectionRect;
 
-    if (mappedAnchor && selectionRect && openPopoverOnSelection) {
-      const aiAvailability = deriveAiAvailability();
-      if (aiAvailability.enabled && !state.settingsModalOpen && state.activeProvocationRequestId === null) {
-        openSelectionActionOverlay(
-          {
-            label: 'selected text',
-            preview: `Selected text: "${trimExcerpt(mappedAnchor.selectedTextExcerpt, 100)}"`
-          },
-          selectionRect
-        );
-      }
+    if (mappedAnchor && selectionRect && openPopoverOnSelection && !state.settingsModalOpen && state.activeProvocationRequestId === null) {
+      openSelectionActionOverlay(
+        {
+          label: 'selected text',
+          preview: `Selected text: "${trimExcerpt(mappedAnchor.selectedTextExcerpt, 100)}"`
+        },
+        selectionRect
+      );
     }
     renderSelectionAnchorAffordance();
     renderProvocation();
@@ -1352,17 +1344,20 @@ const updateSelectionAnchor = (options: { openPopoverOnSelection?: boolean } = {
   state.selectionAnchor = computeSelectionAnchor(elements.sectionContent);
   state.selectionPopoverAnchorRect = readSelectionViewportRect(elements.sectionContent);
   state.pdfSelectionMappingFailed = false;
-  if (state.selectionAnchor && state.selectionPopoverAnchorRect && openPopoverOnSelection) {
-    const aiAvailability = deriveAiAvailability();
-    if (aiAvailability.enabled && !state.settingsModalOpen && state.activeProvocationRequestId === null) {
-      openSelectionActionOverlay(
-        {
-          label: 'selected text',
-          preview: `Selected text: "${trimExcerpt(state.selectionAnchor.selectedTextExcerpt, 100)}"`
-        },
-        state.selectionPopoverAnchorRect
-      );
-    }
+  if (
+    state.selectionAnchor &&
+    state.selectionPopoverAnchorRect &&
+    openPopoverOnSelection &&
+    !state.settingsModalOpen &&
+    state.activeProvocationRequestId === null
+  ) {
+    openSelectionActionOverlay(
+      {
+        label: 'selected text',
+        preview: `Selected text: "${trimExcerpt(state.selectionAnchor.selectedTextExcerpt, 100)}"`
+      },
+      state.selectionPopoverAnchorRect
+    );
   }
   renderSelectionAnchorAffordance();
   renderProvocation();
@@ -1787,8 +1782,10 @@ const renderSelectionActionOverlay = (): void => {
 
   const canContinue = Boolean(state.activeSection && target);
   const canCreateSelectionNote = Boolean(canContinue && target?.label === 'selected text');
+  const aiAvailability = deriveAiAvailability();
+  const canUseAi = Boolean(canContinue && aiAvailability.enabled);
   elements.selectionActionNoteButton.disabled = !canCreateSelectionNote;
-  elements.selectionActionProvocationButton.disabled = !canContinue;
+  elements.selectionActionProvocationButton.disabled = !canUseAi;
   elements.selectionNoteCreateButton.disabled = !canCreateSelectionNote || state.activeProvocationRequestId !== null;
 };
 
@@ -1806,7 +1803,10 @@ const renderProvocationStyleOverlay = (): void => {
   }
 
   const canGenerate = Boolean(
-    state.activeSection && state.pendingSelectionProvocationTarget && state.activeProvocationRequestId === null
+    state.activeSection &&
+      state.pendingSelectionProvocationTarget &&
+      state.activeProvocationRequestId === null &&
+      deriveAiAvailability().enabled
   );
   elements.provocationStyleGenerateButton.disabled = !canGenerate;
 
@@ -1828,7 +1828,8 @@ const openSelectionActionOverlay = (
   setSelectionPopoverMode('chooser');
   renderSelectionActionOverlay();
   renderProvocationStyleOverlay();
-  elements.selectionActionMessage.textContent = '';
+  const aiAvailability = deriveAiAvailability();
+  elements.selectionActionMessage.textContent = aiAvailability.enabled ? '' : aiAvailability.message;
   elements.selectionNoteMessage.textContent = '';
   elements.provocationStyleMessage.textContent = '';
   setProvocationStyleOverlayOpen(true);
@@ -2384,11 +2385,21 @@ const handleSelectionActionChooseProvocation = (): void => {
   if (!state.pendingSelectionProvocationTarget) {
     return;
   }
+  const aiAvailability = deriveAiAvailability();
+  if (!aiAvailability.enabled) {
+    elements.selectionActionMessage.textContent = aiAvailability.message;
+    return;
+  }
   openProvocationStyleOverlay();
 };
 
 const handleSelectionTriggeredProvocationGenerate = async (): Promise<void> => {
   if (!state.pendingSelectionProvocationTarget) {
+    return;
+  }
+  const aiAvailability = deriveAiAvailability();
+  if (!aiAvailability.enabled) {
+    elements.provocationStyleMessage.textContent = aiAvailability.message;
     return;
   }
 
