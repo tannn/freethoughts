@@ -210,6 +210,11 @@ const requestId = (): string => {
   return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const PDF_ZOOM_DEFAULT = 1;
+const PDF_ZOOM_MIN = 0.75;
+const PDF_ZOOM_MAX = 2;
+const PDF_ZOOM_STEP = 0.1;
+
 const toFileUrl = (sourcePath: string): string => {
   if (sourcePath.startsWith('file://')) {
     return sourcePath;
@@ -266,6 +271,87 @@ const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | n
   };
 };
 
+const mapPdfSelectionAnchorToOffsets = (
+  anchor: NoteSelectionAnchor,
+  sectionContent: string
+): NoteSelectionAnchor | null => {
+  const normalizedSection = normalizeSectionText(sectionContent);
+  const selectedTextExcerpt = normalizeSectionText(anchor.selectedTextExcerpt).trim();
+  if (!selectedTextExcerpt) {
+    return null;
+  }
+
+  const boundedHintStart = Math.max(0, Math.min(anchor.startOffset, normalizedSection.length));
+  let mappedStart = normalizedSection.indexOf(selectedTextExcerpt, boundedHintStart);
+  if (mappedStart === -1) {
+    mappedStart = normalizedSection.indexOf(selectedTextExcerpt);
+  }
+
+  if (mappedStart === -1) {
+    return null;
+  }
+
+  const mappedEnd = mappedStart + selectedTextExcerpt.length;
+  return {
+    paragraphOrdinal: countParagraphOrdinal(normalizedSection, mappedStart),
+    startOffset: mappedStart,
+    endOffset: mappedEnd,
+    selectedTextExcerpt
+  };
+};
+
+interface PdfJsRenderTask {
+  promise: Promise<unknown>;
+  cancel?: () => void;
+}
+
+interface PdfJsPage {
+  getViewport: (params: { scale: number }) => { width: number; height: number };
+  render: (params: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => PdfJsRenderTask;
+  getTextContent: () => Promise<unknown>;
+}
+
+interface PdfJsDocumentProxy {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<PdfJsPage>;
+  destroy?: () => Promise<void> | void;
+}
+
+interface PdfJsLoadingTask {
+  promise: Promise<PdfJsDocumentProxy>;
+  destroy?: () => void;
+}
+
+interface PdfJsModule {
+  GlobalWorkerOptions: {
+    workerSrc: string;
+  };
+  getDocument: (params: { url: string }) => PdfJsLoadingTask;
+  TextLayer: new (params: {
+    textContentSource: unknown;
+    container: HTMLElement;
+    viewport: unknown;
+  }) => {
+    render: () => Promise<unknown>;
+    cancel?: () => void;
+  };
+}
+
+let pdfJsModulePromise: Promise<PdfJsModule> | null = null;
+
+const loadPdfJsModule = async (): Promise<PdfJsModule> => {
+  if (!pdfJsModulePromise) {
+    pdfJsModulePromise = import('./vendor/pdfjs/pdf.mjs') as Promise<PdfJsModule>;
+  }
+
+  const pdfjs = await pdfJsModulePromise;
+  const workerSrc = new URL('./vendor/pdfjs/pdf.worker.mjs', window.location.href).toString();
+  if (pdfjs.GlobalWorkerOptions.workerSrc !== workerSrc) {
+    pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+  }
+  return pdfjs;
+};
+
 const trimExcerpt = (text: string, maxLength: number): string =>
   text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
 
@@ -273,43 +359,152 @@ const isPdfDocumentWithNativeSurface = (): boolean =>
   Boolean(
     state.activeSection &&
       state.activeSection.document.fileType === 'pdf' &&
-      state.activeSection.sourceFileStatus.status === 'available'
+      state.activeSection.sourceFileStatus.status === 'available' &&
+      !state.pdfRenderFailed
   );
 
-const isPdfAnchorModeEnabled = (): boolean =>
-  Boolean(state.activeSection && state.pdfAnchorModeByDocument.get(state.activeSection.document.id) === true);
+const clampPdfZoom = (zoom: number): number => Math.max(PDF_ZOOM_MIN, Math.min(PDF_ZOOM_MAX, zoom));
 
-const isNativePdfSelectionUnsupported = (): boolean =>
-  isPdfDocumentWithNativeSurface() && !isPdfAnchorModeEnabled();
+const getPdfZoom = (documentId: string): number => state.pdfZoomByDocument.get(documentId) ?? PDF_ZOOM_DEFAULT;
+
+const applyPdfZoom = (): void => {
+  const documentId = state.activeSection?.document.id ?? null;
+  const zoom = documentId ? getPdfZoom(documentId) : PDF_ZOOM_DEFAULT;
+  elements.pdfZoomLabel.textContent = `Zoom: ${Math.round(zoom * 100)}%`;
+  elements.pdfZoomOutButton.disabled = zoom <= PDF_ZOOM_MIN;
+  elements.pdfZoomInButton.disabled = zoom >= PDF_ZOOM_MAX;
+  elements.pdfZoomResetButton.disabled = Math.abs(zoom - PDF_ZOOM_DEFAULT) < 0.001;
+};
+
+const setPdfZoom = (nextZoom: number): void => {
+  if (!state.activeSection || state.activeSection.document.fileType !== 'pdf') {
+    return;
+  }
+
+  state.pdfZoomByDocument.set(state.activeSection.document.id, clampPdfZoom(nextZoom));
+  state.pdfRenderFailed = false;
+  applyPdfZoom();
+  if (isPdfDocumentWithNativeSurface()) {
+    void renderPdfDocument().catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      appendLog(message);
+      elements.importMessage.textContent = message;
+    });
+  }
+};
+
+const clearPdfDocument = (): void => {
+  elements.pdfDocument.replaceChildren();
+  state.pdfRenderSourcePath = null;
+  state.pdfRenderZoom = PDF_ZOOM_DEFAULT;
+};
+
+const renderPdfDocument = async (): Promise<void> => {
+  const section = state.activeSection;
+  if (!section || section.document.fileType !== 'pdf' || section.sourceFileStatus.status !== 'available') {
+    clearPdfDocument();
+    return;
+  }
+
+  const sourcePath = section.document.sourcePath;
+  const zoom = getPdfZoom(section.document.id);
+  if (state.pdfRenderSourcePath === sourcePath && state.pdfRenderZoom === zoom && !state.pdfRenderFailed) {
+    return;
+  }
+
+  const renderToken = ++state.pdfRenderToken;
+  state.pdfRenderSourcePath = sourcePath;
+  state.pdfRenderZoom = zoom;
+  elements.pdfDocument.replaceChildren();
+
+  const pdfjs = await loadPdfJsModule();
+  const loadingTask = pdfjs.getDocument({ url: toFileUrl(sourcePath) });
+  let documentProxy: PdfJsDocumentProxy | null = null;
+
+  try {
+    documentProxy = await loadingTask.promise;
+    if (renderToken !== state.pdfRenderToken) {
+      return;
+    }
+
+    for (let pageNumber = 1; pageNumber <= documentProxy.numPages; pageNumber += 1) {
+      if (renderToken !== state.pdfRenderToken) {
+        return;
+      }
+
+      const page = await documentProxy.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: zoom });
+
+      const pageElement = document.createElement('article');
+      pageElement.className = 'pdf-page';
+      pageElement.dataset.pageNumber = String(pageNumber);
+
+      const canvas = document.createElement('canvas');
+      canvas.className = 'pdf-canvas';
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+
+      const textLayer = document.createElement('div');
+      textLayer.className = 'pdf-text-layer';
+      textLayer.style.width = `${viewport.width}px`;
+      textLayer.style.height = `${viewport.height}px`;
+
+      pageElement.append(canvas, textLayer);
+      elements.pdfDocument.append(pageElement);
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('Unable to initialize PDF render context.');
+      }
+
+      const renderTask = page.render({ canvasContext: context, viewport });
+      await renderTask.promise;
+      const textContent = await page.getTextContent();
+      const textLayerTask = new pdfjs.TextLayer({
+        textContentSource: textContent,
+        container: textLayer,
+        viewport
+      });
+      await textLayerTask.render();
+    }
+
+    state.pdfRenderFailed = false;
+  } catch (error) {
+    state.pdfRenderFailed = true;
+    clearPdfDocument();
+    throw new Error(
+      error instanceof Error ? `Unable to render PDF document: ${error.message}` : 'Unable to render PDF document.'
+    );
+  } finally {
+    if (documentProxy && renderToken !== state.pdfRenderToken) {
+      await Promise.resolve(documentProxy.destroy?.());
+    }
+    if (renderToken !== state.pdfRenderToken) {
+      loadingTask.destroy?.();
+    }
+  }
+};
 
 const renderSelectionAnchorAffordance = (): void => {
   if (!state.activeSection) {
     elements.newNoteFromSelectionButton.disabled = true;
-    elements.togglePdfAnchorModeButton.classList.add('hidden');
     elements.noteSelectionPreview.textContent = 'Open a section to create notes.';
     return;
   }
 
-  if (isPdfDocumentWithNativeSurface()) {
-    elements.togglePdfAnchorModeButton.classList.remove('hidden');
-    elements.togglePdfAnchorModeButton.textContent = isPdfAnchorModeEnabled()
-      ? 'Return to Native PDF View'
-      : 'Anchor from Extracted Text';
-  } else {
-    elements.togglePdfAnchorModeButton.classList.add('hidden');
-  }
-
-  if (isNativePdfSelectionUnsupported()) {
+  if (state.pdfSelectionMappingFailed) {
     elements.newNoteFromSelectionButton.disabled = true;
     elements.noteSelectionPreview.textContent =
-      'Selection anchors are unavailable in native PDF view. Click "Anchor from Extracted Text" to create a selection-anchored note.';
+      'Could not map selected PDF text to a stable anchor. Adjust the selection and try again.';
     return;
   }
 
   if (!state.selectionAnchor) {
     elements.newNoteFromSelectionButton.disabled = true;
-    elements.noteSelectionPreview.textContent = isPdfAnchorModeEnabled()
-      ? 'Anchor mode enabled. Select extracted text in the section reader to anchor a new note.'
+    elements.noteSelectionPreview.textContent = isPdfDocumentWithNativeSurface()
+      ? 'Select text in the PDF reader to anchor a new note.'
       : 'Select text in the section reader to anchor a new note.';
     return;
   }
@@ -341,6 +536,20 @@ const elements = {
     document.querySelector<HTMLElement>('#top-unassigned-count'),
     'top-unassigned-count'
   ),
+  outlineToggleButton: required(
+    document.querySelector<HTMLButtonElement>('#outline-toggle-button'),
+    'outline-toggle-button'
+  ),
+  outlineBackdrop: required(document.querySelector<HTMLElement>('#outline-backdrop'), 'outline-backdrop'),
+  outlineDrawer: required(document.querySelector<HTMLElement>('#outline-drawer'), 'outline-drawer'),
+  outlineCloseButton: required(
+    document.querySelector<HTMLButtonElement>('#outline-close-button'),
+    'outline-close-button'
+  ),
+  settingsOpenButton: required(
+    document.querySelector<HTMLButtonElement>('#settings-open-button'),
+    'settings-open-button'
+  ),
   refreshNetworkButton: required(
     document.querySelector<HTMLButtonElement>('#refresh-network-button'),
     'refresh-network-button'
@@ -357,7 +566,14 @@ const elements = {
   unassignedView: required(document.querySelector<HTMLElement>('#unassigned-view'), 'unassigned-view'),
   sectionHeading: required(document.querySelector<HTMLElement>('#section-heading'), 'section-heading'),
   pdfSurface: required(document.querySelector<HTMLDivElement>('#pdf-surface'), 'pdf-surface'),
-  pdfFrame: required(document.querySelector<HTMLIFrameElement>('#pdf-frame'), 'pdf-frame'),
+  pdfDocument: required(document.querySelector<HTMLDivElement>('#pdf-document'), 'pdf-document'),
+  pdfZoomOutButton: required(document.querySelector<HTMLButtonElement>('#pdf-zoom-out-button'), 'pdf-zoom-out-button'),
+  pdfZoomInButton: required(document.querySelector<HTMLButtonElement>('#pdf-zoom-in-button'), 'pdf-zoom-in-button'),
+  pdfZoomResetButton: required(
+    document.querySelector<HTMLButtonElement>('#pdf-zoom-reset-button'),
+    'pdf-zoom-reset-button'
+  ),
+  pdfZoomLabel: required(document.querySelector<HTMLElement>('#pdf-zoom-label'), 'pdf-zoom-label'),
   pdfFallback: required(document.querySelector<HTMLDivElement>('#pdf-fallback'), 'pdf-fallback'),
   sectionContent: required(document.querySelector<HTMLPreElement>('#section-content'), 'section-content'),
   reimportButton: required(document.querySelector<HTMLButtonElement>('#reimport-button'), 'reimport-button'),
@@ -377,10 +593,6 @@ const elements = {
   newNoteFromSelectionButton: required(
     document.querySelector<HTMLButtonElement>('#new-note-from-selection-button'),
     'new-note-from-selection-button'
-  ),
-  togglePdfAnchorModeButton: required(
-    document.querySelector<HTMLButtonElement>('#toggle-pdf-anchor-mode-button'),
-    'toggle-pdf-anchor-mode-button'
   ),
   noteSelectionPreview: required(
     document.querySelector<HTMLParagraphElement>('#note-selection-preview'),
@@ -447,6 +659,15 @@ const elements = {
     document.querySelector<HTMLInputElement>('#clear-api-key-input'),
     'clear-api-key-input'
   ),
+  settingsModal: required(document.querySelector<HTMLElement>('#settings-modal'), 'settings-modal'),
+  settingsCloseButton: required(
+    document.querySelector<HTMLButtonElement>('#settings-close-button'),
+    'settings-close-button'
+  ),
+  settingsCancelButton: required(
+    document.querySelector<HTMLButtonElement>('#settings-cancel-button'),
+    'settings-cancel-button'
+  ),
   settingsMessage: required(document.querySelector<HTMLParagraphElement>('#settings-message'), 'settings-message'),
   networkStatus: required(document.querySelector<HTMLElement>('#network-status'), 'network-status'),
   sourceStatus: required(document.querySelector<HTMLElement>('#source-status'), 'source-status'),
@@ -487,7 +708,7 @@ const state = {
   selectedTabByDocument: new Map<string, RightPaneTab>(),
   centerViewByDocument: new Map<string, CenterView>(),
   activeSectionByDocument: new Map<string, string | null>(),
-  pdfAnchorModeByDocument: new Map<string, boolean>(),
+  pdfZoomByDocument: new Map<string, number>(),
   selectedNoteId: null as string | null,
   settings: null as SettingsSnapshot | null,
   authCorrelationState: '' as string,
@@ -495,7 +716,14 @@ const state = {
   networkStatus: null as NetworkStatus | null,
   activeProvocationRequestId: null as string | null,
   reassignmentQueue: [] as UnassignedNoteItem[],
-  selectionAnchor: null as NoteSelectionAnchor | null
+  selectionAnchor: null as NoteSelectionAnchor | null,
+  pdfSelectionMappingFailed: false,
+  pdfRenderToken: 0,
+  pdfRenderSourcePath: null as string | null,
+  pdfRenderZoom: PDF_ZOOM_DEFAULT,
+  pdfRenderFailed: false,
+  outlineDrawerOpen: false,
+  settingsModalOpen: false
 };
 
 const autosave = new NoteAutosaveController(async (noteId, content) => {
@@ -568,6 +796,55 @@ const updateTopBar = (): void => {
 const renderWorkspaceMode = (workspaceOpen: boolean): void => {
   elements.workspaceScreen.classList.toggle('hidden', workspaceOpen);
   elements.appScreen.classList.toggle('hidden', !workspaceOpen);
+  if (!workspaceOpen) {
+    state.outlineDrawerOpen = false;
+    elements.outlineDrawer.classList.add('hidden');
+    elements.outlineBackdrop.classList.add('hidden');
+    elements.outlineDrawer.setAttribute('aria-hidden', 'true');
+    elements.outlineBackdrop.setAttribute('aria-hidden', 'true');
+    elements.outlineToggleButton.setAttribute('aria-expanded', 'false');
+    state.settingsModalOpen = false;
+    elements.settingsModal.classList.add('hidden');
+    elements.settingsModal.setAttribute('aria-hidden', 'true');
+  }
+};
+
+const setOutlineDrawerOpen = (open: boolean): void => {
+  state.outlineDrawerOpen = open;
+  elements.outlineDrawer.classList.toggle('hidden', !open);
+  elements.outlineBackdrop.classList.toggle('hidden', !open);
+  elements.outlineDrawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+  elements.outlineBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+  elements.outlineToggleButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+};
+
+const closeOutlineDrawer = (): void => {
+  setOutlineDrawerOpen(false);
+};
+
+const toggleOutlineDrawer = (): void => {
+  if (elements.appScreen.classList.contains('hidden')) {
+    return;
+  }
+
+  setOutlineDrawerOpen(!state.outlineDrawerOpen);
+};
+
+const setSettingsModalOpen = (open: boolean): void => {
+  state.settingsModalOpen = open;
+  elements.settingsModal.classList.toggle('hidden', !open);
+  elements.settingsModal.setAttribute('aria-hidden', open ? 'false' : 'true');
+};
+
+const closeSettingsModal = (): void => {
+  setSettingsModalOpen(false);
+};
+
+const openSettingsModal = async (): Promise<void> => {
+  closeOutlineDrawer();
+  await refreshSettings();
+  elements.settingsMessage.textContent = '';
+  setSettingsModalOpen(true);
 };
 
 const renderDocuments = (): void => {
@@ -586,6 +863,7 @@ const renderDocuments = (): void => {
       doc.unassignedCount > 0 ? `${doc.title} (${doc.unassignedCount} unassigned)` : doc.title;
 
     button.addEventListener('click', () => {
+      closeOutlineDrawer();
       void openDocument(doc.id);
     });
 
@@ -608,6 +886,7 @@ const renderSections = (): void => {
 
     button.textContent = `${section.orderIndex + 1}. ${section.heading}`;
     button.addEventListener('click', () => {
+      closeOutlineDrawer();
       void openSection(section.id);
     });
 
@@ -623,8 +902,11 @@ const renderSectionView = (): void => {
     elements.sectionContent.classList.remove('hidden');
     elements.pdfSurface.classList.add('hidden');
     elements.pdfFallback.classList.add('hidden');
-    elements.pdfFrame.removeAttribute('src');
+    clearPdfDocument();
+    applyPdfZoom();
     state.selectionAnchor = null;
+    state.pdfSelectionMappingFailed = false;
+    state.pdfRenderFailed = false;
     renderSelectionAnchorAffordance();
     return;
   }
@@ -634,19 +916,23 @@ const renderSectionView = (): void => {
 
   const isPdf = state.activeSection.document.fileType === 'pdf';
   const pdfAvailable = isPdf && state.activeSection.sourceFileStatus.status === 'available';
-  const pdfAnchorMode = pdfAvailable && isPdfAnchorModeEnabled();
-  elements.pdfSurface.classList.toggle('hidden', !pdfAvailable || pdfAnchorMode);
-  elements.pdfFallback.classList.toggle('hidden', !isPdf || pdfAvailable);
-  elements.sectionContent.classList.toggle('hidden', pdfAvailable && !pdfAnchorMode);
-
-  if (pdfAvailable && !pdfAnchorMode) {
-    const nextSrc = toFileUrl(state.activeSection.document.sourcePath);
-    if (elements.pdfFrame.src !== nextSrc) {
-      elements.pdfFrame.src = nextSrc;
-    }
-    state.selectionAnchor = null;
+  const showPdfSurface = pdfAvailable && !state.pdfRenderFailed;
+  elements.pdfSurface.classList.toggle('hidden', !showPdfSurface);
+  elements.pdfFallback.classList.toggle('hidden', !isPdf || showPdfSurface);
+  elements.sectionContent.classList.toggle('hidden', showPdfSurface);
+  applyPdfZoom();
+  if (showPdfSurface) {
+    void renderPdfDocument().catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      appendLog(message);
+      elements.importMessage.textContent = message;
+      elements.pdfSurface.classList.add('hidden');
+      elements.pdfFallback.classList.remove('hidden');
+      elements.sectionContent.classList.remove('hidden');
+      renderSelectionAnchorAffordance();
+    });
   } else {
-    elements.pdfFrame.removeAttribute('src');
+    clearPdfDocument();
   }
 
   renderSelectionAnchorAffordance();
@@ -655,17 +941,29 @@ const renderSectionView = (): void => {
 const updateSelectionAnchor = (): void => {
   if (!state.activeSection) {
     state.selectionAnchor = null;
+    state.pdfSelectionMappingFailed = false;
     renderSelectionAnchorAffordance();
     return;
   }
 
-  if (isNativePdfSelectionUnsupported()) {
-    state.selectionAnchor = null;
+  if (isPdfDocumentWithNativeSurface()) {
+    const rawAnchor = computeSelectionAnchor(elements.pdfDocument);
+    if (!rawAnchor) {
+      state.selectionAnchor = null;
+      state.pdfSelectionMappingFailed = false;
+      renderSelectionAnchorAffordance();
+      return;
+    }
+
+    const mappedAnchor = mapPdfSelectionAnchorToOffsets(rawAnchor, state.activeSection.section.content);
+    state.selectionAnchor = mappedAnchor;
+    state.pdfSelectionMappingFailed = mappedAnchor === null;
     renderSelectionAnchorAffordance();
     return;
   }
 
   state.selectionAnchor = computeSelectionAnchor(elements.sectionContent);
+  state.pdfSelectionMappingFailed = false;
   renderSelectionAnchorAffordance();
 };
 
@@ -1154,7 +1452,11 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   state.selectedNoteId = null;
   state.reassignmentQueue = [];
   state.selectionAnchor = null;
-  state.pdfAnchorModeByDocument.clear();
+  state.pdfSelectionMappingFailed = false;
+  state.pdfZoomByDocument.clear();
+  state.pdfRenderToken += 1;
+  state.pdfRenderFailed = false;
+  clearPdfDocument();
 
   renderWorkspaceMode(true);
   updateTopBar();
@@ -1194,6 +1496,14 @@ const refreshActiveDocumentLists = async (): Promise<void> => {
 };
 
 const openDocument = async (documentId: string): Promise<void> => {
+  if (state.activeDocumentId !== documentId) {
+    state.pdfRenderToken += 1;
+    state.pdfRenderFailed = false;
+    state.selectionAnchor = null;
+    state.pdfSelectionMappingFailed = false;
+    clearPdfDocument();
+  }
+
   const listingEnvelope = (await desktopApi.section.list({ documentId })) as Envelope<SectionListSnapshot>;
   const listing = unwrapEnvelope(listingEnvelope);
 
@@ -1225,6 +1535,7 @@ const openDocument = async (documentId: string): Promise<void> => {
     state.activeSection = null;
     state.selectedNoteId = null;
     state.selectionAnchor = null;
+    state.pdfSelectionMappingFailed = false;
     renderSectionView();
     renderNotes();
     renderProvocation();
@@ -1238,13 +1549,21 @@ const openSection = async (
     preserveView: boolean;
   } = { preserveView: false }
 ): Promise<void> => {
+  const previousSourcePath = state.activeSection?.document.sourcePath ?? null;
   const envelope = (await desktopApi.section.get({ sectionId })) as Envelope<SectionSnapshot>;
   const snapshot = unwrapEnvelope(envelope);
+
+  if (snapshot.document.sourcePath !== previousSourcePath) {
+    state.pdfRenderToken += 1;
+    state.pdfRenderFailed = false;
+    clearPdfDocument();
+  }
 
   state.activeSection = snapshot;
   state.activeDocumentId = snapshot.document.id;
   state.activeSectionByDocument.set(snapshot.document.id, sectionId);
   state.selectionAnchor = null;
+  state.pdfSelectionMappingFailed = false;
   upsertDocument(snapshot.document);
 
   if (!snapshot.notes.some((note) => note.id === state.selectedNoteId)) {
@@ -1353,30 +1672,33 @@ const handleNewNote = async (): Promise<void> => {
   await openSection(state.activeSection.section.id, { preserveView: true });
 };
 
-const handleTogglePdfAnchorMode = (): void => {
-  if (!state.activeSection || !isPdfDocumentWithNativeSurface()) {
-    return;
-  }
-
-  const documentId = state.activeSection.document.id;
-  const nextEnabled = !isPdfAnchorModeEnabled();
-  state.pdfAnchorModeByDocument.set(documentId, nextEnabled);
-  state.selectionAnchor = null;
-  renderSectionView();
-};
-
 const handleNewNoteFromSelection = async (): Promise<void> => {
   if (!state.activeSection) {
     return;
   }
 
-  if (isNativePdfSelectionUnsupported()) {
-    throw new Error('Selection anchors are unavailable in native PDF mode. Use "New Note" for section notes.');
+  let selection = state.selectionAnchor;
+  if (!selection && isPdfDocumentWithNativeSurface()) {
+    const rawAnchor = computeSelectionAnchor(elements.pdfDocument);
+    if (rawAnchor) {
+      selection = mapPdfSelectionAnchorToOffsets(rawAnchor, state.activeSection.section.content);
+      state.pdfSelectionMappingFailed = selection === null;
+    }
+  } else if (!selection) {
+    selection = computeSelectionAnchor(elements.sectionContent);
   }
 
-  const selection = state.selectionAnchor ?? computeSelectionAnchor(elements.sectionContent);
+  if (state.pdfSelectionMappingFailed) {
+    renderSelectionAnchorAffordance();
+    throw new Error('Unable to map PDF selection to a deterministic anchor. Adjust the selection and try again.');
+  }
+
   if (!selection) {
-    throw new Error('Select text in the section reader before creating a note from selection.');
+    throw new Error(
+      isPdfDocumentWithNativeSurface()
+        ? 'Select text in the PDF reader before creating a note from selection.'
+        : 'Select text in the section reader before creating a note from selection.'
+    );
   }
 
   const envelope = (await desktopApi.note.create({
@@ -1391,6 +1713,7 @@ const handleNewNoteFromSelection = async (): Promise<void> => {
 
   const created = unwrapEnvelope(envelope);
   state.selectionAnchor = null;
+  state.pdfSelectionMappingFailed = false;
   state.selectedNoteId = created.id;
   await openSection(state.activeSection.section.id, { preserveView: true });
 };
@@ -1533,6 +1856,7 @@ const handleSettingsSave = async (): Promise<void> => {
   elements.clearApiKeyInput.checked = false;
   state.authGuidanceOverride = null;
   await refreshSettings();
+  closeSettingsModal();
 };
 
 const handleAuthModeSwitch = async (): Promise<void> => {
@@ -1630,7 +1954,10 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
       }
     }
 
-    if (getActiveDocument()) {
+    if (state.settingsModalOpen) {
+      elements.settingsMessage.textContent = message;
+      elements.importMessage.textContent = message;
+    } else if (getActiveDocument()) {
       elements.importMessage.textContent = message;
       elements.settingsMessage.textContent = message;
     } else {
@@ -1645,6 +1972,17 @@ const wireEvents = (): void => {
   });
   elements.sectionContent.addEventListener('keyup', () => {
     updateSelectionAnchor();
+  });
+  elements.pdfDocument.addEventListener('mouseup', () => {
+    updateSelectionAnchor();
+  });
+  elements.pdfDocument.addEventListener('keyup', () => {
+    updateSelectionAnchor();
+  });
+  document.addEventListener('selectionchange', () => {
+    if (isPdfDocumentWithNativeSurface()) {
+      updateSelectionAnchor();
+    }
   });
 
   elements.openWorkspaceButton.addEventListener('click', () => {
@@ -1673,13 +2011,58 @@ const wireEvents = (): void => {
   elements.importForm.addEventListener('submit', (event) => {
     event.preventDefault();
     void withUiErrorHandling(async () => {
+      closeOutlineDrawer();
       await handleImport();
       appendLog('Document imported.');
     });
   });
 
   elements.unassignedNavButton.addEventListener('click', () => {
+    closeOutlineDrawer();
     setCenterView('unassigned');
+  });
+
+  elements.outlineToggleButton.addEventListener('click', () => {
+    toggleOutlineDrawer();
+  });
+
+  elements.outlineCloseButton.addEventListener('click', () => {
+    closeOutlineDrawer();
+  });
+
+  elements.outlineBackdrop.addEventListener('click', () => {
+    closeOutlineDrawer();
+  });
+
+  elements.settingsOpenButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await openSettingsModal();
+    });
+  });
+
+  elements.settingsCloseButton.addEventListener('click', () => {
+    closeSettingsModal();
+  });
+
+  elements.settingsCancelButton.addEventListener('click', () => {
+    closeSettingsModal();
+  });
+
+  elements.settingsModal.addEventListener('click', (event) => {
+    if (event.target === elements.settingsModal) {
+      closeSettingsModal();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.settingsModalOpen) {
+      closeSettingsModal();
+      return;
+    }
+
+    if (event.key === 'Escape' && state.outlineDrawerOpen) {
+      closeOutlineDrawer();
+    }
   });
 
   elements.reimportButton.addEventListener('click', () => {
@@ -1709,10 +2092,16 @@ const wireEvents = (): void => {
     });
   });
 
-  elements.togglePdfAnchorModeButton.addEventListener('click', () => {
-    void withUiErrorHandling(async () => {
-      handleTogglePdfAnchorMode();
-    });
+  elements.pdfZoomOutButton.addEventListener('click', () => {
+    const currentZoom = state.activeSection ? getPdfZoom(state.activeSection.document.id) : PDF_ZOOM_DEFAULT;
+    setPdfZoom(currentZoom - PDF_ZOOM_STEP);
+  });
+  elements.pdfZoomInButton.addEventListener('click', () => {
+    const currentZoom = state.activeSection ? getPdfZoom(state.activeSection.document.id) : PDF_ZOOM_DEFAULT;
+    setPdfZoom(currentZoom + PDF_ZOOM_STEP);
+  });
+  elements.pdfZoomResetButton.addEventListener('click', () => {
+    setPdfZoom(PDF_ZOOM_DEFAULT);
   });
 
   elements.provocationsEnabledInput.addEventListener('change', () => {

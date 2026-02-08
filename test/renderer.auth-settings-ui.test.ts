@@ -9,9 +9,13 @@ const htmlPath = join(__dirname, '..', 'src', 'renderer', 'index.html');
 const appTsPath = join(__dirname, '..', 'src', 'renderer', 'app.ts');
 
 describe('renderer auth settings markup', () => {
-  it('includes auth mode controls and codex sign-in actions in settings panel', () => {
+  it('includes top-nav gear trigger and settings modal controls', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
+    expect(html).toContain('id="settings-open-button"');
+    expect(html).toContain('id="settings-modal"');
+    expect(html).toContain('id="settings-close-button"');
+    expect(html).toContain('id="settings-cancel-button"');
     expect(html).toContain('id="auth-mode-input"');
     expect(html).toContain('id="auth-status-message"');
     expect(html).toContain('id="auth-guidance"');
@@ -19,6 +23,7 @@ describe('renderer auth settings markup', () => {
     expect(html).toContain('id="auth-login-start-button"');
     expect(html).toContain('id="auth-login-complete-button"');
     expect(html).toContain('id="auth-logout-button"');
+    expect(html).not.toContain('class="panel settings-panel"');
   });
 
   it('includes explicit switch-to-api-key guidance for codex runtime and permission failures', () => {
@@ -35,5 +40,16 @@ describe('renderer auth settings markup', () => {
     expect(html).toContain('id="provocation-tab-button"');
     expect(html).toContain('id="notes-list"');
     expect(html).toContain('id="provocation-message"');
+  });
+
+  it('wires settings modal open and close behavior in renderer logic', () => {
+    const appTs = readFileSync(appTsPath, 'utf8');
+
+    expect(appTs).toContain('setSettingsModalOpen');
+    expect(appTs).toContain('openSettingsModal');
+    expect(appTs).toContain('closeSettingsModal');
+    expect(appTs).toContain("elements.settingsOpenButton.addEventListener('click'");
+    expect(appTs).toContain("elements.settingsModal.addEventListener('click'");
+    expect(appTs).toContain("event.key === 'Escape' && state.settingsModalOpen");
   });
 });

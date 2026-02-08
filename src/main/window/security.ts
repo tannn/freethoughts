@@ -4,7 +4,7 @@ export const MAIN_WINDOW_WEB_PREFERENCES = Object.freeze({
   nodeIntegration: false,
   webSecurity: true,
   enableRemoteModule: false,
-  // Required for Chromium's built-in PDF renderer in the iframe surface.
+  // Keep plugins enabled for renderer compatibility while PDF content is rendered via local PDF.js.
   plugins: true
 });
 
@@ -13,7 +13,7 @@ export const CONTENT_SECURITY_POLICY = [
   "script-src 'self'",
   "style-src 'self'",
   "img-src 'self' data:",
-  // Native PDF rendering may route through Chromium's internal extension viewer.
+  // Retained to avoid CSP regressions during PDF.js migration and local file fallback handling.
   "frame-src 'self' file: chrome-extension:",
   "connect-src 'self' https://api.openai.com",
   "frame-ancestors 'none'",

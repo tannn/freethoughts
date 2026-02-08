@@ -21,5 +21,8 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "zod": "^4.1.5"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.10.38"
   }
 }

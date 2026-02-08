@@ -13,7 +13,11 @@ describe('renderer pdf surface markup', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
     expect(html).toContain('id="pdf-surface"');
-    expect(html).toContain('id="pdf-frame"');
+    expect(html).toContain('id="pdf-document"');
+    expect(html).toContain('id="pdf-zoom-out-button"');
+    expect(html).toContain('id="pdf-zoom-in-button"');
+    expect(html).toContain('id="pdf-zoom-reset-button"');
+    expect(html).toContain('id="pdf-zoom-label"');
     expect(html).toContain('id="pdf-fallback"');
     expect(html).toContain('id="section-content"');
     expect(html).toContain("frame-src 'self' file: chrome-extension:");
@@ -25,6 +29,9 @@ describe('renderer pdf surface markup', () => {
     expect(appTs).toContain("document.fileType === 'pdf'");
     expect(appTs).toContain('pdfSurface');
     expect(appTs).toContain('pdfFallback');
-    expect(appTs).toContain('pdfFrame');
+    expect(appTs).toContain('pdfDocument');
+    expect(appTs).toContain("import('./vendor/pdfjs/pdf.mjs')");
+    expect(appTs).toContain('setPdfZoom');
+    expect(appTs).toContain('applyPdfZoom');
   });
 });
