@@ -22,10 +22,11 @@ describe('renderer note selection anchors', () => {
     expect(appTs).toContain('Unable to map PDF selection to a deterministic anchor');
   });
 
-  it('renders explicit note-from-selection affordance and preview area', () => {
+  it('renders selection-action note flow in the anchored selection popover', () => {
     const html = readFileSync(htmlPath, 'utf8');
-    expect(html).toContain('id="new-note-from-selection-button"');
+    expect(html).toContain('id="selection-action-note-button"');
+    expect(html).toContain('id="selection-note-panel"');
+    expect(html).toContain('id="selection-note-create-button"');
     expect(html).toContain('id="pdf-document"');
-    expect(html).toContain('id="note-selection-preview"');
   });
 });

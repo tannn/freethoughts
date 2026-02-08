@@ -1,8 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { createDesktopApi } from '../src/preload/api.js';
 import { PRELOAD_API_KEY, exposeDesktopApi } from '../src/preload/index.js';
 import type { IpcChannel } from '../src/shared/ipc/channels.js';
 import type { IpcEnvelope } from '../src/shared/ipc/envelope.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const electronPreloadPath = join(__dirname, '..', 'src', 'preload', 'electronPreload.cjs');
 
 describe('preload api boundary', () => {
   it('exposes exactly one API object through contextBridge', () => {
@@ -68,5 +75,11 @@ describe('preload api boundary', () => {
         payload: { correlationState: 'state-1' }
       }
     ]);
+  });
+
+  it('keeps the electron preload cjs bridge aligned for provocation deletion', () => {
+    const preloadCjs = readFileSync(electronPreloadPath, 'utf8');
+
+    expect(preloadCjs).toContain('deleteProvocation: (payload) => ipcRenderer.invoke(\'ai.deleteProvocation\', payload)');
   });
 });

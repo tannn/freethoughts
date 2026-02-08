@@ -17,7 +17,7 @@ describe('renderer note delete affordance', () => {
     expect(appTs).toContain("deleteButton.className = 'note-delete-button'");
     expect(appTs).toContain("deleteButton.textContent = 'x'");
     expect(styles).toContain('.note-card-header');
-    expect(styles).toContain('justify-content: flex-end;');
+    expect(styles).toContain('justify-content: space-between;');
     expect(styles).toContain('.note-delete-button');
   });
 
@@ -27,6 +27,6 @@ describe('renderer note delete affordance', () => {
     expect(appTs).toContain("deleteButton.type = 'button'");
     expect(appTs).toContain("deleteButton.setAttribute('aria-label', 'Delete note')");
     expect(appTs).toContain("deleteButton.addEventListener('click'");
-    expect(appTs).toContain('desktopApi.note.delete({ noteId: note.id })');
+    expect(appTs).toContain('desktopApi.note.delete({ noteId: row.id })');
   });
 });

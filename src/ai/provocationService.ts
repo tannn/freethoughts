@@ -71,6 +71,21 @@ const stylePromptSuffix: Record<ProvocationStyle, string> = {
   methodological: 'Use a methodological tone that challenges method quality and evidence validity.'
 };
 
+const isActiveProvocationUniqueConstraintError = (cause: unknown): boolean => {
+  if (!(cause instanceof Error)) {
+    return false;
+  }
+
+  const message = cause.message.toLowerCase();
+  return (
+    message.includes('unique constraint failed') &&
+    (message.includes('idx_provocations_one_active_per_section_revision') ||
+      message.includes('provocations.document_id') ||
+      message.includes('provocations.section_id') ||
+      message.includes('provocations.revision_id'))
+  );
+};
+
 export class ProvocationService {
   private readonly sqlite: SqliteCli;
 
@@ -124,7 +139,8 @@ export class ProvocationService {
       revisionId: currentRevisionId,
       requestId: input.requestId,
       style,
-      outputText: generated.text
+      outputText: generated.text,
+      confirmReplace: input.confirmReplace === true
     });
 
     const created = this.getById(id);
@@ -136,7 +152,10 @@ export class ProvocationService {
   }
 
   async regenerate(input: Omit<GenerateProvocationInput, 'confirmReplace'>): Promise<ProvocationRecord> {
-    return this.generate(input);
+    return this.generate({
+      ...input,
+      confirmReplace: true
+    });
   }
 
   dismiss(documentId: string, sectionId: string): void {
@@ -196,10 +215,21 @@ export class ProvocationService {
     requestId: string;
     style: ProvocationStyle;
     outputText: string;
+    confirmReplace: boolean;
   }): void {
     try {
       this.sqlite.exec(`
         BEGIN IMMEDIATE;
+        ${
+          input.confirmReplace
+            ? `UPDATE provocations
+        SET is_active = 0
+        WHERE document_id = ${sqlString(input.documentId)}
+          AND section_id = ${sqlString(input.sectionId)}
+          AND revision_id = ${sqlString(input.revisionId)}
+          AND is_active = 1;`
+            : ''
+        }
         INSERT INTO provocations (
           id,
           document_id,
@@ -222,6 +252,17 @@ export class ProvocationService {
         COMMIT;
       `);
     } catch (error) {
+      if (isActiveProvocationUniqueConstraintError(error)) {
+        throw new AppError(
+          'E_CONFLICT',
+          'Active provocation already exists for this section. Confirm replace or dismiss the current one first.',
+          {
+            documentId: input.documentId,
+            sectionId: input.sectionId,
+            revisionId: input.revisionId
+          }
+        );
+      }
       throw new AppError('E_INTERNAL', 'Failed to persist generated provocation', {
         message: error instanceof Error ? error.message : String(error)
       });

@@ -81,7 +81,7 @@
                 <button id="pdf-zoom-in-button" type="button" class="secondary" aria-label="Zoom in">+</button>
                 <span id="pdf-zoom-label" class="hint">Zoom: 100%</span>
               </div>
-              <div class="pdf-viewport">
+              <div id="pdf-viewport" class="pdf-viewport">
                 <div id="pdf-document" class="pdf-document"></div>
               </div>
             </div>
@@ -100,46 +100,12 @@
 
         <aside class="right-pane">
           <section class="panel">
-            <div class="tab-row">
-              <button id="notes-tab-button" type="button" class="tab active" data-tab="notes">Notes</button>
-              <button id="provocation-tab-button" type="button" class="tab" data-tab="provocation">Provocation</button>
+            <div class="feed-filter-row">
+              <button id="feed-filter-all-button" type="button" class="feed-filter-button active">All</button>
+              <button id="feed-filter-notes-button" type="button" class="feed-filter-button">Notes</button>
+              <button id="feed-filter-provocation-button" type="button" class="feed-filter-button">Provocation</button>
             </div>
-
-            <div id="notes-tab" class="tab-panel">
-              <div class="notes-toolbar">
-                <button id="new-note-button" type="button">New Note</button>
-                <button id="new-note-from-selection-button" type="button" class="secondary">
-                  New Note from Selection
-                </button>
-              </div>
-              <p id="note-selection-preview" class="hint">Select text in the section reader to anchor a new note.</p>
-              <div id="notes-list" class="notes-list"></div>
-            </div>
-
-            <div id="provocation-tab" class="tab-panel hidden">
-              <label class="toggle-row">
-                <input id="provocations-enabled-input" type="checkbox" checked />
-                Provocations enabled for this document
-              </label>
-              <label>
-                Provocation style override
-                <select id="provocation-style-override-input">
-                  <option value="">Use workspace default</option>
-                  <option value="skeptical">skeptical</option>
-                  <option value="creative">creative</option>
-                  <option value="methodological">methodological</option>
-                </select>
-              </label>
-              <p id="provocation-target" class="hint">Target: current section</p>
-              <div class="provocation-actions">
-                <button id="generate-provocation-button" type="button">Generate</button>
-                <button id="regenerate-provocation-button" type="button" class="secondary">Regenerate</button>
-                <button id="dismiss-provocation-button" type="button" class="secondary">Dismiss</button>
-                <button id="cancel-ai-button" type="button" class="secondary">Cancel</button>
-              </div>
-              <p id="provocation-message" class="message"></p>
-              <pre id="provocation-output" class="provocation-output">No active provocation.</pre>
-            </div>
+            <div id="unified-feed-list" class="unified-feed-list"></div>
           </section>
         </aside>
       </section>
@@ -150,6 +116,81 @@
         <span id="ai-status">AI: -</span>
         <span id="source-actions" class="status-actions"></span>
       </footer>
+
+      <section
+        id="provocation-style-overlay"
+        class="selection-popover hidden"
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="selection-action-title"
+        aria-hidden="true"
+      >
+        <div class="provocation-style-popover">
+          <section id="selection-action-chooser">
+            <p id="selection-action-preview" class="hint">Selected target: -</p>
+            <div class="selection-action-buttons">
+              <button id="selection-action-note-button" type="button" class="secondary">Note</button>
+              <button id="selection-action-provocation-button" type="button">Provocation</button>
+            </div>
+            <p id="selection-action-message" class="message"></p>
+          </section>
+
+          <section id="selection-note-panel" class="hidden">
+            <h2>Create Note from Selection</h2>
+            <p id="selection-note-preview" class="hint">Selected target: -</p>
+            <div class="modal-actions">
+              <button id="selection-note-back-button" type="button" class="secondary">Back</button>
+              <button id="selection-note-create-button" type="button">Create Note</button>
+            </div>
+            <p id="selection-note-message" class="message"></p>
+          </section>
+
+          <section id="selection-provocation-panel" class="hidden">
+            <h2 id="provocation-style-title">Select Provocation Style</h2>
+            <p id="provocation-style-selection-preview" class="hint">Selected target: -</p>
+            <div class="style-picker">
+              <button
+                id="provocation-style-menu-button"
+                class="secondary style-menu-button"
+                type="button"
+                aria-expanded="false"
+                aria-controls="provocation-style-menu"
+              >
+                Style: skeptical
+              </button>
+              <div id="provocation-style-menu" class="style-menu hidden" role="listbox" aria-label="Provocation style">
+                <button
+                  id="provocation-style-option-skeptical"
+                  type="button"
+                  class="style-option"
+                  data-style="skeptical"
+                >
+                  <span>skeptical</span>
+                  <span class="style-option-check" aria-hidden="true">✓</span>
+                </button>
+                <button id="provocation-style-option-creative" type="button" class="style-option" data-style="creative">
+                  <span>creative</span>
+                  <span class="style-option-check" aria-hidden="true">✓</span>
+                </button>
+                <button
+                  id="provocation-style-option-methodological"
+                  type="button"
+                  class="style-option"
+                  data-style="methodological"
+                >
+                  <span>methodological</span>
+                  <span class="style-option-check" aria-hidden="true">✓</span>
+                </button>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button id="provocation-style-cancel-button" type="button" class="secondary">Back</button>
+              <button id="provocation-style-generate-button" type="button">Generate</button>
+            </div>
+            <p id="provocation-style-message" class="message"></p>
+          </section>
+        </div>
+      </section>
 
       <section id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
         <div class="modal-content settings-modal-content">

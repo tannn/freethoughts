@@ -33,5 +33,8 @@ describe('renderer pdf surface markup', () => {
     expect(appTs).toContain("import('./vendor/pdfjs/pdf.mjs')");
     expect(appTs).toContain('setPdfZoom');
     expect(appTs).toContain('applyPdfZoom');
+    expect(appTs).toContain('window.devicePixelRatio');
+    expect(appTs).toContain('transform: outputScale > 1');
+    expect(appTs).toContain("style.setProperty('--scale-factor'");
   });
 });

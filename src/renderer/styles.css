@@ -268,6 +268,7 @@ pre {
 
 .pdf-page {
   position: relative;
+  --scale-factor: 1;
   background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -284,15 +285,20 @@ pre {
   inset: 0;
   overflow: hidden;
   opacity: 0.22;
+  text-size-adjust: none;
+  forced-color-adjust: none;
   line-height: 1;
+  transform-origin: 0 0;
 }
 
-.pdf-text-layer span {
+.pdf-text-layer span,
+.pdf-text-layer br {
   position: absolute;
   color: transparent;
   white-space: pre;
   transform-origin: 0 0;
   cursor: text;
+  margin: 0;
 }
 
 .pdf-text-layer ::selection {
@@ -329,29 +335,24 @@ pre {
   color: var(--accent-strong);
 }
 
-.tab-row {
+.feed-filter-row {
   display: flex;
   gap: 6px;
 }
 
-.tab {
+.feed-filter-button {
   background: #f6faf8;
   color: var(--ink);
   border-color: var(--line);
 }
 
-.tab.active {
+.feed-filter-button.active {
   border-color: var(--accent);
   color: var(--accent-strong);
   background: #eef8f6;
 }
 
-.tab-panel {
-  display: grid;
-  gap: 10px;
-}
-
-.notes-list,
+.unified-feed-list,
 .unassigned-list {
   display: grid;
   gap: 10px;
@@ -375,11 +376,19 @@ pre {
 
 .note-card-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 .note-anchor {
   margin: 0;
+}
+
+.feed-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .note-actions,
@@ -493,6 +502,85 @@ pre {
 
 .settings-modal-content {
   width: min(640px, 100%);
+}
+
+.selection-popover {
+  position: fixed;
+  inset: auto auto auto auto;
+  z-index: 40;
+}
+
+.provocation-style-popover {
+  width: min(360px, calc(100vw - 24px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 10px 28px rgba(17, 34, 26, 0.2);
+}
+
+.provocation-style-popover h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.provocation-style-popover section {
+  display: grid;
+  gap: 10px;
+}
+
+.selection-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.selection-action-buttons button {
+  flex: 1;
+}
+
+.style-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.style-menu-button {
+  justify-self: start;
+}
+
+.style-menu {
+  display: grid;
+  gap: 6px;
+}
+
+.style-option {
+  width: 100%;
+  background: #ffffff;
+  color: var(--ink);
+  border-color: var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.style-option:hover {
+  background: #f5faf4;
+  border-color: #bccbb9;
+}
+
+.style-option.active {
+  border-color: var(--accent);
+}
+
+.style-option-check {
+  opacity: 0;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.style-option.active .style-option-check {
+  opacity: 1;
 }
 
 #settings-form {

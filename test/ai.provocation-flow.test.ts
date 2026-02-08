@@ -125,4 +125,59 @@ describe('provocation generation flow', () => {
       })
     ).rejects.toMatchObject({ code: 'E_CONFLICT' } satisfies Partial<AppError>);
   });
+
+  it('maps legacy one-active unique collisions to replace flow instead of E_INTERNAL', async () => {
+    const seeded = createTempDb();
+    seedDocumentRevision(seeded.sqlite, {
+      documentId: 'doc-legacy',
+      revisionId: 'rev-1',
+      sections: [{ id: 'sec-1', anchorKey: 'a#1', heading: 'A', orderIndex: 0, content: 'alpha' }]
+    });
+
+    seeded.sqlite.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provocations_one_active_per_section_revision
+      ON provocations(document_id, section_id, revision_id)
+      WHERE is_active = 1;
+    `);
+
+    const settings = new AiSettingsRepository(seeded.dbPath);
+    const client = new OpenAIClient(
+      settings,
+      { getApiKey: async () => 'key' },
+      {
+        async generate(_request: OpenAiGenerationRequest): Promise<OpenAiGenerationResponse> {
+          return { text: 'legacy-index-provocation' };
+        }
+      },
+      { timeoutMs: 5000, retryDelaysMs: [5, 15] },
+      async () => Promise.resolve(),
+      () => 0
+    );
+    const service = new ProvocationService(seeded.dbPath, settings, client);
+
+    const first = await service.generate({
+      requestId: 'req-legacy-1',
+      documentId: 'doc-legacy',
+      sectionId: 'sec-1'
+    });
+
+    await expect(
+      service.generate({
+        requestId: 'req-legacy-2',
+        documentId: 'doc-legacy',
+        sectionId: 'sec-1'
+      })
+    ).rejects.toMatchObject({ code: 'E_CONFLICT' } satisfies Partial<AppError>);
+
+    const replaced = await service.generate({
+      requestId: 'req-legacy-3',
+      documentId: 'doc-legacy',
+      sectionId: 'sec-1',
+      confirmReplace: true
+    });
+
+    expect(replaced.id).not.toBe(first.id);
+    expect(service.getActive('doc-legacy', 'sec-1')?.id).toBe(replaced.id);
+    expect(service.listHistory('doc-legacy', 'sec-1').map((entry) => entry.id)).toEqual([replaced.id]);
+  });
 });

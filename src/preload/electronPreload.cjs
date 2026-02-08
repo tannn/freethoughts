@@ -24,7 +24,8 @@ const api = {
   },
   ai: {
     generateProvocation: (payload) => ipcRenderer.invoke('ai.generateProvocation', payload),
-    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload)
+    cancel: (payload) => ipcRenderer.invoke('ai.cancel', payload),
+    deleteProvocation: (payload) => ipcRenderer.invoke('ai.deleteProvocation', payload)
   },
   settings: {
     get: (payload = {}) => ipcRenderer.invoke('settings.get', payload),

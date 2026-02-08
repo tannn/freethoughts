@@ -1,4 +1,4 @@
-export type RightPaneTab = 'notes' | 'provocation';
+export type RightPaneTab = 'all' | 'notes' | 'provocation';
 export type CenterView = 'section' | 'unassigned-notes';
 
 export interface ReaderShellSnapshot {
@@ -10,7 +10,7 @@ export interface ReaderShellSnapshot {
   leftNavItems: readonly string[];
 }
 
-const RIGHT_PANE_TABS: readonly RightPaneTab[] = ['notes', 'provocation'];
+const RIGHT_PANE_TABS: readonly RightPaneTab[] = ['all', 'notes', 'provocation'];
 const LEFT_NAV_ITEMS: readonly string[] = ['sections', 'unassigned-notes'];
 
 export class ReaderShellController {
@@ -26,7 +26,7 @@ export class ReaderShellController {
     this.activeDocumentId = documentId;
 
     if (!this.selectedTabByDocument.has(documentId)) {
-      this.selectedTabByDocument.set(documentId, 'notes');
+      this.selectedTabByDocument.set(documentId, 'all');
     }
 
     if (!this.centerViewByDocument.has(documentId)) {
@@ -62,7 +62,7 @@ export class ReaderShellController {
     return {
       activeDocumentId: documentId,
       activeSectionId: documentId ? (this.activeSectionByDocument.get(documentId) ?? null) : null,
-      selectedTab: documentId ? (this.selectedTabByDocument.get(documentId) ?? 'notes') : 'notes',
+      selectedTab: documentId ? (this.selectedTabByDocument.get(documentId) ?? 'all') : 'all',
       centerView: documentId ? (this.centerViewByDocument.get(documentId) ?? 'section') : 'section',
       rightPaneTabs: RIGHT_PANE_TABS,
       leftNavItems: LEFT_NAV_ITEMS
