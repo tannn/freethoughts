@@ -29,12 +29,17 @@ interface TurnState {
   errorMessage?: string | null;
 }
 
+interface TurnWaiter {
+  resolve: (completion: CodexAppServerTurnCompletion) => void;
+  reject: (error: CodexAppServerTransportError) => void;
+}
+
 interface ProcessContext {
   child: ChildProcessWithoutNullStreams;
   pending: Map<number, PendingResponse>;
   nextRequestId: number;
   turnByKey: Map<string, TurnState>;
-  waiterByKey: Map<string, (completion: CodexAppServerTurnCompletion) => void>;
+  waiterByKey: Map<string, TurnWaiter>;
   stderrLines: string[];
 }
 
@@ -275,7 +280,12 @@ export class CodexCliAppServerTransport implements CodexAppServerGenerationTrans
         resolve(completion);
       };
 
-      context.waiterByKey.set(key, finish);
+      const fail = (error: CodexAppServerTransportError) => {
+        input.signal.removeEventListener('abort', onAbort);
+        reject(error);
+      };
+
+      context.waiterByKey.set(key, { resolve: finish, reject: fail });
       input.signal.addEventListener('abort', onAbort, { once: true });
     });
   }
@@ -373,10 +383,7 @@ export class CodexCliAppServerTransport implements CodexAppServerGenerationTrans
         'runtime_unavailable',
         `Codex App Server process failed: ${error.message}`
       );
-      for (const pending of context.pending.values()) {
-        pending.reject(transportError);
-      }
-      context.pending.clear();
+      this.rejectInFlight(context, transportError);
     });
 
     child.on('exit', (code, signal) => {
@@ -386,10 +393,7 @@ export class CodexCliAppServerTransport implements CodexAppServerGenerationTrans
         stderrTail: context.stderrLines.slice(-10).join('\n')
       });
       const transportError = processExitError(context);
-      for (const pending of context.pending.values()) {
-        pending.reject(transportError);
-      }
-      context.pending.clear();
+      this.rejectInFlight(context, transportError);
     });
 
     return context;
@@ -559,13 +563,25 @@ export class CodexCliAppServerTransport implements CodexAppServerGenerationTrans
       const waiter = context.waiterByKey.get(key);
       if (waiter) {
         context.waiterByKey.delete(key);
-        waiter({
+        waiter.resolve({
           turnStatus: existing.status,
           outputText: existing.outputText || null,
           errorMessage: existing.errorMessage ?? null
         });
       }
     }
+  }
+
+  private rejectInFlight(context: ProcessContext, error: CodexAppServerTransportError): void {
+    for (const pending of context.pending.values()) {
+      pending.reject(error);
+    }
+    context.pending.clear();
+
+    for (const waiter of context.waiterByKey.values()) {
+      waiter.reject(error);
+    }
+    context.waiterByKey.clear();
   }
 
   private shutdown(context: ProcessContext): void {

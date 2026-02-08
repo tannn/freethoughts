@@ -160,4 +160,112 @@ describe('codex app-server stdio transport', () => {
       kind: 'runtime_inaccessible'
     } satisfies Partial<CodexAppServerTransportError>);
   });
+
+  it('rejects waitForTurnCompletion when process exits mid-turn', async () => {
+    const child = setupFakeServer((message, processRef) => {
+      const method = message.method;
+      const id = message.id as number;
+      if (method === 'initialize') {
+        processRef.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result: {} }) + '\n');
+        return;
+      }
+      if (method === 'thread/start') {
+        processRef.stdout.write(
+          JSON.stringify({ jsonrpc: '2.0', id, result: { thread: { id: 'thread-1' } } }) + '\n'
+        );
+        return;
+      }
+      if (method === 'turn/start') {
+        processRef.stdout.write(
+          JSON.stringify({ jsonrpc: '2.0', id, result: { turn: { id: 'turn-1' } } }) + '\n'
+        );
+      }
+    });
+
+    const transport = new CodexCliAppServerTransport({
+      spawnImpl: () => child as unknown as ChildProcessWithoutNullStreams
+    });
+
+    const signal = new AbortController().signal;
+    await transport.initialize({
+      params: { clientInfo: { name: 'test', version: '1.0.0' } },
+      signal
+    });
+    await transport.startSession({ params: { model: 'gpt-4.1-mini' }, signal });
+    await transport.sendTurn({
+      params: {
+        threadId: 'thread-1',
+        input: [{ type: 'text', text: 'Prompt' }],
+        model: 'gpt-4.1-mini'
+      },
+      signal
+    });
+
+    const completionPromise = transport.waitForTurnCompletion({
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      signal
+    });
+
+    child.emit('exit', 1, null);
+
+    await expect(completionPromise).rejects.toMatchObject({
+      kind: 'provider_error',
+      message: 'Codex App Server process exited unexpectedly.'
+    } satisfies Partial<CodexAppServerTransportError>);
+  });
+
+  it('rejects waitForTurnCompletion when process errors mid-turn', async () => {
+    const child = setupFakeServer((message, processRef) => {
+      const method = message.method;
+      const id = message.id as number;
+      if (method === 'initialize') {
+        processRef.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result: {} }) + '\n');
+        return;
+      }
+      if (method === 'thread/start') {
+        processRef.stdout.write(
+          JSON.stringify({ jsonrpc: '2.0', id, result: { thread: { id: 'thread-1' } } }) + '\n'
+        );
+        return;
+      }
+      if (method === 'turn/start') {
+        processRef.stdout.write(
+          JSON.stringify({ jsonrpc: '2.0', id, result: { turn: { id: 'turn-1' } } }) + '\n'
+        );
+      }
+    });
+
+    const transport = new CodexCliAppServerTransport({
+      spawnImpl: () => child as unknown as ChildProcessWithoutNullStreams
+    });
+
+    const signal = new AbortController().signal;
+    await transport.initialize({
+      params: { clientInfo: { name: 'test', version: '1.0.0' } },
+      signal
+    });
+    await transport.startSession({ params: { model: 'gpt-4.1-mini' }, signal });
+    await transport.sendTurn({
+      params: {
+        threadId: 'thread-1',
+        input: [{ type: 'text', text: 'Prompt' }],
+        model: 'gpt-4.1-mini'
+      },
+      signal
+    });
+
+    const completionPromise = transport.waitForTurnCompletion({
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      signal
+    });
+
+    child.emit('error', new Error('simulated crash'));
+
+    await expect(completionPromise).rejects.toMatchObject({
+      kind: 'runtime_unavailable',
+      message: 'Codex App Server process failed: simulated crash'
+    } satisfies Partial<CodexAppServerTransportError>);
+  });
 });

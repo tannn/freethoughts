@@ -73,6 +73,10 @@ describe('renderer provocation style overlay', () => {
     expect(appTs).toContain('selectionPopoverAnchorRect');
     expect(appTs).toContain('positionProvocationStyleOverlay');
     expect(appTs).toContain('openSelectionActionOverlay(');
+    expect(appTs).toContain('openPopoverOnSelection && !state.settingsModalOpen && state.activeProvocationRequestId === null');
+    expect(appTs).not.toContain('if (aiAvailability.enabled && !state.settingsModalOpen && state.activeProvocationRequestId === null)');
+    expect(appTs).toContain('const canUseAi = Boolean(canContinue && aiAvailability.enabled);');
+    expect(appTs).toContain('elements.selectionActionProvocationButton.disabled = !canUseAi;');
     expect(appTs).toContain('openProvocationStyleOverlay(');
     expect(appTs).toContain("elements.selectionActionNoteButton.addEventListener('click'");
     expect(appTs).toContain("elements.selectionActionProvocationButton.addEventListener('click'");

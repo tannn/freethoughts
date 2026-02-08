@@ -14,6 +14,7 @@ describe('renderer auth settings markup', () => {
 
     expect(html).toContain('id="settings-open-button"');
     expect(html).toContain('id="settings-modal"');
+    expect(html).toContain('id="refresh-network-button"');
     expect(html).toContain('id="settings-close-button"');
     expect(html).toContain('id="settings-cancel-button"');
     expect(html).toContain('id="auth-mode-input"');
@@ -24,6 +25,13 @@ describe('renderer auth settings markup', () => {
     expect(html).toContain('id="auth-login-complete-button"');
     expect(html).toContain('id="auth-logout-button"');
     expect(html).not.toContain('class="panel settings-panel"');
+  });
+
+  it('keeps unassigned count out of the top nav and keeps unassigned access in outline navigation', () => {
+    const html = readFileSync(htmlPath, 'utf8');
+
+    expect(html).not.toContain('id="top-unassigned-count"');
+    expect(html).toContain('id="unassigned-nav-button"');
   });
 
   it('includes explicit switch-to-api-key guidance for codex runtime and permission failures', () => {
