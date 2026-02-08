@@ -2,7 +2,7 @@ import { NoteAutosaveController } from '../reader/autosave.js';
 import { getDesktopApi } from './desktopApi.js';
 
 type ProvocationStyle = 'skeptical' | 'creative' | 'methodological';
-type RightPaneTab = 'notes' | 'provocation';
+type UnifiedFeedFilter = 'all' | 'notes' | 'provocation';
 type CenterView = 'section' | 'unassigned';
 type AuthMode = 'api_key' | 'codex_subscription';
 type AuthSessionStatus = 'signed_out' | 'pending' | 'authenticated' | 'expired' | 'invalid' | 'cancelled';
@@ -74,6 +74,26 @@ interface NoteSelectionAnchor {
   startOffset: number;
   endOffset: number;
   selectedTextExcerpt: string;
+  rawSelectedText?: string;
+  contextBefore?: string;
+  contextAfter?: string;
+}
+
+interface SelectionTriggeredProvocationTarget {
+  noteId?: string;
+  label: 'selected note' | 'selected text';
+  preview: string;
+}
+
+type SelectionPopoverMode = 'chooser' | 'note' | 'provocation';
+
+interface ViewportRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
 }
 
 interface ProvocationRecord {
@@ -86,6 +106,18 @@ interface ProvocationRecord {
   outputText: string;
   isActive: boolean;
   createdAt: string;
+}
+
+interface UnifiedFeedItem {
+  id: string;
+  itemType: 'note' | 'provocation';
+  sectionId: string;
+  sectionHeading: string;
+  sectionOrderIndex: number;
+  paragraphOrdinal: number | null;
+  startOffset: number | null;
+  createdAt: string;
+  textContent: string;
 }
 
 interface AiAvailability {
@@ -129,6 +161,7 @@ interface SectionSnapshot {
   notes: NoteRecord[];
   activeProvocation: ProvocationRecord | null;
   provocations: ProvocationRecord[];
+  unifiedFeed: UnifiedFeedItem[];
   aiAvailability: AiAvailability;
   sourceFileStatus: SourceFileStatus;
 }
@@ -210,6 +243,10 @@ const requestId = (): string => {
   return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const PROVOCATION_STYLES: readonly ProvocationStyle[] = ['skeptical', 'creative', 'methodological'];
+const PROVOCATION_STYLE_POPOVER_OFFSET = 10;
+const PROVOCATION_STYLE_POPOVER_MARGIN = 12;
+
 const PDF_ZOOM_DEFAULT = 1;
 const PDF_ZOOM_MIN = 0.75;
 const PDF_ZOOM_MAX = 2;
@@ -226,6 +263,65 @@ const toFileUrl = (sourcePath: string): string => {
 };
 
 const normalizeSectionText = (text: string): string => text.replace(/\r\n/g, '\n');
+const normalizeMatchText = (text: string): string =>
+  text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+interface SectionOffsetMap {
+  text: string;
+  offsets: number[];
+}
+
+const buildSectionOffsetMap = (source: string): SectionOffsetMap => {
+  let normalized = '';
+  const offsets: number[] = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === '\r' && source[index + 1] === '\n') {
+      continue;
+    }
+    normalized += char;
+    offsets.push(index);
+  }
+
+  offsets.push(source.length);
+  return {
+    text: normalized,
+    offsets
+  };
+};
+
+const normalizedOffsetToOriginalOffset = (offsets: number[], normalizedOffset: number): number => {
+  if (offsets.length === 0) {
+    return 0;
+  }
+
+  const boundedOffset = Math.max(0, Math.min(normalizedOffset, offsets.length - 1));
+  return offsets[boundedOffset] ?? offsets[offsets.length - 1];
+};
+
+const suffixOverlapLength = (left: string, right: string): number => {
+  const max = Math.min(left.length, right.length);
+  for (let length = max; length > 0; length -= 1) {
+    if (left.endsWith(right.slice(-length))) {
+      return length;
+    }
+  }
+  return 0;
+};
+
+const prefixOverlapLength = (left: string, right: string): number => {
+  const max = Math.min(left.length, right.length);
+  for (let length = max; length > 0; length -= 1) {
+    if (left.slice(0, length) === right.slice(0, length)) {
+      return length;
+    }
+  }
+  return 0;
+};
 
 const countParagraphOrdinal = (text: string, startOffset: number): number => {
   if (startOffset <= 0) {
@@ -257,17 +353,25 @@ const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | n
 
   const startOffset = startRange.toString().length;
   const endOffset = endRange.toString().length;
-  const selectedTextExcerpt = selection.toString().trim();
+  const rawSelectedText = selection.toString();
+  const selectedTextExcerpt = rawSelectedText.trim();
 
   if (!selectedTextExcerpt) {
     return null;
   }
 
+  const contextWindow = 36;
+  const contextBefore = normalizedText.slice(Math.max(0, startOffset - contextWindow), startOffset);
+  const contextAfter = normalizedText.slice(endOffset, Math.min(normalizedText.length, endOffset + contextWindow));
+
   return {
     paragraphOrdinal: countParagraphOrdinal(normalizedText, startOffset),
     startOffset: Math.min(startOffset, endOffset),
     endOffset: Math.max(startOffset, endOffset),
-    selectedTextExcerpt
+    selectedTextExcerpt,
+    rawSelectedText,
+    contextBefore,
+    contextAfter
   };
 };
 
@@ -275,29 +379,144 @@ const mapPdfSelectionAnchorToOffsets = (
   anchor: NoteSelectionAnchor,
   sectionContent: string
 ): NoteSelectionAnchor | null => {
-  const normalizedSection = normalizeSectionText(sectionContent);
-  const selectedTextExcerpt = normalizeSectionText(anchor.selectedTextExcerpt).trim();
-  if (!selectedTextExcerpt) {
+  const sectionOffsetMap = buildSectionOffsetMap(sectionContent);
+  const normalizedSection = sectionOffsetMap.text;
+  const rawSelectedText = normalizeSectionText(anchor.rawSelectedText ?? anchor.selectedTextExcerpt);
+  const selectedTextExcerpt = rawSelectedText.trim();
+  if (!selectedTextExcerpt || !normalizedSection) {
     return null;
   }
 
+  const candidateNeedles = new Set<string>();
+  if (rawSelectedText) {
+    candidateNeedles.add(rawSelectedText);
+  }
+  candidateNeedles.add(selectedTextExcerpt);
+
+  const contextBeforeNorm = normalizeMatchText(normalizeSectionText(anchor.contextBefore ?? ''));
+  const contextAfterNorm = normalizeMatchText(normalizeSectionText(anchor.contextAfter ?? ''));
   const boundedHintStart = Math.max(0, Math.min(anchor.startOffset, normalizedSection.length));
-  let mappedStart = normalizedSection.indexOf(selectedTextExcerpt, boundedHintStart);
-  if (mappedStart === -1) {
-    mappedStart = normalizedSection.indexOf(selectedTextExcerpt);
+  const beforeWindow = Math.max(24, (anchor.contextBefore?.length ?? 0) + 24);
+  const afterWindow = Math.max(24, (anchor.contextAfter?.length ?? 0) + 24);
+
+  let bestMatch:
+    | {
+        start: number;
+        needle: string;
+        score: number;
+      }
+    | null = null;
+
+  for (const needle of candidateNeedles) {
+    if (!needle) {
+      continue;
+    }
+
+    let searchStart = 0;
+    while (searchStart <= normalizedSection.length) {
+      const foundAt = normalizedSection.indexOf(needle, searchStart);
+      if (foundAt === -1) {
+        break;
+      }
+
+      let score = 0;
+      const distance = Math.abs(foundAt - boundedHintStart);
+      score -= Math.min(distance, 400) * 0.2;
+
+      if (contextBeforeNorm) {
+        const beforeSlice = normalizeMatchText(
+          normalizedSection.slice(Math.max(0, foundAt - beforeWindow), foundAt)
+        );
+        score += suffixOverlapLength(beforeSlice, contextBeforeNorm) * 3;
+      }
+
+      if (contextAfterNorm) {
+        const afterSlice = normalizeMatchText(
+          normalizedSection.slice(foundAt + needle.length, Math.min(normalizedSection.length, foundAt + needle.length + afterWindow))
+        );
+        score += prefixOverlapLength(afterSlice, contextAfterNorm) * 3;
+      }
+
+      if (needle === rawSelectedText && rawSelectedText !== selectedTextExcerpt) {
+        score += 2;
+      }
+
+      if (
+        !bestMatch ||
+        score > bestMatch.score ||
+        (score === bestMatch.score && Math.abs(foundAt - boundedHintStart) < Math.abs(bestMatch.start - boundedHintStart))
+      ) {
+        bestMatch = {
+          start: foundAt,
+          needle,
+          score
+        };
+      }
+
+      searchStart = foundAt + 1;
+    }
   }
 
-  if (mappedStart === -1) {
+  if (!bestMatch) {
     return null;
   }
 
-  const mappedEnd = mappedStart + selectedTextExcerpt.length;
+  const leadingTrim =
+    bestMatch.needle.length > selectedTextExcerpt.length ? bestMatch.needle.length - bestMatch.needle.trimStart().length : 0;
+  const trailingTrim =
+    bestMatch.needle.length > selectedTextExcerpt.length ? bestMatch.needle.length - bestMatch.needle.trimEnd().length : 0;
+  const mappedStartNorm = bestMatch.start + leadingTrim;
+  const mappedEndNorm = bestMatch.start + bestMatch.needle.length - trailingTrim;
+  const mappedStart = normalizedOffsetToOriginalOffset(sectionOffsetMap.offsets, mappedStartNorm);
+  const mappedEnd = normalizedOffsetToOriginalOffset(sectionOffsetMap.offsets, mappedEndNorm);
+
   return {
-    paragraphOrdinal: countParagraphOrdinal(normalizedSection, mappedStart),
+    paragraphOrdinal: countParagraphOrdinal(normalizedSection, mappedStartNorm),
     startOffset: mappedStart,
     endOffset: mappedEnd,
-    selectedTextExcerpt
+    selectedTextExcerpt,
+    rawSelectedText,
+    contextBefore: anchor.contextBefore,
+    contextAfter: anchor.contextAfter
   };
+};
+
+const getSelectionRangeInContainer = (container: HTMLElement): Range | null => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!container.contains(range.commonAncestorContainer)) {
+    return null;
+  }
+
+  return range;
+};
+
+const toViewportRect = (rect: DOMRect | DOMRectReadOnly): ViewportRect => ({
+  left: rect.left,
+  top: rect.top,
+  right: rect.right,
+  bottom: rect.bottom,
+  width: rect.width,
+  height: rect.height
+});
+
+const readSelectionViewportRect = (container: HTMLElement): ViewportRect | null => {
+  const range = getSelectionRangeInContainer(container);
+  if (!range) {
+    return null;
+  }
+
+  const rect = range.getBoundingClientRect();
+  if (rect.width > 0 || rect.height > 0) {
+    return toViewportRect(rect);
+  }
+
+  const clientRect = range.getClientRects()[0];
+  return clientRect ? toViewportRect(clientRect) : null;
 };
 
 interface PdfJsRenderTask {
@@ -307,7 +526,11 @@ interface PdfJsRenderTask {
 
 interface PdfJsPage {
   getViewport: (params: { scale: number }) => { width: number; height: number };
-  render: (params: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => PdfJsRenderTask;
+  render: (params: {
+    canvasContext: CanvasRenderingContext2D;
+    viewport: unknown;
+    transform?: [number, number, number, number, number, number];
+  }) => PdfJsRenderTask;
   getTextContent: () => Promise<unknown>;
 }
 
@@ -438,16 +661,19 @@ const renderPdfDocument = async (): Promise<void> => {
       const pageElement = document.createElement('article');
       pageElement.className = 'pdf-page';
       pageElement.dataset.pageNumber = String(pageNumber);
+      pageElement.style.setProperty('--scale-factor', `${zoom}`);
 
       const canvas = document.createElement('canvas');
       canvas.className = 'pdf-canvas';
-      canvas.width = Math.max(1, Math.floor(viewport.width));
-      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const outputScale = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+      canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
       canvas.style.width = `${viewport.width}px`;
       canvas.style.height = `${viewport.height}px`;
 
       const textLayer = document.createElement('div');
       textLayer.className = 'pdf-text-layer';
+      textLayer.style.setProperty('--scale-factor', `${zoom}`);
       textLayer.style.width = `${viewport.width}px`;
       textLayer.style.height = `${viewport.height}px`;
 
@@ -459,7 +685,11 @@ const renderPdfDocument = async (): Promise<void> => {
         throw new Error('Unable to initialize PDF render context.');
       }
 
-      const renderTask = page.render({ canvasContext: context, viewport });
+      const renderTask = page.render({
+        canvasContext: context,
+        viewport,
+        transform: outputScale > 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined
+      });
       await renderTask.promise;
       const textContent = await page.getTextContent();
       const textLayerTask = new pdfjs.TextLayer({
@@ -488,32 +718,7 @@ const renderPdfDocument = async (): Promise<void> => {
 };
 
 const renderSelectionAnchorAffordance = (): void => {
-  if (!state.activeSection) {
-    elements.newNoteFromSelectionButton.disabled = true;
-    elements.noteSelectionPreview.textContent = 'Open a section to create notes.';
-    return;
-  }
-
-  if (state.pdfSelectionMappingFailed) {
-    elements.newNoteFromSelectionButton.disabled = true;
-    elements.noteSelectionPreview.textContent =
-      'Could not map selected PDF text to a stable anchor. Adjust the selection and try again.';
-    return;
-  }
-
-  if (!state.selectionAnchor) {
-    elements.newNoteFromSelectionButton.disabled = true;
-    elements.noteSelectionPreview.textContent = isPdfDocumentWithNativeSurface()
-      ? 'Select text in the PDF reader to anchor a new note.'
-      : 'Select text in the section reader to anchor a new note.';
-    return;
-  }
-
-  const anchor = state.selectionAnchor;
-  elements.newNoteFromSelectionButton.disabled = false;
-  elements.noteSelectionPreview.textContent = `Selection anchor: paragraph ${
-    anchor.paragraphOrdinal + 1
-  }, chars ${anchor.startOffset}-${anchor.endOffset}, "${trimExcerpt(anchor.selectedTextExcerpt, 100)}"`;
+  // Sidebar note/provocation action affordances were removed; selection actions now live in the anchored popover.
 };
 
 const desktopApi = getDesktopApi(window as unknown as Record<string, unknown>);
@@ -566,6 +771,7 @@ const elements = {
   unassignedView: required(document.querySelector<HTMLElement>('#unassigned-view'), 'unassigned-view'),
   sectionHeading: required(document.querySelector<HTMLElement>('#section-heading'), 'section-heading'),
   pdfSurface: required(document.querySelector<HTMLDivElement>('#pdf-surface'), 'pdf-surface'),
+  pdfViewport: required(document.querySelector<HTMLDivElement>('#pdf-viewport'), 'pdf-viewport'),
   pdfDocument: required(document.querySelector<HTMLDivElement>('#pdf-document'), 'pdf-document'),
   pdfZoomOutButton: required(document.querySelector<HTMLButtonElement>('#pdf-zoom-out-button'), 'pdf-zoom-out-button'),
   pdfZoomInButton: required(document.querySelector<HTMLButtonElement>('#pdf-zoom-in-button'), 'pdf-zoom-in-button'),
@@ -582,50 +788,19 @@ const elements = {
     'unassigned-summary'
   ),
   unassignedList: required(document.querySelector<HTMLDivElement>('#unassigned-list'), 'unassigned-list'),
-  notesTabButton: required(document.querySelector<HTMLButtonElement>('#notes-tab-button'), 'notes-tab-button'),
-  provocationTabButton: required(
-    document.querySelector<HTMLButtonElement>('#provocation-tab-button'),
-    'provocation-tab-button'
+  feedFilterAllButton: required(
+    document.querySelector<HTMLButtonElement>('#feed-filter-all-button'),
+    'feed-filter-all-button'
   ),
-  notesTab: required(document.querySelector<HTMLDivElement>('#notes-tab'), 'notes-tab'),
-  provocationTab: required(document.querySelector<HTMLDivElement>('#provocation-tab'), 'provocation-tab'),
-  newNoteButton: required(document.querySelector<HTMLButtonElement>('#new-note-button'), 'new-note-button'),
-  newNoteFromSelectionButton: required(
-    document.querySelector<HTMLButtonElement>('#new-note-from-selection-button'),
-    'new-note-from-selection-button'
+  feedFilterNotesButton: required(
+    document.querySelector<HTMLButtonElement>('#feed-filter-notes-button'),
+    'feed-filter-notes-button'
   ),
-  noteSelectionPreview: required(
-    document.querySelector<HTMLParagraphElement>('#note-selection-preview'),
-    'note-selection-preview'
+  feedFilterProvocationButton: required(
+    document.querySelector<HTMLButtonElement>('#feed-filter-provocation-button'),
+    'feed-filter-provocation-button'
   ),
-  notesList: required(document.querySelector<HTMLDivElement>('#notes-list'), 'notes-list'),
-  provocationsEnabledInput: required(
-    document.querySelector<HTMLInputElement>('#provocations-enabled-input'),
-    'provocations-enabled-input'
-  ),
-  provocationStyleOverrideInput: required(
-    document.querySelector<HTMLSelectElement>('#provocation-style-override-input'),
-    'provocation-style-override-input'
-  ),
-  provocationTarget: required(document.querySelector<HTMLParagraphElement>('#provocation-target'), 'provocation-target'),
-  generateProvocationButton: required(
-    document.querySelector<HTMLButtonElement>('#generate-provocation-button'),
-    'generate-provocation-button'
-  ),
-  regenerateProvocationButton: required(
-    document.querySelector<HTMLButtonElement>('#regenerate-provocation-button'),
-    'regenerate-provocation-button'
-  ),
-  dismissProvocationButton: required(
-    document.querySelector<HTMLButtonElement>('#dismiss-provocation-button'),
-    'dismiss-provocation-button'
-  ),
-  cancelAiButton: required(document.querySelector<HTMLButtonElement>('#cancel-ai-button'), 'cancel-ai-button'),
-  provocationMessage: required(
-    document.querySelector<HTMLParagraphElement>('#provocation-message'),
-    'provocation-message'
-  ),
-  provocationOutput: required(document.querySelector<HTMLPreElement>('#provocation-output'), 'provocation-output'),
+  unifiedFeedList: required(document.querySelector<HTMLDivElement>('#unified-feed-list'), 'unified-feed-list'),
   settingsForm: required(document.querySelector<HTMLFormElement>('#settings-form'), 'settings-form'),
   authModeInput: required(document.querySelector<HTMLSelectElement>('#auth-mode-input'), 'auth-mode-input'),
   authStatusMessage: required(
@@ -669,6 +844,84 @@ const elements = {
     'settings-cancel-button'
   ),
   settingsMessage: required(document.querySelector<HTMLParagraphElement>('#settings-message'), 'settings-message'),
+  provocationStyleOverlay: required(
+    document.querySelector<HTMLElement>('#provocation-style-overlay'),
+    'provocation-style-overlay'
+  ),
+  selectionActionChooser: required(
+    document.querySelector<HTMLElement>('#selection-action-chooser'),
+    'selection-action-chooser'
+  ),
+  selectionActionPreview: required(
+    document.querySelector<HTMLParagraphElement>('#selection-action-preview'),
+    'selection-action-preview'
+  ),
+  selectionActionNoteButton: required(
+    document.querySelector<HTMLButtonElement>('#selection-action-note-button'),
+    'selection-action-note-button'
+  ),
+  selectionActionProvocationButton: required(
+    document.querySelector<HTMLButtonElement>('#selection-action-provocation-button'),
+    'selection-action-provocation-button'
+  ),
+  selectionActionMessage: required(
+    document.querySelector<HTMLParagraphElement>('#selection-action-message'),
+    'selection-action-message'
+  ),
+  selectionNotePanel: required(document.querySelector<HTMLElement>('#selection-note-panel'), 'selection-note-panel'),
+  selectionNotePreview: required(
+    document.querySelector<HTMLParagraphElement>('#selection-note-preview'),
+    'selection-note-preview'
+  ),
+  selectionNoteBackButton: required(
+    document.querySelector<HTMLButtonElement>('#selection-note-back-button'),
+    'selection-note-back-button'
+  ),
+  selectionNoteCreateButton: required(
+    document.querySelector<HTMLButtonElement>('#selection-note-create-button'),
+    'selection-note-create-button'
+  ),
+  selectionNoteMessage: required(
+    document.querySelector<HTMLParagraphElement>('#selection-note-message'),
+    'selection-note-message'
+  ),
+  selectionProvocationPanel: required(
+    document.querySelector<HTMLElement>('#selection-provocation-panel'),
+    'selection-provocation-panel'
+  ),
+  provocationStyleSelectionPreview: required(
+    document.querySelector<HTMLParagraphElement>('#provocation-style-selection-preview'),
+    'provocation-style-selection-preview'
+  ),
+  provocationStyleMenuButton: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-menu-button'),
+    'provocation-style-menu-button'
+  ),
+  provocationStyleMenu: required(document.querySelector<HTMLElement>('#provocation-style-menu'), 'provocation-style-menu'),
+  provocationStyleOptionSkeptical: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-option-skeptical'),
+    'provocation-style-option-skeptical'
+  ),
+  provocationStyleOptionCreative: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-option-creative'),
+    'provocation-style-option-creative'
+  ),
+  provocationStyleOptionMethodological: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-option-methodological'),
+    'provocation-style-option-methodological'
+  ),
+  provocationStyleCancelButton: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-cancel-button'),
+    'provocation-style-cancel-button'
+  ),
+  provocationStyleGenerateButton: required(
+    document.querySelector<HTMLButtonElement>('#provocation-style-generate-button'),
+    'provocation-style-generate-button'
+  ),
+  provocationStyleMessage: required(
+    document.querySelector<HTMLParagraphElement>('#provocation-style-message'),
+    'provocation-style-message'
+  ),
   networkStatus: required(document.querySelector<HTMLElement>('#network-status'), 'network-status'),
   sourceStatus: required(document.querySelector<HTMLElement>('#source-status'), 'source-status'),
   aiStatus: required(document.querySelector<HTMLElement>('#ai-status'), 'ai-status'),
@@ -698,6 +951,12 @@ const elements = {
   messageLog: required(document.querySelector<HTMLPreElement>('#message-log'), 'message-log')
 };
 
+const provocationStyleOptions = [
+  elements.provocationStyleOptionSkeptical,
+  elements.provocationStyleOptionCreative,
+  elements.provocationStyleOptionMethodological
+] as const;
+
 const state = {
   workspace: null as WorkspaceRecord | null,
   documents: [] as DocumentSummary[],
@@ -705,7 +964,7 @@ const state = {
   sections: [] as SectionListItem[],
   unassignedNotes: [] as UnassignedNoteItem[],
   activeSection: null as SectionSnapshot | null,
-  selectedTabByDocument: new Map<string, RightPaneTab>(),
+  selectedFeedFilterByDocument: new Map<string, UnifiedFeedFilter>(),
   centerViewByDocument: new Map<string, CenterView>(),
   activeSectionByDocument: new Map<string, string | null>(),
   pdfZoomByDocument: new Map<string, number>(),
@@ -723,7 +982,14 @@ const state = {
   pdfRenderZoom: PDF_ZOOM_DEFAULT,
   pdfRenderFailed: false,
   outlineDrawerOpen: false,
-  settingsModalOpen: false
+  settingsModalOpen: false,
+  provocationStyleOverlayOpen: false,
+  provocationStyleOverlayOpenedAtMs: 0,
+  provocationStyleMenuOpen: false,
+  selectionPopoverMode: 'chooser' as SelectionPopoverMode,
+  selectionPopoverAnchorRect: null as ViewportRect | null,
+  pendingSelectionProvocationTarget: null as SelectionTriggeredProvocationTarget | null,
+  pendingSelectionProvocationStyle: 'skeptical' as ProvocationStyle
 };
 
 const autosave = new NoteAutosaveController(async (noteId, content) => {
@@ -740,21 +1006,22 @@ const appendLog = (line: string): void => {
 const getActiveDocument = (): DocumentSummary | null =>
   state.activeDocumentId ? state.documents.find((document) => document.id === state.activeDocumentId) ?? null : null;
 
-const getActiveTab = (): RightPaneTab => {
+const getActiveFeedFilter = (): UnifiedFeedFilter => {
   if (!state.activeDocumentId) {
-    return 'notes';
+    return 'all';
   }
 
-  return state.selectedTabByDocument.get(state.activeDocumentId) ?? 'notes';
+  return state.selectedFeedFilterByDocument.get(state.activeDocumentId) ?? 'all';
 };
 
-const setActiveTab = (tab: RightPaneTab): void => {
+const setActiveFeedFilter = (filter: UnifiedFeedFilter): void => {
   if (!state.activeDocumentId) {
     return;
   }
 
-  state.selectedTabByDocument.set(state.activeDocumentId, tab);
-  renderTabs();
+  state.selectedFeedFilterByDocument.set(state.activeDocumentId, filter);
+  renderFeedFilters();
+  renderUnifiedFeed();
 };
 
 const getCenterView = (): CenterView => {
@@ -806,6 +1073,24 @@ const renderWorkspaceMode = (workspaceOpen: boolean): void => {
     state.settingsModalOpen = false;
     elements.settingsModal.classList.add('hidden');
     elements.settingsModal.setAttribute('aria-hidden', 'true');
+    state.provocationStyleOverlayOpen = false;
+    state.provocationStyleOverlayOpenedAtMs = 0;
+    state.provocationStyleMenuOpen = false;
+    state.selectionPopoverMode = 'chooser';
+    state.selectionPopoverAnchorRect = null;
+    state.pendingSelectionProvocationTarget = null;
+    elements.provocationStyleOverlay.classList.add('hidden');
+    elements.provocationStyleOverlay.setAttribute('aria-hidden', 'true');
+    elements.provocationStyleOverlay.style.left = '';
+    elements.provocationStyleOverlay.style.top = '';
+    elements.selectionActionChooser.classList.remove('hidden');
+    elements.selectionNotePanel.classList.add('hidden');
+    elements.selectionProvocationPanel.classList.add('hidden');
+    elements.selectionActionMessage.textContent = '';
+    elements.selectionNoteMessage.textContent = '';
+    elements.provocationStyleMessage.textContent = '';
+    elements.provocationStyleMenu.classList.add('hidden');
+    elements.provocationStyleMenuButton.setAttribute('aria-expanded', 'false');
   }
 };
 
@@ -836,15 +1121,94 @@ const setSettingsModalOpen = (open: boolean): void => {
   elements.settingsModal.setAttribute('aria-hidden', open ? 'false' : 'true');
 };
 
+const setProvocationStyleMenuOpen = (open: boolean): void => {
+  state.provocationStyleMenuOpen = open;
+  elements.provocationStyleMenu.classList.toggle('hidden', !open);
+  elements.provocationStyleMenuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+};
+
+const getElementViewportRect = (element: HTMLElement): ViewportRect => toViewportRect(element.getBoundingClientRect());
+
+const positionProvocationStyleOverlay = (): void => {
+  if (!state.provocationStyleOverlayOpen || !state.selectionPopoverAnchorRect) {
+    return;
+  }
+
+  const popover = elements.provocationStyleOverlay.firstElementChild;
+  if (!(popover instanceof HTMLElement)) {
+    return;
+  }
+
+  const anchor = state.selectionPopoverAnchorRect;
+  const popoverRect = popover.getBoundingClientRect();
+  const width = popoverRect.width;
+  const height = popoverRect.height;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let left = anchor.left + anchor.width / 2 - width / 2;
+  left = Math.max(
+    PROVOCATION_STYLE_POPOVER_MARGIN,
+    Math.min(viewportWidth - width - PROVOCATION_STYLE_POPOVER_MARGIN, left)
+  );
+
+  let top = anchor.bottom + PROVOCATION_STYLE_POPOVER_OFFSET;
+  if (top + height > viewportHeight - PROVOCATION_STYLE_POPOVER_MARGIN) {
+    top = anchor.top - height - PROVOCATION_STYLE_POPOVER_OFFSET;
+  }
+  top = Math.max(PROVOCATION_STYLE_POPOVER_MARGIN, top);
+
+  elements.provocationStyleOverlay.style.left = `${Math.round(left)}px`;
+  elements.provocationStyleOverlay.style.top = `${Math.round(top)}px`;
+};
+
+const setSelectionPopoverMode = (mode: SelectionPopoverMode): void => {
+  state.selectionPopoverMode = mode;
+  elements.selectionActionChooser.classList.toggle('hidden', mode !== 'chooser');
+  elements.selectionNotePanel.classList.toggle('hidden', mode !== 'note');
+  elements.selectionProvocationPanel.classList.toggle('hidden', mode !== 'provocation');
+  if (mode !== 'provocation') {
+    setProvocationStyleMenuOpen(false);
+  }
+};
+
+const setProvocationStyleOverlayOpen = (open: boolean): void => {
+  state.provocationStyleOverlayOpen = open;
+  state.provocationStyleOverlayOpenedAtMs = open ? Date.now() : 0;
+  elements.provocationStyleOverlay.classList.toggle('hidden', !open);
+  elements.provocationStyleOverlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+  if (!open) {
+    setProvocationStyleMenuOpen(false);
+    setSelectionPopoverMode('chooser');
+    state.pendingSelectionProvocationTarget = null;
+    state.selectionPopoverAnchorRect = null;
+    elements.selectionActionMessage.textContent = '';
+    elements.selectionNoteMessage.textContent = '';
+    elements.provocationStyleMessage.textContent = '';
+    elements.provocationStyleOverlay.style.left = '';
+    elements.provocationStyleOverlay.style.top = '';
+    return;
+  }
+
+  queueMicrotask(() => {
+    positionProvocationStyleOverlay();
+  });
+};
+
 const closeSettingsModal = (): void => {
   setSettingsModalOpen(false);
 };
 
 const openSettingsModal = async (): Promise<void> => {
   closeOutlineDrawer();
+  closeProvocationStyleOverlay();
   await refreshSettings();
   elements.settingsMessage.textContent = '';
   setSettingsModalOpen(true);
+};
+
+const closeProvocationStyleOverlay = (): void => {
+  setProvocationStyleOverlayOpen(false);
 };
 
 const renderDocuments = (): void => {
@@ -906,6 +1270,7 @@ const renderSectionView = (): void => {
     applyPdfZoom();
     state.selectionAnchor = null;
     state.pdfSelectionMappingFailed = false;
+    state.selectionPopoverAnchorRect = null;
     state.pdfRenderFailed = false;
     renderSelectionAnchorAffordance();
     return;
@@ -938,33 +1303,69 @@ const renderSectionView = (): void => {
   renderSelectionAnchorAffordance();
 };
 
-const updateSelectionAnchor = (): void => {
+const updateSelectionAnchor = (options: { openPopoverOnSelection?: boolean } = {}): void => {
+  const openPopoverOnSelection = options.openPopoverOnSelection ?? false;
+
   if (!state.activeSection) {
     state.selectionAnchor = null;
     state.pdfSelectionMappingFailed = false;
+    state.selectionPopoverAnchorRect = null;
     renderSelectionAnchorAffordance();
+    renderProvocation();
     return;
   }
 
   if (isPdfDocumentWithNativeSurface()) {
     const rawAnchor = computeSelectionAnchor(elements.pdfDocument);
+    const selectionRect = readSelectionViewportRect(elements.pdfDocument);
     if (!rawAnchor) {
       state.selectionAnchor = null;
       state.pdfSelectionMappingFailed = false;
+      state.selectionPopoverAnchorRect = null;
       renderSelectionAnchorAffordance();
+      renderProvocation();
       return;
     }
 
     const mappedAnchor = mapPdfSelectionAnchorToOffsets(rawAnchor, state.activeSection.section.content);
     state.selectionAnchor = mappedAnchor;
     state.pdfSelectionMappingFailed = mappedAnchor === null;
+    state.selectionPopoverAnchorRect = selectionRect;
+
+    if (mappedAnchor && selectionRect && openPopoverOnSelection) {
+      const aiAvailability = deriveAiAvailability();
+      if (aiAvailability.enabled && !state.settingsModalOpen && state.activeProvocationRequestId === null) {
+        openSelectionActionOverlay(
+          {
+            label: 'selected text',
+            preview: `Selected text: "${trimExcerpt(mappedAnchor.selectedTextExcerpt, 100)}"`
+          },
+          selectionRect
+        );
+      }
+    }
     renderSelectionAnchorAffordance();
+    renderProvocation();
     return;
   }
 
   state.selectionAnchor = computeSelectionAnchor(elements.sectionContent);
+  state.selectionPopoverAnchorRect = readSelectionViewportRect(elements.sectionContent);
   state.pdfSelectionMappingFailed = false;
+  if (state.selectionAnchor && state.selectionPopoverAnchorRect && openPopoverOnSelection) {
+    const aiAvailability = deriveAiAvailability();
+    if (aiAvailability.enabled && !state.settingsModalOpen && state.activeProvocationRequestId === null) {
+      openSelectionActionOverlay(
+        {
+          label: 'selected text',
+          preview: `Selected text: "${trimExcerpt(state.selectionAnchor.selectedTextExcerpt, 100)}"`
+        },
+        state.selectionPopoverAnchorRect
+      );
+    }
+  }
   renderSelectionAnchorAffordance();
+  renderProvocation();
 };
 
 const assignUnassigned = async (noteId: string, targetSectionId: string): Promise<void> => {
@@ -1041,16 +1442,15 @@ const renderCenterView = (): void => {
   elements.unassignedView.classList.toggle('hidden', view !== 'unassigned');
 };
 
-const renderTabs = (): void => {
-  const activeTab = getActiveTab();
-  elements.notesTabButton.classList.toggle('active', activeTab === 'notes');
-  elements.provocationTabButton.classList.toggle('active', activeTab === 'provocation');
-  elements.notesTab.classList.toggle('hidden', activeTab !== 'notes');
-  elements.provocationTab.classList.toggle('hidden', activeTab !== 'provocation');
+const renderFeedFilters = (): void => {
+  const filter = getActiveFeedFilter();
+  elements.feedFilterAllButton.classList.toggle('active', filter === 'all');
+  elements.feedFilterNotesButton.classList.toggle('active', filter === 'notes');
+  elements.feedFilterProvocationButton.classList.toggle('active', filter === 'provocation');
 };
 
 const syncSelectedNoteCard = (): void => {
-  const currentSelected = elements.notesList.querySelector<HTMLElement>('.note-card.selected');
+  const currentSelected = elements.unifiedFeedList.querySelector<HTMLElement>('.note-card.selected');
   if (currentSelected && currentSelected.dataset.noteId !== state.selectedNoteId) {
     currentSelected.classList.remove('selected');
   }
@@ -1059,7 +1459,7 @@ const syncSelectedNoteCard = (): void => {
     return;
   }
 
-  const nextSelected = elements.notesList.querySelector<HTMLElement>(
+  const nextSelected = elements.unifiedFeedList.querySelector<HTMLElement>(
     `article.note-card[data-note-id="${state.selectedNoteId}"]`
   );
   if (nextSelected) {
@@ -1067,8 +1467,28 @@ const syncSelectedNoteCard = (): void => {
   }
 };
 
-const renderNotes = (): void => {
-  elements.notesList.replaceChildren();
+const appendNoteAnchorMeta = (card: HTMLElement, note: NoteRecord): void => {
+  if (!note.selectedTextExcerpt && note.paragraphOrdinal === null) {
+    return;
+  }
+
+  const anchorMeta = document.createElement('p');
+  anchorMeta.className = 'note-anchor hint';
+
+  const segments = [`Anchor paragraph ${note.paragraphOrdinal !== null ? note.paragraphOrdinal + 1 : '?'}`];
+  if (note.startOffset !== null && note.endOffset !== null) {
+    segments.push(`chars ${note.startOffset}-${note.endOffset}`);
+  }
+  if (note.selectedTextExcerpt) {
+    segments.push(`"${trimExcerpt(note.selectedTextExcerpt, 80)}"`);
+  }
+
+  anchorMeta.textContent = segments.join(' | ');
+  card.append(anchorMeta);
+};
+
+const renderUnifiedFeed = (): void => {
+  elements.unifiedFeedList.replaceChildren();
 
   if (!state.activeSection) {
     renderSelectionAnchorAffordance();
@@ -1077,78 +1497,157 @@ const renderNotes = (): void => {
 
   renderSelectionAnchorAffordance();
 
-  for (const note of state.activeSection.notes) {
-    const card = document.createElement('article');
-    card.className = 'note-card';
-    card.dataset.noteId = note.id;
-    if (note.id === state.selectedNoteId) {
-      card.classList.add('selected');
+  const activeSectionId = state.activeSection.section.id;
+  const filter = getActiveFeedFilter();
+  const rows = state.activeSection.unifiedFeed.filter((row) => {
+    if (filter === 'all') {
+      return true;
     }
+    if (filter === 'notes') {
+      return row.itemType === 'note';
+    }
+    return row.itemType === 'provocation';
+  });
+
+  for (const row of rows) {
+    if (row.itemType === 'note') {
+      const note = state.activeSection.notes.find((candidate) => candidate.id === row.id);
+      const inActiveSection = row.sectionId === activeSectionId;
+      const card = document.createElement('article');
+      card.className = 'note-card';
+      card.dataset.noteId = row.id;
+      if (row.id === state.selectedNoteId && inActiveSection) {
+        card.classList.add('selected');
+      }
+
+      const cardHeader = document.createElement('div');
+      cardHeader.className = 'note-card-header';
+
+      const sectionHint = document.createElement('p');
+      sectionHint.className = 'hint';
+      sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
+      cardHeader.append(sectionHint);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'note-delete-button';
+      deleteButton.textContent = 'x';
+      deleteButton.setAttribute('aria-label', 'Delete note');
+      deleteButton.title = 'Delete note';
+      deleteButton.addEventListener('click', () => {
+        void withUiErrorHandling(async () => {
+          const envelope = (await desktopApi.note.delete({ noteId: row.id })) as Envelope<{ noteId: string }>;
+          unwrapEnvelope(envelope);
+          if (state.activeSection) {
+            await openSection(state.activeSection.section.id, { preserveView: true });
+          }
+        });
+      });
+      cardHeader.append(deleteButton);
+      card.append(cardHeader);
+
+      if (note && inActiveSection) {
+        const textarea = document.createElement('textarea');
+        textarea.className = 'note-text';
+        textarea.value = note.content;
+        textarea.placeholder = 'Write note...';
+
+        textarea.addEventListener('focus', () => {
+          if (state.selectedNoteId === note.id) {
+            return;
+          }
+          state.selectedNoteId = note.id;
+          syncSelectedNoteCard();
+          renderProvocation();
+        });
+
+        textarea.addEventListener('input', () => {
+          autosave.queue(note.id, textarea.value);
+        });
+
+        textarea.addEventListener('blur', () => {
+          void autosave.onBlur(note.id);
+        });
+
+        card.append(textarea);
+        appendNoteAnchorMeta(card, note);
+      } else {
+        const preview = document.createElement('p');
+        preview.className = 'feed-text';
+        preview.textContent = row.textContent;
+        card.append(preview);
+
+        const openButton = document.createElement('button');
+        openButton.type = 'button';
+        openButton.className = 'secondary';
+        openButton.textContent = 'Open Section';
+        openButton.addEventListener('click', () => {
+          void withUiErrorHandling(async () => {
+            await openSection(row.sectionId);
+            state.selectedNoteId = row.id;
+            syncSelectedNoteCard();
+          });
+        });
+        card.append(openButton);
+      }
+
+      elements.unifiedFeedList.append(card);
+      continue;
+    }
+
+    const card = document.createElement('article');
+    card.className = 'note-card provocation-card';
 
     const cardHeader = document.createElement('div');
     cardHeader.className = 'note-card-header';
+
+    const sectionHint = document.createElement('p');
+    sectionHint.className = 'hint';
+    sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
+    cardHeader.append(sectionHint);
 
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     deleteButton.className = 'note-delete-button';
     deleteButton.textContent = 'x';
-    deleteButton.setAttribute('aria-label', 'Delete note');
-    deleteButton.title = 'Delete note';
+    deleteButton.setAttribute('aria-label', 'Delete provocation');
+    deleteButton.title = 'Delete provocation';
     deleteButton.addEventListener('click', () => {
       void withUiErrorHandling(async () => {
-        const envelope = (await desktopApi.note.delete({ noteId: note.id })) as Envelope<{ noteId: string }>;
+        const envelope = (await desktopApi.ai.deleteProvocation({
+          provocationId: row.id
+        })) as Envelope<{ provocationId: string; deleted: boolean }>;
         unwrapEnvelope(envelope);
         if (state.activeSection) {
           await openSection(state.activeSection.section.id, { preserveView: true });
         }
       });
     });
-
     cardHeader.append(deleteButton);
     card.append(cardHeader);
 
-    const textarea = document.createElement('textarea');
-    textarea.className = 'note-text';
-    textarea.value = note.content;
-    textarea.placeholder = 'Write note...';
+    const provocationText = document.createElement('pre');
+    provocationText.className = 'provocation-output';
+    provocationText.textContent = row.textContent;
+    card.append(provocationText);
 
-    textarea.addEventListener('focus', () => {
-      if (state.selectedNoteId === note.id) {
-        return;
-      }
-      state.selectedNoteId = note.id;
-      syncSelectedNoteCard();
-      renderProvocation();
-    });
-
-    textarea.addEventListener('input', () => {
-      autosave.queue(note.id, textarea.value);
-    });
-
-    textarea.addEventListener('blur', () => {
-      void autosave.onBlur(note.id);
-    });
-
-    card.append(textarea);
-
-    if (note.selectedTextExcerpt || note.paragraphOrdinal !== null) {
-      const anchorMeta = document.createElement('p');
-      anchorMeta.className = 'note-anchor hint';
-
-      const segments = [`Anchor paragraph ${note.paragraphOrdinal !== null ? note.paragraphOrdinal + 1 : '?'}`];
-      if (note.startOffset !== null && note.endOffset !== null) {
-        segments.push(`chars ${note.startOffset}-${note.endOffset}`);
-      }
-      if (note.selectedTextExcerpt) {
-        segments.push(`"${trimExcerpt(note.selectedTextExcerpt, 80)}"`);
-      }
-
-      anchorMeta.textContent = segments.join(' | ');
-      card.append(anchorMeta);
+    if (row.sectionId !== activeSectionId) {
+      const openButton = document.createElement('button');
+      openButton.type = 'button';
+      openButton.className = 'secondary';
+      openButton.textContent = 'Open Section';
+      openButton.addEventListener('click', () => {
+        void withUiErrorHandling(async () => {
+          await openSection(row.sectionId);
+        });
+      });
+      card.append(openButton);
     }
 
-    elements.notesList.append(card);
+    elements.unifiedFeedList.append(card);
   }
+
+  syncSelectedNoteCard();
 };
 
 const getAuthGuidance = (auth: AuthStatusSnapshot | null): string => {
@@ -1248,6 +1747,127 @@ const renderAuthSettings = (): void => {
   elements.authGuidance.textContent = state.authGuidanceOverride ?? getAuthGuidance(auth);
 };
 
+const getWorkspaceDefaultProvocationStyle = (): ProvocationStyle =>
+  state.settings?.defaultProvocationStyle ?? 'skeptical';
+
+const getSelectionTriggeredProvocationTarget = (): SelectionTriggeredProvocationTarget | null => {
+  const section = state.activeSection;
+  if (!section) {
+    return null;
+  }
+
+  if (state.selectionAnchor) {
+    return {
+      label: 'selected text',
+      preview: `Selected text: "${trimExcerpt(state.selectionAnchor.selectedTextExcerpt, 100)}"`
+    };
+  }
+
+  const selectedNote = state.selectedNoteId
+    ? section.notes.find((note) => note.id === state.selectedNoteId) ?? null
+    : null;
+  if (selectedNote) {
+    const trimmed = selectedNote.content.trim();
+    const preview = trimmed ? trimExcerpt(trimmed, 100) : '(empty note)';
+    return {
+      noteId: selectedNote.id,
+      label: 'selected note',
+      preview: `Selected note: "${preview}"`
+    };
+  }
+
+  return null;
+};
+
+const renderSelectionActionOverlay = (): void => {
+  const target = state.pendingSelectionProvocationTarget;
+  const preview = target?.preview ?? 'Selected target: -';
+  elements.selectionActionPreview.textContent = preview;
+  elements.selectionNotePreview.textContent = preview;
+
+  const canContinue = Boolean(state.activeSection && target);
+  const canCreateSelectionNote = Boolean(canContinue && target?.label === 'selected text');
+  elements.selectionActionNoteButton.disabled = !canCreateSelectionNote;
+  elements.selectionActionProvocationButton.disabled = !canContinue;
+  elements.selectionNoteCreateButton.disabled = !canCreateSelectionNote || state.activeProvocationRequestId !== null;
+};
+
+const renderProvocationStyleOverlay = (): void => {
+  const activeStyle = state.pendingSelectionProvocationStyle;
+  elements.provocationStyleMenuButton.textContent = `Style: ${activeStyle}`;
+  elements.provocationStyleSelectionPreview.textContent =
+    state.pendingSelectionProvocationTarget?.preview ?? 'Selected target: -';
+
+  for (const option of provocationStyleOptions) {
+    const style = option.dataset.style as ProvocationStyle | undefined;
+    const selected = style === activeStyle;
+    option.classList.toggle('active', selected);
+    option.setAttribute('aria-selected', selected ? 'true' : 'false');
+  }
+
+  const canGenerate = Boolean(
+    state.activeSection && state.pendingSelectionProvocationTarget && state.activeProvocationRequestId === null
+  );
+  elements.provocationStyleGenerateButton.disabled = !canGenerate;
+
+  if (state.provocationStyleOverlayOpen) {
+    queueMicrotask(() => {
+      positionProvocationStyleOverlay();
+    });
+  }
+};
+
+const openSelectionActionOverlay = (
+  target: SelectionTriggeredProvocationTarget,
+  anchorRect: ViewportRect
+): void => {
+  closeOutlineDrawer();
+  state.pendingSelectionProvocationTarget = target;
+  state.selectionPopoverAnchorRect = anchorRect;
+  state.pendingSelectionProvocationStyle = getWorkspaceDefaultProvocationStyle();
+  setSelectionPopoverMode('chooser');
+  renderSelectionActionOverlay();
+  renderProvocationStyleOverlay();
+  elements.selectionActionMessage.textContent = '';
+  elements.selectionNoteMessage.textContent = '';
+  elements.provocationStyleMessage.textContent = '';
+  setProvocationStyleOverlayOpen(true);
+};
+
+const setPendingSelectionProvocationStyle = (style: ProvocationStyle): void => {
+  state.pendingSelectionProvocationStyle = style;
+  setProvocationStyleMenuOpen(false);
+  renderProvocationStyleOverlay();
+};
+
+const openProvocationStyleOverlay = (): void => {
+  setSelectionPopoverMode('provocation');
+  elements.provocationStyleMessage.textContent = '';
+  renderProvocationStyleOverlay();
+};
+
+const openSelectionNoteOverlay = (): void => {
+  setSelectionPopoverMode('note');
+  elements.selectionNoteMessage.textContent = '';
+  renderSelectionActionOverlay();
+};
+
+const repositionSelectionTriggeredOverlay = (): void => {
+  if (!state.provocationStyleOverlayOpen || state.pendingSelectionProvocationTarget?.label !== 'selected text') {
+    return;
+  }
+
+  const rect = isPdfDocumentWithNativeSurface()
+    ? readSelectionViewportRect(elements.pdfDocument)
+    : readSelectionViewportRect(elements.sectionContent);
+  if (!rect) {
+    return;
+  }
+
+  state.selectionPopoverAnchorRect = rect;
+  positionProvocationStyleOverlay();
+};
+
 const deriveAiAvailability = (): AiAvailability => {
   const activeDocument = getActiveDocument();
   const online =
@@ -1314,36 +1934,9 @@ const deriveAiAvailability = (): AiAvailability => {
 };
 
 const renderProvocation = (): void => {
-  const section = state.activeSection;
-  const activeProvocation = section?.activeProvocation ?? null;
-  const selectedNote = state.selectedNoteId
-    ? section?.notes.find((note) => note.id === state.selectedNoteId) ?? null
-    : null;
-
-  elements.provocationTarget.textContent = selectedNote
-    ? 'Target: selected note'
-    : 'Target: current section';
-
-  const loading = state.activeProvocationRequestId !== null;
-  const aiAvailability = deriveAiAvailability();
-  const canGenerate = Boolean(section && aiAvailability?.enabled && !loading);
-
-  elements.generateProvocationButton.disabled = !canGenerate;
-  elements.regenerateProvocationButton.disabled = !canGenerate || !activeProvocation;
-  elements.dismissProvocationButton.disabled = !section || !activeProvocation;
-  elements.cancelAiButton.disabled = !loading;
-
-  elements.provocationOutput.textContent = activeProvocation
-    ? activeProvocation.outputText
-    : loading
-      ? 'Generating provocation...'
-      : 'No active provocation.';
-
-  const statusMessage = aiAvailability.enabled ? '' : aiAvailability.message;
-  elements.provocationMessage.textContent = statusMessage;
-
-  const activeDocument = getActiveDocument();
-  elements.provocationsEnabledInput.checked = activeDocument?.provocationsEnabled ?? true;
+  // Sidebar provocation controls were removed; only selection popover states need re-rendering here.
+  renderSelectionActionOverlay();
+  renderProvocationStyleOverlay();
 };
 
 const renderStatusBar = (): void => {
@@ -1450,9 +2043,11 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   state.unassignedNotes = [];
   state.activeSection = null;
   state.selectedNoteId = null;
+  state.selectedFeedFilterByDocument.clear();
   state.reassignmentQueue = [];
   state.selectionAnchor = null;
   state.pdfSelectionMappingFailed = false;
+  state.selectionPopoverAnchorRect = null;
   state.pdfZoomByDocument.clear();
   state.pdfRenderToken += 1;
   state.pdfRenderFailed = false;
@@ -1464,7 +2059,7 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   renderSections();
   renderSectionView();
   renderUnassignedView();
-  renderTabs();
+  renderFeedFilters();
   renderCenterView();
   renderReassignmentModal();
 
@@ -1496,11 +2091,16 @@ const refreshActiveDocumentLists = async (): Promise<void> => {
 };
 
 const openDocument = async (documentId: string): Promise<void> => {
+  if (state.provocationStyleOverlayOpen) {
+    closeProvocationStyleOverlay();
+  }
+
   if (state.activeDocumentId !== documentId) {
     state.pdfRenderToken += 1;
     state.pdfRenderFailed = false;
     state.selectionAnchor = null;
     state.pdfSelectionMappingFailed = false;
+    state.selectionPopoverAnchorRect = null;
     clearPdfDocument();
   }
 
@@ -1512,8 +2112,8 @@ const openDocument = async (documentId: string): Promise<void> => {
   state.unassignedNotes = listing.unassignedNotes;
   upsertDocument(listing.document);
 
-  if (!state.selectedTabByDocument.has(documentId)) {
-    state.selectedTabByDocument.set(documentId, 'notes');
+  if (!state.selectedFeedFilterByDocument.has(documentId)) {
+    state.selectedFeedFilterByDocument.set(documentId, 'all');
   }
 
   if (!state.centerViewByDocument.has(documentId)) {
@@ -1526,7 +2126,7 @@ const openDocument = async (documentId: string): Promise<void> => {
   renderDocuments();
   renderSections();
   renderUnassignedView();
-  renderTabs();
+  renderFeedFilters();
   renderCenterView();
 
   if (preferredSectionId) {
@@ -1536,8 +2136,9 @@ const openDocument = async (documentId: string): Promise<void> => {
     state.selectedNoteId = null;
     state.selectionAnchor = null;
     state.pdfSelectionMappingFailed = false;
+    state.selectionPopoverAnchorRect = null;
     renderSectionView();
-    renderNotes();
+    renderUnifiedFeed();
     renderProvocation();
     renderStatusBar();
   }
@@ -1549,6 +2150,10 @@ const openSection = async (
     preserveView: boolean;
   } = { preserveView: false }
 ): Promise<void> => {
+  if (state.provocationStyleOverlayOpen) {
+    closeProvocationStyleOverlay();
+  }
+
   const previousSourcePath = state.activeSection?.document.sourcePath ?? null;
   const envelope = (await desktopApi.section.get({ sectionId })) as Envelope<SectionSnapshot>;
   const snapshot = unwrapEnvelope(envelope);
@@ -1564,6 +2169,7 @@ const openSection = async (
   state.activeSectionByDocument.set(snapshot.document.id, sectionId);
   state.selectionAnchor = null;
   state.pdfSelectionMappingFailed = false;
+  state.selectionPopoverAnchorRect = null;
   upsertDocument(snapshot.document);
 
   if (!snapshot.notes.some((note) => note.id === state.selectedNoteId)) {
@@ -1578,7 +2184,7 @@ const openSection = async (
   renderDocuments();
   renderSections();
   renderSectionView();
-  renderNotes();
+  renderUnifiedFeed();
   renderProvocation();
   renderStatusBar();
 };
@@ -1655,23 +2261,6 @@ const handleLocateFile = async (): Promise<void> => {
   }
 };
 
-const handleNewNote = async (): Promise<void> => {
-  if (!state.activeSection) {
-    return;
-  }
-
-  const envelope = (await desktopApi.note.create({
-    documentId: state.activeSection.document.id,
-    sectionId: state.activeSection.section.id,
-    text: ''
-  })) as Envelope<NoteRecord>;
-
-  const created = unwrapEnvelope(envelope);
-  state.selectionAnchor = null;
-  state.selectedNoteId = created.id;
-  await openSection(state.activeSection.section.id, { preserveView: true });
-};
-
 const handleNewNoteFromSelection = async (): Promise<void> => {
   if (!state.activeSection) {
     return;
@@ -1714,37 +2303,16 @@ const handleNewNoteFromSelection = async (): Promise<void> => {
   const created = unwrapEnvelope(envelope);
   state.selectionAnchor = null;
   state.pdfSelectionMappingFailed = false;
+  state.selectionPopoverAnchorRect = null;
   state.selectedNoteId = created.id;
   await openSection(state.activeSection.section.id, { preserveView: true });
 };
 
-const handleProvocationToggle = async (): Promise<void> => {
-  if (!state.activeDocumentId) {
-    return;
-  }
-
-  const envelope = (await desktopApi.settings.update({
-    documentId: state.activeDocumentId,
-    provocationsEnabled: elements.provocationsEnabledInput.checked
-  })) as Envelope<unknown>;
-
-  unwrapEnvelope(envelope);
-  await refreshActiveDocumentLists();
-  if (state.activeSection) {
-    await openSection(state.activeSection.section.id, { preserveView: true });
-  }
-};
-
-const readProvocationStyle = (): ProvocationStyle | undefined => {
-  const value = elements.provocationStyleOverrideInput.value;
-  if (!value) {
-    return undefined;
-  }
-
-  return value as ProvocationStyle;
-};
-
-const generateProvocation = async (initial: { acknowledgeCloudWarning?: boolean } = {}): Promise<void> => {
+const generateProvocation = async (initial: {
+  acknowledgeCloudWarning?: boolean;
+  noteId?: string;
+  style?: ProvocationStyle;
+} = {}): Promise<void> => {
   const section = state.activeSection;
   if (!section) {
     return;
@@ -1762,8 +2330,8 @@ const generateProvocation = async (initial: { acknowledgeCloudWarning?: boolean 
         requestId: currentRequestId,
         documentId: section.document.id,
         sectionId: section.section.id,
-        noteId: state.selectedNoteId ?? undefined,
-        style: readProvocationStyle(),
+        noteId: initial.noteId,
+        style: initial.style,
         acknowledgeCloudWarning
       })) as Envelope<ProvocationRecord>;
 
@@ -1800,37 +2368,46 @@ const generateProvocation = async (initial: { acknowledgeCloudWarning?: boolean 
   }
 };
 
-const handleDismissProvocation = async (): Promise<void> => {
-  if (!state.activeSection) {
+
+const handleSelectionActionChooseNote = (): void => {
+  if (!state.pendingSelectionProvocationTarget) {
     return;
   }
-
-  const activeProvocation = state.activeSection.activeProvocation;
-  if (!activeProvocation) {
+  if (state.pendingSelectionProvocationTarget.label !== 'selected text') {
+    elements.selectionActionMessage.textContent = 'Select text before creating a note from selection.';
     return;
   }
-
-  const envelope = (await desktopApi.ai.deleteProvocation({
-    provocationId: activeProvocation.id
-  })) as Envelope<{ provocationId: string; deleted: boolean }>;
-
-  unwrapEnvelope(envelope);
-  await openSection(state.activeSection.section.id, { preserveView: true });
+  openSelectionNoteOverlay();
 };
 
-const handleCancelAi = async (): Promise<void> => {
-  if (!state.activeProvocationRequestId) {
+const handleSelectionActionChooseProvocation = (): void => {
+  if (!state.pendingSelectionProvocationTarget) {
+    return;
+  }
+  openProvocationStyleOverlay();
+};
+
+const handleSelectionTriggeredProvocationGenerate = async (): Promise<void> => {
+  if (!state.pendingSelectionProvocationTarget) {
     return;
   }
 
-  const request = state.activeProvocationRequestId;
-  const envelope = (await desktopApi.ai.cancel({ requestId: request })) as Envelope<{
-    requestId: string;
-    cancelled: boolean;
-  }>;
+  elements.provocationStyleMessage.textContent = '';
+  await generateProvocation({
+    noteId: state.pendingSelectionProvocationTarget.noteId,
+    style: state.pendingSelectionProvocationStyle
+  });
+  closeProvocationStyleOverlay();
+};
 
-  unwrapEnvelope(envelope);
-  appendLog(`Cancellation requested for ${request}.`);
+const handleSelectionTriggeredNoteCreate = async (): Promise<void> => {
+  if (!state.pendingSelectionProvocationTarget) {
+    return;
+  }
+
+  elements.selectionNoteMessage.textContent = '';
+  await handleNewNoteFromSelection();
+  closeProvocationStyleOverlay();
 };
 
 const handleSettingsSave = async (): Promise<void> => {
@@ -1942,6 +2519,9 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
     elements.workspaceMessage.textContent = '';
     elements.importMessage.textContent = '';
     elements.settingsMessage.textContent = '';
+    elements.selectionActionMessage.textContent = '';
+    elements.selectionNoteMessage.textContent = '';
+    elements.provocationStyleMessage.textContent = '';
     renderStatusBar();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -1954,7 +2534,17 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
       }
     }
 
-    if (state.settingsModalOpen) {
+    if (state.provocationStyleOverlayOpen) {
+      if (state.selectionPopoverMode === 'note') {
+        elements.selectionNoteMessage.textContent = message;
+      } else if (state.selectionPopoverMode === 'provocation') {
+        elements.provocationStyleMessage.textContent = message;
+      } else {
+        elements.selectionActionMessage.textContent = message;
+      }
+      elements.importMessage.textContent = message;
+      elements.settingsMessage.textContent = message;
+    } else if (state.settingsModalOpen) {
       elements.settingsMessage.textContent = message;
       elements.importMessage.textContent = message;
     } else if (getActiveDocument()) {
@@ -1968,21 +2558,22 @@ const withUiErrorHandling = async (work: () => Promise<void>): Promise<void> => 
 
 const wireEvents = (): void => {
   elements.sectionContent.addEventListener('mouseup', () => {
-    updateSelectionAnchor();
+    updateSelectionAnchor({ openPopoverOnSelection: true });
   });
   elements.sectionContent.addEventListener('keyup', () => {
-    updateSelectionAnchor();
+    updateSelectionAnchor({ openPopoverOnSelection: true });
   });
   elements.pdfDocument.addEventListener('mouseup', () => {
-    updateSelectionAnchor();
+    updateSelectionAnchor({ openPopoverOnSelection: true });
   });
   elements.pdfDocument.addEventListener('keyup', () => {
-    updateSelectionAnchor();
+    updateSelectionAnchor({ openPopoverOnSelection: true });
   });
-  document.addEventListener('selectionchange', () => {
-    if (isPdfDocumentWithNativeSurface()) {
-      updateSelectionAnchor();
-    }
+  elements.sectionContent.addEventListener('scroll', () => {
+    repositionSelectionTriggeredOverlay();
+  });
+  elements.pdfViewport.addEventListener('scroll', () => {
+    repositionSelectionTriggeredOverlay();
   });
 
   elements.openWorkspaceButton.addEventListener('click', () => {
@@ -2055,6 +2646,11 @@ const wireEvents = (): void => {
   });
 
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.provocationStyleOverlayOpen) {
+      closeProvocationStyleOverlay();
+      return;
+    }
+
     if (event.key === 'Escape' && state.settingsModalOpen) {
       closeSettingsModal();
       return;
@@ -2065,6 +2661,40 @@ const wireEvents = (): void => {
     }
   });
 
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Node)) {
+      if (state.provocationStyleMenuOpen) {
+        setProvocationStyleMenuOpen(false);
+      }
+      if (state.provocationStyleOverlayOpen) {
+        closeProvocationStyleOverlay();
+      }
+      return;
+    }
+
+    if (state.provocationStyleOverlayOpen && !elements.provocationStyleOverlay.contains(event.target)) {
+      if (Date.now() - state.provocationStyleOverlayOpenedAtMs < 180) {
+        return;
+      }
+      closeProvocationStyleOverlay();
+      return;
+    }
+
+    if (!state.provocationStyleMenuOpen) {
+      return;
+    }
+
+    if (!elements.provocationStyleMenu.contains(event.target) && !elements.provocationStyleMenuButton.contains(event.target)) {
+      setProvocationStyleMenuOpen(false);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (state.provocationStyleOverlayOpen) {
+      positionProvocationStyleOverlay();
+    }
+  });
+
   elements.reimportButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
       await handleReimport();
@@ -2072,24 +2702,16 @@ const wireEvents = (): void => {
     });
   });
 
-  elements.notesTabButton.addEventListener('click', () => {
-    setActiveTab('notes');
+  elements.feedFilterAllButton.addEventListener('click', () => {
+    setActiveFeedFilter('all');
   });
 
-  elements.provocationTabButton.addEventListener('click', () => {
-    setActiveTab('provocation');
+  elements.feedFilterNotesButton.addEventListener('click', () => {
+    setActiveFeedFilter('notes');
   });
 
-  elements.newNoteButton.addEventListener('click', () => {
-    void withUiErrorHandling(async () => {
-      await handleNewNote();
-    });
-  });
-
-  elements.newNoteFromSelectionButton.addEventListener('click', () => {
-    void withUiErrorHandling(async () => {
-      await handleNewNoteFromSelection();
-    });
+  elements.feedFilterProvocationButton.addEventListener('click', () => {
+    setActiveFeedFilter('provocation');
   });
 
   elements.pdfZoomOutButton.addEventListener('click', () => {
@@ -2104,28 +2726,48 @@ const wireEvents = (): void => {
     setPdfZoom(PDF_ZOOM_DEFAULT);
   });
 
-  elements.provocationsEnabledInput.addEventListener('change', () => {
-    void withUiErrorHandling(handleProvocationToggle);
+  elements.provocationStyleMenuButton.addEventListener('click', () => {
+    setProvocationStyleMenuOpen(!state.provocationStyleMenuOpen);
   });
 
-  elements.generateProvocationButton.addEventListener('click', () => {
+  elements.selectionActionNoteButton.addEventListener('click', () => {
+    handleSelectionActionChooseNote();
+  });
+
+  elements.selectionActionProvocationButton.addEventListener('click', () => {
+    handleSelectionActionChooseProvocation();
+  });
+
+  elements.selectionNoteBackButton.addEventListener('click', () => {
+    setSelectionPopoverMode('chooser');
+    renderSelectionActionOverlay();
+  });
+
+  elements.selectionNoteCreateButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
-      await generateProvocation();
+      await handleSelectionTriggeredNoteCreate();
     });
   });
 
-  elements.regenerateProvocationButton.addEventListener('click', () => {
-    void withUiErrorHandling(async () => {
-      await generateProvocation();
+  for (const option of provocationStyleOptions) {
+    option.addEventListener('click', () => {
+      const style = option.dataset.style;
+      if (!style || !PROVOCATION_STYLES.includes(style as ProvocationStyle)) {
+        return;
+      }
+      setPendingSelectionProvocationStyle(style as ProvocationStyle);
     });
+  }
+
+  elements.provocationStyleCancelButton.addEventListener('click', () => {
+    setSelectionPopoverMode('chooser');
+    renderSelectionActionOverlay();
   });
 
-  elements.dismissProvocationButton.addEventListener('click', () => {
-    void withUiErrorHandling(handleDismissProvocation);
-  });
-
-  elements.cancelAiButton.addEventListener('click', () => {
-    void withUiErrorHandling(handleCancelAi);
+  elements.provocationStyleGenerateButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleSelectionTriggeredProvocationGenerate();
+    });
   });
 
   elements.authModeInput.addEventListener('change', () => {
@@ -2192,10 +2834,10 @@ const bootstrap = async (): Promise<void> => {
   wireEvents();
   renderWorkspaceMode(false);
   renderCenterView();
-  renderTabs();
+  renderFeedFilters();
   renderSectionView();
   renderUnassignedView();
-  renderNotes();
+  renderUnifiedFeed();
   renderAuthSettings();
   renderProvocation();
   renderStatusBar();

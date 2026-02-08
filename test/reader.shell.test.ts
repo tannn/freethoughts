@@ -25,7 +25,7 @@ describe('reader shell controller', () => {
     expect(shell.snapshot().activeSectionId).toBe('sec-2');
 
     shell.openDocument('doc-2', 'sec-a');
-    expect(shell.snapshot().selectedTab).toBe('notes');
+    expect(shell.snapshot().selectedTab).toBe('all');
 
     shell.openDocument('doc-1');
     expect(shell.snapshot().selectedTab).toBe('provocation');

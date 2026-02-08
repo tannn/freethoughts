@@ -73,6 +73,18 @@ interface SectionRow {
   content: string;
 }
 
+interface DbUnifiedFeedRow {
+  id: string;
+  item_type: 'note' | 'provocation';
+  section_id: string;
+  section_heading: string;
+  section_order_index: number;
+  paragraph_ordinal: number | null;
+  start_offset: number | null;
+  created_at: string;
+  text_content: string;
+}
+
 interface NextRevisionRow {
   next_revision_number: number;
 }
@@ -118,12 +130,25 @@ export interface SectionDetail {
   anchorKey: string;
 }
 
+export interface UnifiedFeedItem {
+  id: string;
+  itemType: 'note' | 'provocation';
+  sectionId: string;
+  sectionHeading: string;
+  sectionOrderIndex: number;
+  paragraphOrdinal: number | null;
+  startOffset: number | null;
+  createdAt: string;
+  textContent: string;
+}
+
 export interface SectionSnapshot {
   document: DocumentSummary;
   section: SectionDetail;
   notes: NoteRecord[];
   activeProvocation: ReturnType<ProvocationService['getActive']>;
   provocations: ReturnType<ProvocationService['listHistory']>;
+  unifiedFeed: UnifiedFeedItem[];
   aiAvailability: ReturnType<typeof getAiActionAvailability>;
   sourceFileStatus: SourceFileStatus;
 }
@@ -385,6 +410,7 @@ export class DesktopRuntime {
     const network = getNetworkStatus(this.onlineProvider);
     const aiAvailability = getAiActionAvailability(network.online, documentSummary.provocationsEnabled);
     const provocationHistory = this.provocationService.listHistory(section.document_id, section.id);
+    const unifiedFeed = this.listUnifiedFeed(document.id, section.revision_id);
 
     return {
       document: documentSummary,
@@ -399,6 +425,7 @@ export class DesktopRuntime {
       notes,
       activeProvocation: provocationHistory[0] ?? null,
       provocations: provocationHistory,
+      unifiedFeed,
       aiAvailability,
       sourceFileStatus: getSourceFileStatus(document.source_path)
     };
@@ -941,6 +968,83 @@ export class DesktopRuntime {
     `);
 
     return rows;
+  }
+
+  private listUnifiedFeed(documentId: string, revisionId: string): UnifiedFeedItem[] {
+    const rows = this.sqlite.queryJson<DbUnifiedFeedRow>(`
+      WITH feed AS (
+        SELECT
+          n.id AS id,
+          'note' AS item_type,
+          n.section_id AS section_id,
+          s.heading AS section_heading,
+          s.order_index AS section_order_index,
+          n.paragraph_ordinal AS paragraph_ordinal,
+          n.start_offset AS start_offset,
+          n.created_at AS created_at,
+          n.content AS text_content
+        FROM notes n
+        INNER JOIN sections s ON s.id = n.section_id
+        WHERE n.document_id = ${sqlString(documentId)}
+          AND s.document_id = ${sqlString(documentId)}
+          AND s.revision_id = ${sqlString(revisionId)}
+
+        UNION ALL
+
+        SELECT
+          p.id AS id,
+          'provocation' AS item_type,
+          p.section_id AS section_id,
+          s.heading AS section_heading,
+          s.order_index AS section_order_index,
+          NULL AS paragraph_ordinal,
+          NULL AS start_offset,
+          p.created_at AS created_at,
+          p.output_text AS text_content
+        FROM provocations p
+        INNER JOIN sections s ON s.id = p.section_id
+        WHERE p.document_id = ${sqlString(documentId)}
+          AND p.revision_id = ${sqlString(revisionId)}
+          AND s.document_id = ${sqlString(documentId)}
+          AND s.revision_id = ${sqlString(revisionId)}
+          AND p.is_active = 1
+      )
+      SELECT
+        id,
+        item_type,
+        section_id,
+        section_heading,
+        section_order_index,
+        paragraph_ordinal,
+        start_offset,
+        created_at,
+        text_content
+      FROM feed
+      ORDER BY
+        section_order_index ASC,
+        CASE
+          WHEN paragraph_ordinal IS NULL THEN -1
+          ELSE paragraph_ordinal
+        END ASC,
+        CASE
+          WHEN start_offset IS NULL THEN -1
+          ELSE start_offset
+        END ASC,
+        created_at ASC,
+        id ASC;
+    `);
+
+    return rows.map((row) => ({
+      id: row.id,
+      itemType: row.item_type,
+      sectionId: row.section_id,
+      sectionHeading: row.section_heading,
+      sectionOrderIndex: row.section_order_index,
+      paragraphOrdinal: row.paragraph_ordinal,
+      startOffset: row.start_offset,
+      createdAt: row.created_at,
+      textContent: row.text_content
+    }));
   }
 
   private assertSectionInCurrentRevision(documentId: string, sectionId: string): void {

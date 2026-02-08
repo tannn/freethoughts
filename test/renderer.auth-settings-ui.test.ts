@@ -33,13 +33,14 @@ describe('renderer auth settings markup', () => {
     expect(appTs).toContain('Codex login lacks required generation permission. Switch to API key mode.');
   });
 
-  it('keeps notes and provocation pane structure intact', () => {
+  it('keeps unified-feed and selection popover entry structure intact', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
-    expect(html).toContain('id="notes-tab-button"');
-    expect(html).toContain('id="provocation-tab-button"');
-    expect(html).toContain('id="notes-list"');
-    expect(html).toContain('id="provocation-message"');
+    expect(html).toContain('id="feed-filter-all-button"');
+    expect(html).toContain('id="feed-filter-notes-button"');
+    expect(html).toContain('id="feed-filter-provocation-button"');
+    expect(html).toContain('id="unified-feed-list"');
+    expect(html).toContain('id="selection-action-chooser"');
   });
 
   it('wires settings modal open and close behavior in renderer logic', () => {

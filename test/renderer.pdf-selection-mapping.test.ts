@@ -12,8 +12,14 @@ describe('renderer pdf selection mapping', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
 
     expect(appTs).toContain('mapPdfSelectionAnchorToOffsets');
-    expect(appTs).toContain('normalizedSection.indexOf(selectedTextExcerpt, boundedHintStart)');
-    expect(appTs).toContain('countParagraphOrdinal(normalizedSection, mappedStart)');
+    expect(appTs).toContain('candidateNeedles');
+    expect(appTs).toContain('suffixOverlapLength');
+    expect(appTs).toContain('prefixOverlapLength');
+    expect(appTs).toContain('buildSectionOffsetMap');
+    expect(appTs).toContain('normalizedOffsetToOriginalOffset');
+    expect(appTs).toContain('const mappedStartNorm = bestMatch.start + leadingTrim');
+    expect(appTs).toContain('const mappedStart = normalizedOffsetToOriginalOffset(sectionOffsetMap.offsets, mappedStartNorm)');
+    expect(appTs).toContain('countParagraphOrdinal(normalizedSection, mappedStartNorm)');
     expect(appTs).toContain('paragraphOrdinal: selection.paragraphOrdinal');
     expect(appTs).toContain('startOffset: selection.startOffset');
     expect(appTs).toContain('endOffset: selection.endOffset');
@@ -22,7 +28,7 @@ describe('renderer pdf selection mapping', () => {
   it('surfaces recoverable guidance when deterministic mapping fails', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
 
-    expect(appTs).toContain('Could not map selected PDF text to a stable anchor. Adjust the selection and try again.');
     expect(appTs).toContain('Unable to map PDF selection to a deterministic anchor. Adjust the selection and try again.');
+    expect(appTs).toContain('selection-action-message');
   });
 });
