@@ -1899,7 +1899,7 @@ const renderUnifiedFeed = (): void => {
 
       elements.unifiedFeedList.append(card);
       const attached = attachedProvocations.get(row.id);
-      if (attached && filter !== 'provocation') {
+      if (attached && filter === 'all') {
         const attachedCard = buildProvocationCard(attached);
         attachedCard.classList.add('note-provocation-attachment');
         elements.unifiedFeedList.append(attachedCard);
