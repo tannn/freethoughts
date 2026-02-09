@@ -13,9 +13,11 @@
     "fixtures:phase5": "node scripts/generate-phase5-fixtures.mjs",
     "bench:phase5": "npm run fixtures:phase5 && TFT_RUN_PHASE5_BENCH=1 vitest run --run test/qa.phase5-fixtures-bench.test.ts",
     "acceptance:phase5": "node scripts/run-phase5-acceptance.mjs",
-    "ci": "npm run lint && npm run typecheck && npm test"
+    "ci": "npm run lint && npm run typecheck && npm test",
+    "bundle:mac": "npm run build:app && electron-packager . \"Free Thoughts\" --platform=darwin --arch=arm64 --out=release --overwrite --prune=false"
   },
   "devDependencies": {
+    "@electron/packager": "^19.0.2",
     "@types/node": "^24.3.0",
     "electron": "^37.2.0",
     "typescript": "^5.9.2",
@@ -24,5 +26,6 @@
   },
   "dependencies": {
     "pdfjs-dist": "^4.10.38"
-  }
+  },
+  "main": "dist/main/electronMain.js"
 }
