@@ -270,6 +270,10 @@ const normalizeMatchText = (text: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+const normalizeMatchNeedle = (text: string): string =>
+  normalizeSectionText(text)
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
 
 interface SectionOffsetMap {
   text: string;
@@ -286,6 +290,34 @@ const buildSectionOffsetMap = (source: string): SectionOffsetMap => {
       continue;
     }
     normalized += char;
+    offsets.push(index);
+  }
+
+  offsets.push(source.length);
+  return {
+    text: normalized,
+    offsets
+  };
+};
+
+const buildMatchOffsetMap = (source: string): SectionOffsetMap => {
+  let normalized = '';
+  const offsets: number[] = [];
+  let inWhitespace = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    if (/\s/.test(char)) {
+      if (inWhitespace) {
+        continue;
+      }
+      normalized += ' ';
+      offsets.push(index);
+      inWhitespace = true;
+      continue;
+    }
+    inWhitespace = false;
+    normalized += char.toLowerCase();
     offsets.push(index);
   }
 
@@ -331,6 +363,90 @@ const countParagraphOrdinal = (text: string, startOffset: number): number => {
   }
   const matches = text.slice(0, startOffset).match(/\n{2,}/g);
   return matches ? matches.length : 0;
+};
+
+const findBestNeedleMatch = (
+  normalizedSection: string,
+  candidateNeedles: Iterable<string>,
+  options: {
+    contextBeforeNorm: string;
+    contextAfterNorm: string;
+    boundedHintStart: number;
+    beforeWindow: number;
+    afterWindow: number;
+    rawSelectedText: string;
+    selectedTextExcerpt: string;
+  }
+): { start: number; needle: string; score: number } | null => {
+  const {
+    contextBeforeNorm,
+    contextAfterNorm,
+    boundedHintStart,
+    beforeWindow,
+    afterWindow,
+    rawSelectedText,
+    selectedTextExcerpt
+  } = options;
+
+  let bestMatch:
+    | {
+        start: number;
+        needle: string;
+        score: number;
+      }
+    | null = null;
+
+  for (const needle of candidateNeedles) {
+    if (!needle) {
+      continue;
+    }
+
+    let searchStart = 0;
+    while (searchStart <= normalizedSection.length) {
+      const foundAt = normalizedSection.indexOf(needle, searchStart);
+      if (foundAt === -1) {
+        break;
+      }
+
+      let score = 0;
+      const distance = Math.abs(foundAt - boundedHintStart);
+      score -= Math.min(distance, 400) * 0.2;
+
+      if (contextBeforeNorm) {
+        const beforeSlice = normalizeMatchText(
+          normalizedSection.slice(Math.max(0, foundAt - beforeWindow), foundAt)
+        );
+        score += suffixOverlapLength(beforeSlice, contextBeforeNorm) * 3;
+      }
+
+      if (contextAfterNorm) {
+        const afterSlice = normalizeMatchText(
+          normalizedSection.slice(foundAt + needle.length, Math.min(normalizedSection.length, foundAt + needle.length + afterWindow))
+        );
+        score += prefixOverlapLength(afterSlice, contextAfterNorm) * 3;
+      }
+
+      if (needle === rawSelectedText && rawSelectedText !== selectedTextExcerpt) {
+        score += 2;
+      }
+
+      if (
+        !bestMatch ||
+        score > bestMatch.score ||
+        (score === bestMatch.score && Math.abs(foundAt - boundedHintStart) < Math.abs(bestMatch.start - boundedHintStart))
+      ) {
+        bestMatch = {
+          start: foundAt,
+          needle,
+          score
+        };
+      }
+
+      searchStart = foundAt + 1;
+    }
+  }
+
+  return bestMatch;
 };
 
 const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | null => {
@@ -401,66 +517,65 @@ const mapPdfSelectionAnchorToOffsets = (
   const beforeWindow = Math.max(24, (anchor.contextBefore?.length ?? 0) + 24);
   const afterWindow = Math.max(24, (anchor.contextAfter?.length ?? 0) + 24);
 
-  let bestMatch:
-    | {
-        start: number;
-        needle: string;
-        score: number;
-      }
-    | null = null;
-
-  for (const needle of candidateNeedles) {
-    if (!needle) {
-      continue;
-    }
-
-    let searchStart = 0;
-    while (searchStart <= normalizedSection.length) {
-      const foundAt = normalizedSection.indexOf(needle, searchStart);
-      if (foundAt === -1) {
-        break;
-      }
-
-      let score = 0;
-      const distance = Math.abs(foundAt - boundedHintStart);
-      score -= Math.min(distance, 400) * 0.2;
-
-      if (contextBeforeNorm) {
-        const beforeSlice = normalizeMatchText(
-          normalizedSection.slice(Math.max(0, foundAt - beforeWindow), foundAt)
-        );
-        score += suffixOverlapLength(beforeSlice, contextBeforeNorm) * 3;
-      }
-
-      if (contextAfterNorm) {
-        const afterSlice = normalizeMatchText(
-          normalizedSection.slice(foundAt + needle.length, Math.min(normalizedSection.length, foundAt + needle.length + afterWindow))
-        );
-        score += prefixOverlapLength(afterSlice, contextAfterNorm) * 3;
-      }
-
-      if (needle === rawSelectedText && rawSelectedText !== selectedTextExcerpt) {
-        score += 2;
-      }
-
-      if (
-        !bestMatch ||
-        score > bestMatch.score ||
-        (score === bestMatch.score && Math.abs(foundAt - boundedHintStart) < Math.abs(bestMatch.start - boundedHintStart))
-      ) {
-        bestMatch = {
-          start: foundAt,
-          needle,
-          score
-        };
-      }
-
-      searchStart = foundAt + 1;
-    }
-  }
+  let bestMatch = findBestNeedleMatch(normalizedSection, candidateNeedles, {
+    contextBeforeNorm,
+    contextAfterNorm,
+    boundedHintStart,
+    beforeWindow,
+    afterWindow,
+    rawSelectedText,
+    selectedTextExcerpt
+  });
 
   if (!bestMatch) {
-    return null;
+    const normalizedRawSelectedText = normalizeMatchNeedle(rawSelectedText);
+    const normalizedExcerpt = normalizeMatchNeedle(selectedTextExcerpt);
+    if (!normalizedExcerpt) {
+      return null;
+    }
+
+    const matchNeedles = new Set<string>();
+    if (normalizedRawSelectedText) {
+      matchNeedles.add(normalizedRawSelectedText);
+    }
+    matchNeedles.add(normalizedExcerpt);
+
+    const matchOffsetMap = buildMatchOffsetMap(normalizedSection);
+    const boundedMatchHintStart = Math.max(0, Math.min(anchor.startOffset, matchOffsetMap.text.length));
+    bestMatch = findBestNeedleMatch(matchOffsetMap.text, matchNeedles, {
+      contextBeforeNorm,
+      contextAfterNorm,
+      boundedHintStart: boundedMatchHintStart,
+      beforeWindow,
+      afterWindow,
+      rawSelectedText: normalizedRawSelectedText,
+      selectedTextExcerpt: normalizedExcerpt
+    });
+
+    if (!bestMatch) {
+      return null;
+    }
+
+    const leadingTrim =
+      bestMatch.needle.length > normalizedExcerpt.length ? bestMatch.needle.length - bestMatch.needle.trimStart().length : 0;
+    const trailingTrim =
+      bestMatch.needle.length > normalizedExcerpt.length ? bestMatch.needle.length - bestMatch.needle.trimEnd().length : 0;
+    const mappedStartMatch = bestMatch.start + leadingTrim;
+    const mappedEndMatch = bestMatch.start + bestMatch.needle.length - trailingTrim;
+    const mappedStartNorm = normalizedOffsetToOriginalOffset(matchOffsetMap.offsets, mappedStartMatch);
+    const mappedEndNorm = normalizedOffsetToOriginalOffset(matchOffsetMap.offsets, mappedEndMatch);
+    const mappedStart = normalizedOffsetToOriginalOffset(sectionOffsetMap.offsets, mappedStartNorm);
+    const mappedEnd = normalizedOffsetToOriginalOffset(sectionOffsetMap.offsets, mappedEndNorm);
+
+    return {
+      paragraphOrdinal: countParagraphOrdinal(normalizedSection, mappedStartNorm),
+      startOffset: mappedStart,
+      endOffset: mappedEnd,
+      selectedTextExcerpt,
+      rawSelectedText,
+      contextBefore: anchor.contextBefore,
+      contextAfter: anchor.contextAfter
+    };
   }
 
   const leadingTrim =
