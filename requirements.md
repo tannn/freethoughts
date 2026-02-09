@@ -1,4 +1,4 @@
-# Free Thought v0
+# Free Thoughts v0
 
 ## Requirements
 
@@ -38,7 +38,8 @@ In-scope v0 outcomes:
 - FR-005: Imported documents must be referenced at their original path (no workspace file copy in v0).
 - FR-005A: Document import must use the native macOS file picker (`NSOpenPanel`) instead of manual absolute-path entry.
 - FR-006: The app must store source file fingerprint metadata (`size`, `mtime`, `sha256`) for each document revision.
-- FR-006B: The native macOS app menu bar name must display `Free Thought`.
+- FR-006B: The native macOS app menu bar name must display `Free Thoughts`.
+- FR-006C: The app must provide a macOS Electron bundling workflow that outputs an app named `Free Thoughts`.
 
 ### 3.2 Document ingestion and sectioning
 
