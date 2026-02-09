@@ -9,17 +9,17 @@ const htmlPath = join(__dirname, '..', 'src', 'renderer', 'index.html');
 const mainPath = join(__dirname, '..', 'src', 'main', 'electronMain.ts');
 
 describe('app branding', () => {
-  it('uses Free Thought in the renderer shell', () => {
+  it('uses Free Thoughts in the renderer shell', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
-    expect(html).toContain('<title>Free Thought</title>');
-    expect(html).toContain('<h1>Free Thought</h1>');
+    expect(html).toContain('<title>Free Thoughts</title>');
+    expect(html).toContain('<h1>Free Thoughts</h1>');
   });
 
-  it('uses Free Thought as the main window title', () => {
+  it('uses Free Thoughts as the main window title', () => {
     const main = readFileSync(mainPath, 'utf8');
 
-    expect(main).toContain("app.setName('Free Thought')");
-    expect(main).toContain("title: 'Free Thought'");
+    expect(main).toContain("app.setName('Free Thoughts')");
+    expect(main).toContain("title: 'Free Thoughts'");
   });
 });

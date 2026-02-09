@@ -33,7 +33,7 @@ import {
   type UpdateSettingsPayload
 } from './runtime/index.js';
 
-app.setName('Free Thought');
+app.setName('Free Thoughts');
 
 class UnsupportedPlatformApiKeyProvider implements RuntimeApiKeyProvider {
   private unsupported(message: string): never {
@@ -249,7 +249,7 @@ const createMainWindow = (): BrowserWindow => {
     height: 820,
     minWidth: 980,
     minHeight: 680,
-    title: 'Free Thought',
+    title: 'Free Thoughts',
     webPreferences: {
       ...MAIN_WINDOW_WEB_PREFERENCES,
       preload: preloadPath
