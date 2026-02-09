@@ -4,3 +4,4 @@ coverage/
 *.log
 .code/agents/
 release/
+.DS_Store
