@@ -121,6 +121,8 @@ pre {
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   position: relative;
 }
 
@@ -178,6 +180,7 @@ pre {
   grid-template-columns: minmax(320px, 1fr) minmax(280px, 360px);
   gap: 10px;
   padding: 10px;
+  height: 100%;
   min-height: 0;
 }
 
@@ -189,8 +192,12 @@ pre {
 }
 
 .right-pane {
-  grid-auto-rows: min-content;
-  align-content: start;
+  grid-template-rows: 1fr;
+}
+
+.right-pane .panel {
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .panel {
@@ -356,8 +363,16 @@ pre {
 .unassigned-list {
   display: grid;
   gap: 10px;
-  max-height: 280px;
   overflow: auto;
+}
+
+.unified-feed-list {
+  min-height: 0;
+  align-content: start;
+}
+
+.unassigned-list {
+  max-height: 280px;
 }
 
 .note-card,
