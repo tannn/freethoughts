@@ -1031,6 +1031,9 @@ const elements = {
     'provocation-style-message'
   ),
   footerStatus: required(document.querySelector<HTMLElement>('#footer-status'), 'footer-status'),
+  footerActions: required(document.querySelector<HTMLElement>('#footer-actions'), 'footer-actions'),
+  footerLocateButton: required(document.querySelector<HTMLButtonElement>('#footer-locate-button'), 'footer-locate-button'),
+  footerReimportButton: required(document.querySelector<HTMLButtonElement>('#footer-reimport-button'), 'footer-reimport-button'),
   reassignmentModal: required(document.querySelector<HTMLElement>('#reassignment-modal'), 'reassignment-modal'),
   reassignmentCount: required(
     document.querySelector<HTMLParagraphElement>('#reassignment-count'),
@@ -2078,6 +2081,10 @@ const renderStatusBar = (): void => {
     sourceStatus,
     aiAvailability
   });
+  const showActions = sourceStatus.status === 'missing';
+  elements.footerActions.classList.toggle('hidden', !showActions);
+  elements.footerLocateButton.disabled = !showActions || !state.activeDocumentId;
+  elements.footerReimportButton.disabled = !showActions || !state.activeDocumentId;
 };
 
 const renderReassignmentModal = (): void => {
@@ -2813,6 +2820,19 @@ const wireEvents = (): void => {
   });
 
   elements.settingsReimportButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleReimport();
+      appendLog('Document re-imported.');
+    });
+  });
+
+  elements.footerLocateButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      await handleLocateFile();
+    });
+  });
+
+  elements.footerReimportButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
       await handleReimport();
       appendLog('Document re-imported.');
