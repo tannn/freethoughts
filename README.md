@@ -18,3 +18,11 @@ npm test
 npm run acceptance:phase5
 npm run bench:phase5
 ```
+
+## Bundle the macOS app
+
+```bash
+npm run bundle:mac
+```
+
+This produces a `Free Thoughts.app` bundle in `release/Free Thoughts-darwin-arm64/`.
