@@ -24,7 +24,7 @@ describe('renderer footer status label', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
 
     expect(appTs).toContain('Status: offline');
-    expect(appTs).toContain('Status: AI');
+    expect(appTs).toContain('Status: AI ${aiAvailability.reason}');
     expect(appTs).toContain('Status: ok');
   });
 });
