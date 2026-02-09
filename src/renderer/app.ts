@@ -869,6 +869,10 @@ const elements = {
     document.querySelector<HTMLParagraphElement>('#selection-note-preview'),
     'selection-note-preview'
   ),
+  selectionNoteInput: required(
+    document.querySelector<HTMLInputElement>('#selection-note-input'),
+    'selection-note-input'
+  ),
   selectionNoteBackButton: required(
     document.querySelector<HTMLButtonElement>('#selection-note-back-button'),
     'selection-note-back-button'
@@ -1850,7 +1854,11 @@ const openProvocationStyleOverlay = (): void => {
 const openSelectionNoteOverlay = (): void => {
   setSelectionPopoverMode('note');
   elements.selectionNoteMessage.textContent = '';
+  elements.selectionNoteInput.value = '';
   renderSelectionActionOverlay();
+  queueMicrotask(() => {
+    elements.selectionNoteInput.focus();
+  });
 };
 
 const repositionSelectionTriggeredOverlay = (): void => {
@@ -2262,7 +2270,7 @@ const handleLocateFile = async (): Promise<void> => {
   }
 };
 
-const handleNewNoteFromSelection = async (): Promise<void> => {
+const handleNewNoteFromSelection = async (noteText: string): Promise<void> => {
   if (!state.activeSection) {
     return;
   }
@@ -2294,7 +2302,7 @@ const handleNewNoteFromSelection = async (): Promise<void> => {
   const envelope = (await desktopApi.note.create({
     documentId: state.activeSection.document.id,
     sectionId: state.activeSection.section.id,
-    text: '',
+    text: noteText,
     paragraphOrdinal: selection.paragraphOrdinal,
     startOffset: selection.startOffset,
     endOffset: selection.endOffset,
@@ -2417,7 +2425,9 @@ const handleSelectionTriggeredNoteCreate = async (): Promise<void> => {
   }
 
   elements.selectionNoteMessage.textContent = '';
-  await handleNewNoteFromSelection();
+  const noteText = elements.selectionNoteInput.value;
+  await handleNewNoteFromSelection(noteText);
+  elements.selectionNoteInput.value = '';
   closeProvocationStyleOverlay();
 };
 
