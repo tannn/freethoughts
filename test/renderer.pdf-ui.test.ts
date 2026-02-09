@@ -42,9 +42,13 @@ describe('renderer pdf surface markup', () => {
   it('keeps the pdf viewport scrollable when zoomed wider than the center pane', () => {
     const css = readFileSync(cssPath, 'utf8');
 
-    expect(css).toContain('.pdf-viewport');
-    expect(css).toContain('overflow: auto;');
-    expect(css).toContain('width: max-content;');
-    expect(css).toContain('min-width: 100%;');
+    const pdfViewportRule = css.match(/\.pdf-viewport\s*\{[^}]*\}/);
+    const pdfDocumentRule = css.match(/\.pdf-document\s*\{[^}]*\}/);
+
+    expect(pdfViewportRule).not.toBeNull();
+    expect(pdfViewportRule?.[0]).toContain('overflow: auto;');
+    expect(pdfDocumentRule).not.toBeNull();
+    expect(pdfDocumentRule?.[0]).toContain('width: max-content;');
+    expect(pdfDocumentRule?.[0]).toContain('min-width: 100%;');
   });
 });
