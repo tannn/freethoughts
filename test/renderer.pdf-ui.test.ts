@@ -42,13 +42,39 @@ describe('renderer pdf surface markup', () => {
   it('keeps the pdf viewport scrollable when zoomed wider than the center pane', () => {
     const css = readFileSync(cssPath, 'utf8');
 
-    const pdfViewportRule = css.match(/\.pdf-viewport\s*\{[\s\S]*?\}/);
-    const pdfDocumentRule = css.match(/\.pdf-document\s*\{[\s\S]*?\}/);
+    const readRule = (selector: string): string | null => {
+      const selectorIndex = css.indexOf(selector);
+      if (selectorIndex < 0) {
+        return null;
+      }
+
+      const braceStart = css.indexOf('{', selectorIndex);
+      if (braceStart < 0) {
+        return null;
+      }
+
+      let depth = 0;
+      for (let index = braceStart; index < css.length; index += 1) {
+        if (css[index] === '{') {
+          depth += 1;
+        } else if (css[index] === '}') {
+          depth -= 1;
+          if (depth === 0) {
+            return css.slice(braceStart + 1, index);
+          }
+        }
+      }
+
+      return null;
+    };
+
+    const pdfViewportRule = readRule('.pdf-viewport');
+    const pdfDocumentRule = readRule('.pdf-document');
 
     expect(pdfViewportRule).not.toBeNull();
-    expect(pdfViewportRule?.[0]).toContain('overflow: auto;');
+    expect(pdfViewportRule).toContain('overflow: auto;');
     expect(pdfDocumentRule).not.toBeNull();
-    expect(pdfDocumentRule?.[0]).toContain('width: max-content;');
-    expect(pdfDocumentRule?.[0]).toContain('min-width: 100%;');
+    expect(pdfDocumentRule).toContain('width: max-content;');
+    expect(pdfDocumentRule).toContain('min-width: 100%;');
   });
 });
