@@ -24,7 +24,7 @@ describe('renderer footer status label', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
     const missingIndex = appTs.indexOf("sourceStatus?.status === 'missing'");
     const offlineIndex = appTs.indexOf("Status: offline");
-    const aiUnavailableIndex = appTs.indexOf("Status: AI ${aiAvailability.reason}");
+    const aiUnavailableIndex = appTs.indexOf('`Status: AI ${aiAvailability.reason}`');
 
     expect(appTs).toContain('Status: offline');
     expect(appTs).toContain('Status: AI ${aiAvailability.reason}');

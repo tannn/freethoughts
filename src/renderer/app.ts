@@ -2078,7 +2078,7 @@ const renderStatusBar = (): void => {
   }
 
   const aiAvailability = deriveAiAvailability();
-  if (aiAvailability.reason === 'offline' || state.networkStatus?.online === false) {
+  if (aiAvailability.reason === 'offline') {
     elements.footerStatus.textContent = 'Status: offline';
     return;
   }
