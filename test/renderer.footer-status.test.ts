@@ -2,12 +2,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { deriveFooterStatusLabel } from '../src/renderer/footerStatus.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const htmlPath = join(__dirname, '..', 'src', 'renderer', 'index.html');
-const appTsPath = join(__dirname, '..', 'src', 'renderer', 'app.ts');
-
 describe('renderer footer status label', () => {
   it('renders a single footer status label', () => {
     const html = readFileSync(htmlPath, 'utf8');
@@ -21,14 +20,35 @@ describe('renderer footer status label', () => {
   });
 
   it('maps status content in renderer logic', () => {
-    const appTs = readFileSync(appTsPath, 'utf8');
-    const renderStart = appTs.indexOf('const renderStatusBar');
-    const renderEnd = appTs.indexOf('const renderReassignmentModal');
-    const renderBody = appTs.slice(renderStart, renderEnd);
+    expect(
+      deriveFooterStatusLabel({
+        sourceStatus: {
+          status: 'missing',
+          message: 'Source file not found at original path.'
+        },
+        aiAvailability: { enabled: false, reason: 'offline' }
+      })
+    ).toBe('Status: Source file not found at original path.');
 
-    expect(renderBody).toMatch(
-      /sourceStatus\?\.status === 'missing'[\s\S]*Status: offline[\s\S]*Status: AI[\s\S]*Status: ok/
-    );
-    expect(renderBody).toContain('aiAvailability.reason');
+    expect(
+      deriveFooterStatusLabel({
+        sourceStatus: { status: 'available', message: 'Source file available' },
+        aiAvailability: { enabled: false, reason: 'offline' }
+      })
+    ).toBe('Status: offline');
+
+    expect(
+      deriveFooterStatusLabel({
+        sourceStatus: { status: 'available', message: 'Source file available' },
+        aiAvailability: { enabled: false, reason: 'auth-unavailable' }
+      })
+    ).toBe('Status: AI auth-unavailable');
+
+    expect(
+      deriveFooterStatusLabel({
+        sourceStatus: { status: 'available', message: 'Source file available' },
+        aiAvailability: { enabled: true, reason: 'ok' }
+      })
+    ).toBe('Status: ok');
   });
 });

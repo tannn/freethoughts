@@ -1,5 +1,6 @@
 import { NoteAutosaveController } from '../reader/autosave.js';
 import { getDesktopApi } from './desktopApi.js';
+import { deriveFooterStatusLabel } from './footerStatus.js';
 import { formatNoteAnchorExcerpt } from './noteAnchors.js';
 import { trimExcerpt } from './text.js';
 
@@ -2072,23 +2073,11 @@ const renderProvocation = (): void => {
 
 const renderStatusBar = (): void => {
   const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
-  if (sourceStatus?.status === 'missing') {
-    elements.footerStatus.textContent = `Status: ${sourceStatus.message}`;
-    return;
-  }
-
   const aiAvailability = deriveAiAvailability();
-  if (aiAvailability.reason === 'offline') {
-    elements.footerStatus.textContent = 'Status: offline';
-    return;
-  }
-
-  if (!aiAvailability.enabled) {
-    elements.footerStatus.textContent = `Status: AI ${aiAvailability.reason}`;
-    return;
-  }
-
-  elements.footerStatus.textContent = 'Status: ok';
+  elements.footerStatus.textContent = deriveFooterStatusLabel({
+    sourceStatus,
+    aiAvailability
+  });
 };
 
 const renderReassignmentModal = (): void => {
