@@ -2075,7 +2075,7 @@ const renderStatusBar = (): void => {
   const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
   const aiAvailability = deriveAiAvailability();
   elements.footerStatus.textContent = deriveFooterStatusLabel({
-    sourceStatus,
+    sourceStatus: sourceStatus ?? undefined,
     aiAvailability
   });
 };

@@ -1,7 +1,7 @@
 export type FooterStatusSource = {
   status: 'available' | 'missing';
   message: string;
-} | null;
+};
 
 export type FooterStatusAiAvailability = {
   enabled: boolean;
@@ -9,7 +9,7 @@ export type FooterStatusAiAvailability = {
 };
 
 export const deriveFooterStatusLabel = (input: {
-  sourceStatus: FooterStatusSource;
+  sourceStatus?: FooterStatusSource;
   aiAvailability: FooterStatusAiAvailability;
 }): string => {
   const { sourceStatus, aiAvailability } = input;
