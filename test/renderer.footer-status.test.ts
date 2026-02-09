@@ -26,28 +26,28 @@ describe('renderer footer status label', () => {
           status: 'missing',
           message: 'Source file not found at original path.'
         },
-        aiAvailability: { enabled: false, reason: 'offline' }
+        aiAvailability: { enabled: false, reason: 'offline', message: 'AI actions disabled while offline.' }
       })
     ).toBe('Status: Source file not found at original path.');
 
     expect(
       deriveFooterStatusLabel({
         sourceStatus: { status: 'available', message: 'Source file available' },
-        aiAvailability: { enabled: false, reason: 'offline' }
+        aiAvailability: { enabled: false, reason: 'offline', message: 'AI actions disabled while offline.' }
       })
     ).toBe('Status: offline');
 
     expect(
       deriveFooterStatusLabel({
         sourceStatus: { status: 'available', message: 'Source file available' },
-        aiAvailability: { enabled: false, reason: 'auth-unavailable' }
+        aiAvailability: { enabled: false, reason: 'auth-unavailable', message: 'Auth status unavailable.' }
       })
     ).toBe('Status: AI auth-unavailable');
 
     expect(
       deriveFooterStatusLabel({
         sourceStatus: { status: 'available', message: 'Source file available' },
-        aiAvailability: { enabled: true, reason: 'ok' }
+        aiAvailability: { enabled: true, reason: 'ok', message: 'AI actions available' }
       })
     ).toBe('Status: ok');
   });

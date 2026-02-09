@@ -7,10 +7,12 @@ export type FooterStatusAiAvailability =
   | {
       enabled: true;
       reason: 'ok';
+      message: string;
     }
   | {
       enabled: false;
       reason: 'offline' | 'provocations-disabled' | 'auth-unavailable';
+      message: string;
     };
 
 export const deriveFooterStatusLabel = (input: {

@@ -2078,10 +2078,10 @@ const renderProvocation = (): void => {
 };
 
 const renderStatusBar = (): void => {
-  const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
+  const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus;
   const aiAvailability = deriveAiAvailability();
   elements.footerStatus.textContent = deriveFooterStatusLabel({
-    sourceStatus: sourceStatus ?? undefined,
+    sourceStatus,
     aiAvailability
   });
 };
