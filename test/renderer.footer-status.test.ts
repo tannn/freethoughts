@@ -10,7 +10,7 @@ const cssPath = join(__dirname, '..', 'src', 'renderer', 'styles.css');
 const appTsPath = join(__dirname, '..', 'src', 'renderer', 'app.ts');
 
 describe('renderer footer status', () => {
-  it('renders network status with a conditional generation indicator', () => {
+  it('verifies footer contains network status and generation indicator elements', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
     expect(html).toContain('id="network-status"');
@@ -20,7 +20,7 @@ describe('renderer footer status', () => {
     expect(html).not.toContain('id="ai-status"');
   });
 
-  it('styles the animated generation indicator', () => {
+  it('verifies CSS contains generation indicator animation styles', () => {
     const css = readFileSync(cssPath, 'utf8');
 
     expect(css).toContain('.status-indicator');
@@ -28,7 +28,7 @@ describe('renderer footer status', () => {
     expect(css).toContain('@keyframes statusPulse');
   });
 
-  it('toggles footer generation status in renderer logic', () => {
+  it('verifies app.ts toggles generation status based on active request', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
 
     expect(appTs).toContain('generationStatus');
