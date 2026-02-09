@@ -54,7 +54,7 @@ const createPdfCommandRunner = (responses: {
 };
 
 describe('runtime import adapter', () => {
-  it('imports real txt fixture paths and returns deterministic anchored sections', () => {
+  it('imports txt fixtures and returns a single anchored document section', () => {
     const sourcePath = join(fixtureRoot, 'txt', 'discussion-notes.txt');
 
     const first = importDocumentFromPath(sourcePath);
@@ -64,26 +64,21 @@ describe('runtime import adapter', () => {
     expect(first.fileType).toBe('txt');
     expect(first.wordCount).toBeGreaterThan(0);
     expect(first.pageCount).toBeNull();
-    expect(first.sections.length).toBeGreaterThan(0);
+    expect(first.sections).toHaveLength(1);
     expect(first.sections[0]?.anchorKey).toBe('document#1');
-    expect(first.sections.map((section) => section.anchorKey)).toContain('method-overview#1');
   });
 
-  it('imports real md fixture paths and enforces markdown word counting path', () => {
+  it('imports md fixtures and returns a single anchored document section', () => {
     const sourcePath = join(fixtureRoot, 'md', 'research-log.md');
     const imported = importDocumentFromPath(sourcePath);
 
     expect(imported.fileType).toBe('md');
     expect(imported.wordCount).toBeGreaterThan(0);
-    expect(imported.sections.map((section) => section.anchorKey)).toEqual([
-      'research-log#1',
-      'session-goal#1',
-      'observations#1',
-      'follow-up#1'
-    ]);
+    expect(imported.sections).toHaveLength(1);
+    expect(imported.sections[0]?.anchorKey).toBe('document#1');
   });
 
-  it('imports real .pdf paths and prioritizes outline-derived sections when available', () => {
+  it('imports pdfs into a single document section', () => {
     const dir = createTempDir();
     const sourcePath = join(dir, 'outline.pdf');
     writeFileSync(sourcePath, '%PDF-1.4\n%stub\n', 'utf8');
@@ -105,15 +100,9 @@ describe('runtime import adapter', () => {
     expect(imported.wordCount).toBeNull();
     expect(imported.sections).toEqual([
       expect.objectContaining({
-        heading: 'Section 1',
-        anchorKey: 'section-1#1',
+        heading: 'Document',
+        anchorKey: 'document#1',
         pageStart: 1,
-        pageEnd: 2
-      }),
-      expect.objectContaining({
-        heading: 'Section 2',
-        anchorKey: 'section-2#1',
-        pageStart: 3,
         pageEnd: 4
       })
     ]);

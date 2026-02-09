@@ -3,8 +3,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { basename, extname, resolve } from 'node:path';
 import { buildAnchors } from './anchors.js';
 import { captureSourceFingerprint, type SourceFingerprint } from './fingerprint.js';
-import { sectionMarkdown, sectionTxt } from './sectioning/mdTxt.js';
-import { sectionPdf, type PdfOutlineItem, type PdfPage } from './sectioning/pdf.js';
+import { type PdfPage } from './sectioning/pdf.js';
 import { DOCUMENT_WORD_LIMIT, countMarkdownWords, countTxtWords } from './wordCount.js';
 import { AppError } from '../shared/ipc/errors.js';
 
@@ -122,6 +121,20 @@ const ensureWithinPageLimit = (pageCount: number): void => {
   }
 };
 
+const buildSingleSection = (content: string): Array<{ heading: string; content: string }> => [
+  {
+    heading: 'Document',
+    content: content.trim()
+  }
+];
+
+const buildSinglePdfSection = (pages: PdfPage[]): { heading: string; content: string; startPage: number; endPage: number } => {
+  const startPage = pages[0]?.pageNumber ?? 1;
+  const endPage = pages[pages.length - 1]?.pageNumber ?? startPage;
+  const content = pages.map((page) => page.text).join('\n\n').trim();
+  return { heading: 'Document', content, startPage, endPage };
+};
+
 const parseTxtImport = (sourcePath: string): PreparedTextImport => {
   const text = readFileSync(sourcePath, 'utf8');
   const wordCount = countTxtWords(text);
@@ -130,7 +143,7 @@ const parseTxtImport = (sourcePath: string): PreparedTextImport => {
   return {
     title: basename(sourcePath),
     wordCount,
-    sections: sectionTxt(text)
+    sections: buildSingleSection(text)
   };
 };
 
@@ -142,111 +155,8 @@ const parseMarkdownImport = (sourcePath: string): PreparedTextImport => {
   return {
     title: basename(sourcePath),
     wordCount,
-    sections: sectionMarkdown(markdown)
+    sections: buildSingleSection(markdown)
   };
-};
-
-const parsePdfDestinationLine = (line: string): { pageNumber: number; destination: string } | null => {
-  const match = line.match(/^\s*(\d+)\s+\[.*\]\s+"(.+)"\s*$/);
-  if (!match?.[1] || !match[2]) {
-    return null;
-  }
-
-  const pageNumber = Number.parseInt(match[1], 10);
-  if (!Number.isFinite(pageNumber) || pageNumber < 1) {
-    return null;
-  }
-
-  return {
-    pageNumber,
-    destination: match[2].trim()
-  };
-};
-
-const mapDestinationToHeading = (destination: string): { heading: string; rank: number } | null => {
-  const normalized = destination.trim();
-  if (!normalized) {
-    return null;
-  }
-
-  const lower = normalized.toLowerCase();
-  if (
-    /^page\.\d+$/.test(lower) ||
-    lower.startsWith('figure.caption.') ||
-    lower.startsWith('table.caption.') ||
-    lower.startsWith('cite.') ||
-    lower.startsWith('item.') ||
-    lower.startsWith('hfootnote.')
-  ) {
-    return null;
-  }
-
-  const chapterMatch = lower.match(/^chapter\.(\d+)$/);
-  if (chapterMatch?.[1]) {
-    return { heading: `Chapter ${chapterMatch[1]}`, rank: 1 };
-  }
-
-  const appendixMatch = lower.match(/^appendix\.([a-z0-9]+)$/);
-  if (appendixMatch?.[1]) {
-    return { heading: `Appendix ${appendixMatch[1].toUpperCase()}`, rank: 1 };
-  }
-
-  const sectionMatch = lower.match(/^section\*?\.(\d+(?:\.\d+)*)$/);
-  if (sectionMatch?.[1]) {
-    return { heading: `Section ${sectionMatch[1]}`, rank: 2 };
-  }
-
-  const subsectionMatch = lower.match(/^subsection\.(\d+(?:\.\d+)*)$/);
-  if (subsectionMatch?.[1]) {
-    return { heading: `Subsection ${subsectionMatch[1]}`, rank: 3 };
-  }
-
-  const subsubsectionMatch = lower.match(/^subsubsection\.(\d+(?:\.\d+)*)$/);
-  if (subsubsectionMatch?.[1]) {
-    return { heading: `Subsubsection ${subsubsectionMatch[1]}`, rank: 4 };
-  }
-
-  if (/^[a-z0-9 _-]{1,80}$/i.test(normalized)) {
-    const heading = normalized.replaceAll(/[_-]+/g, ' ').trim();
-    if (heading) {
-      return { heading, rank: 5 };
-    }
-  }
-
-  return null;
-};
-
-const extractPdfOutline = (sourcePath: string, runCommand: RuntimeImportCommandRunner): PdfOutlineItem[] => {
-  try {
-    const output = runCommand('pdfinfo', ['-dests', sourcePath]);
-    const bestByPage = new Map<number, { heading: string; rank: number }>();
-
-    for (const line of output.split(/\r?\n/)) {
-      const parsed = parsePdfDestinationLine(line);
-      if (!parsed) {
-        continue;
-      }
-
-      const mapped = mapDestinationToHeading(parsed.destination);
-      if (!mapped) {
-        continue;
-      }
-
-      const existing = bestByPage.get(parsed.pageNumber);
-      if (!existing || mapped.rank < existing.rank) {
-        bestByPage.set(parsed.pageNumber, mapped);
-      }
-    }
-
-    return [...bestByPage.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([pageNumber, mapped]) => ({
-        title: mapped.heading,
-        pageNumber
-      }));
-  } catch {
-    return [];
-  }
 };
 
 const parsePdfPageCount = (sourcePath: string, runCommand: RuntimeImportCommandRunner): number => {
@@ -308,12 +218,10 @@ const parsePdfImport = (sourcePath: string, runCommand: RuntimeImportCommandRunn
     });
   }
 
-  const outline = extractPdfOutline(sourcePath, runCommand);
-
   return {
     title: basename(sourcePath),
     pageCount,
-    sections: sectionPdf({ pages, outline: outline.length > 0 ? outline : undefined })
+    sections: [buildSinglePdfSection(pages)]
   };
 };
 

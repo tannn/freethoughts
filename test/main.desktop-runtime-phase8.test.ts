@@ -38,7 +38,7 @@ class CountingTransport implements OpenAiTransport {
 }
 
 describe('phase 8 desktop runtime integration', () => {
-  it('supports workspace -> import -> read -> note -> reimport -> reassign flow', () => {
+  it('supports workspace -> import -> read -> note -> reimport flow', () => {
     const seeded = createTempDb();
     const workspaceDir = createTempDir();
     const sourcePath = join(workspaceDir, 'reader.md');
@@ -81,7 +81,7 @@ describe('phase 8 desktop runtime integration', () => {
     );
 
     const reimported = runtime.reimportDocument(imported.document.id);
-    expect(reimported.unassignedNotes.map((item) => item.noteId)).toContain(createdNote.id);
+    expect(reimported.unassignedNotes).toEqual([]);
 
     expect(() => runtime.getSection(firstSection.section.id)).toThrowError(
       'Section not found in current document revision'
@@ -93,13 +93,8 @@ describe('phase 8 desktop runtime integration', () => {
       throw new Error('expected section after reimport');
     }
 
-    const notesBeforeReassign = runtime.getSection(firstReimportedSectionId).notes.map((note) => note.id);
-    expect(notesBeforeReassign).not.toContain(createdNote.id);
-
-    runtime.reassignNote({ noteId: createdNote.id, targetSectionId: firstReimportedSectionId });
-
-    const notesAfterReassign = runtime.getSection(firstReimportedSectionId).notes.map((note) => note.id);
-    expect(notesAfterReassign).toContain(createdNote.id);
+    const notesAfterReimport = runtime.getSection(firstReimportedSectionId).notes.map((note) => note.id);
+    expect(notesAfterReimport).toContain(createdNote.id);
   });
 
   it('enforces cloud-warning ack, delete, offline gating, and document provocation toggle', async () => {

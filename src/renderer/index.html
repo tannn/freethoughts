@@ -28,7 +28,7 @@
         <span>Workspace: <strong id="top-workspace-path">-</strong></span>
         <span>Document: <strong id="top-document-title">-</strong></span>
         <div class="top-bar-actions">
-          <button id="outline-toggle-button" type="button" class="secondary" aria-expanded="false">Outline</button>
+          <button id="outline-toggle-button" type="button" class="secondary" aria-expanded="false">Documents</button>
         </div>
       </header>
 
@@ -36,7 +36,7 @@
       <aside id="outline-drawer" class="outline-drawer hidden" aria-hidden="true">
         <section class="panel drawer-header-panel">
           <div class="drawer-header">
-            <h2>Outline</h2>
+            <h2>Documents</h2>
             <button id="outline-close-button" type="button" class="secondary">Close</button>
           </div>
         </section>
@@ -53,11 +53,6 @@
         <section class="panel">
           <h2>Documents</h2>
           <ul id="document-list" class="nav-list"></ul>
-        </section>
-
-        <section class="panel">
-          <h2>Sections</h2>
-          <ul id="section-list" class="nav-list"></ul>
           <button id="unassigned-nav-button" type="button" class="secondary">Unassigned Notes (0)</button>
         </section>
       </aside>
@@ -66,7 +61,7 @@
         <section class="center-pane">
           <section id="section-view" class="panel view">
             <div class="section-header">
-              <h2 id="section-heading">No section selected</h2>
+              <h2 id="section-heading">No document selected</h2>
             </div>
             <div id="pdf-surface" class="pdf-surface hidden">
               <div class="pdf-toolbar">
@@ -80,7 +75,7 @@
               </div>
             </div>
             <div id="pdf-fallback" class="pdf-fallback hidden">
-              <p class="hint">Native PDF view unavailable. Showing extracted section text.</p>
+              <p class="hint">Native PDF view unavailable. Showing extracted document text.</p>
             </div>
             <pre id="section-content" class="section-content">Import a document to begin.</pre>
           </section>

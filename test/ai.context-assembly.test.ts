@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildDeterministicProvocationContext } from '../src/ai/contextAssembly.js';
 
 describe('deterministic provocation context assembly', () => {
-  it('assembles context in active, previous, next order', () => {
+  it('assembles context from the active document section only', () => {
     const context = buildDeterministicProvocationContext(
       [
         { id: 's1', heading: 'One', content: 'alpha', orderIndex: 0 },
@@ -13,9 +13,10 @@ describe('deterministic provocation context assembly', () => {
       100
     );
 
-    expect(context.includedSectionIds).toEqual(['s2', 's1', 's3']);
-    expect(context.text.indexOf('[Active] Two')).toBeLessThan(context.text.indexOf('[Previous] One'));
-    expect(context.text.indexOf('[Previous] One')).toBeLessThan(context.text.indexOf('[Next] Three'));
+    expect(context.includedSectionIds).toEqual(['s2']);
+    expect(context.text).toContain('[Active] Two');
+    expect(context.text).not.toContain('[Previous]');
+    expect(context.text).not.toContain('[Next]');
   });
 
   it('clips deterministically from the tail of the last included section', () => {

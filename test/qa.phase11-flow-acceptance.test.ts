@@ -51,7 +51,7 @@ class RecordingTransport implements OpenAiTransport {
 }
 
 describe('phase 11 end-to-end acceptance harness', () => {
-  it('covers workspace -> import -> read -> note -> provocation -> re-import -> reassign -> continue', async () => {
+  it('covers workspace -> import -> read -> note -> provocation -> re-import -> continue', async () => {
     const seeded = createTempDb();
     const workspaceDir = createTempDir();
     const sourcePath = join(workspaceDir, 'phase11-flow.md');
@@ -112,27 +112,25 @@ describe('phase 11 end-to-end acceptance harness', () => {
     );
 
     const reimported = runtime.reimportDocument(imported.document.id);
-    expect(reimported.unassignedNotes.map((item) => item.noteId)).toContain(note.id);
+    expect(reimported.unassignedNotes).toEqual([]);
 
     expect(() => runtime.getSection(firstSection.section.id)).toThrowError(
       'Section not found in current document revision'
     );
 
-    const reassignedSectionId = reimported.sections[0]?.id;
-    expect(reassignedSectionId).toBeDefined();
-    if (!reassignedSectionId) {
+    const currentSectionId = reimported.sections[0]?.id;
+    expect(currentSectionId).toBeDefined();
+    if (!currentSectionId) {
       throw new Error('expected section after reimport');
     }
 
-    runtime.reassignNote({ noteId: note.id, targetSectionId: reassignedSectionId });
-
-    const reassignedSection = runtime.getSection(reassignedSectionId);
-    expect(reassignedSection.notes.map((item) => item.id)).toContain(note.id);
+    const currentSection = runtime.getSection(currentSectionId);
+    expect(currentSection.notes.map((item) => item.id)).toContain(note.id);
 
     const continued = await runtime.generateProvocation({
       requestId: 'req-phase11-2',
       documentId: imported.document.id,
-      sectionId: reassignedSectionId
+      sectionId: currentSectionId
     });
 
     expect(continued.outputText).toBe('provocation-2');

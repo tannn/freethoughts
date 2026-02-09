@@ -35,7 +35,7 @@ describe('reader shell controller', () => {
     const shell = new ReaderShellController();
     shell.openDocument('doc-1', 'sec-1');
 
-    expect(shell.snapshot().leftNavItems).toEqual(['sections', 'unassigned-notes']);
+    expect(shell.snapshot().leftNavItems).toEqual(['documents', 'unassigned-notes']);
 
     shell.openUnassignedNotesView();
     expect(shell.snapshot().centerView).toBe('unassigned-notes');

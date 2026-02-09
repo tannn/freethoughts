@@ -9,10 +9,10 @@ Historical wireframes are archived in `mockups.archive.md`.
 
 ```text
 +----------------------------------------------------------------------------------+
-| Top Bar: Workspace | Active Document | [Outline]                                 |
+| Top Bar: Workspace | Active Document | [Documents]                               |
 +---------------------------------------------+------------------------------------+
 | Center Pane                                  | Right Sidebar                      |
-| Section Reader                               | Unified Feed                       |
+| Document Reader                              | Unified Feed                       |
 |                                              | (Unassigned + Notes + Provocation) |
 +---------------------------------------------+------------------------------------+
 | Footer: Status: <state>                                                         |
@@ -30,7 +30,7 @@ Behavior refs:
 ```text
 +---------------------------------------------------------------+------------------+
 | Reader content (no persistent left pane)                     | NOTES            |
-| Section heading + text                                       | Unassigned       |
+| Document text                                               | Unassigned       |
 |                                                              | (if any)         |
 |                                                              | (feed starts empty) |
 +---------------------------------------------------------------+------------------+
@@ -70,7 +70,7 @@ Behavior refs:
 
 Behavior refs:
 - Notes are plain text + autosave after creation/edit: `FR-025`, `FR-028`
-- Keep deterministic section anchor model unchanged: `FR-023A`
+- Keep deterministic document anchor model unchanged: `FR-023A`
 - Quick-entry single-line input in selection note overlay (spec §7.3)
 
 ## 5. Selection-triggered provocation style overlay

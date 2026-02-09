@@ -8,7 +8,7 @@ This document defines build-ready requirements for v0 of a macOS-first Electron 
 
 In-scope v0 outcomes:
 
-1. Section-anchored notes with optional paragraph/text-selection anchors
+1. Document-anchored notes with optional paragraph/text-selection anchors
 2. On-demand provocations for reading and note writing
 
 ## 2. Product constraints
@@ -23,7 +23,7 @@ In-scope v0 outcomes:
 - Notes format: plain text only
 - Search: not included in v0
 - New document drafting: non-goal
-- AI context for generation: active section plus deterministic adjacent section context only (no embedding retrieval in v0)
+- AI context for generation: active document context only (no embedding retrieval in v0)
 - Source documents remain in place (referenced by path; not copied into workspace in v0).
 
 ## 3. Functional requirements
@@ -33,7 +33,7 @@ In-scope v0 outcomes:
 - FR-001: The app must let users create/open a local workspace folder.
 - FR-001A: Workspace create/open must use the native macOS directory picker (`NSOpenPanel`) instead of manual absolute-path entry.
 - FR-002: On first OpenAI action per workspace, the app must show a cloud-processing warning and require acknowledgment.
-- FR-003: The app must support offline operation for non-AI features (open document, read sections, edit notes).
+- FR-003: The app must support offline operation for non-AI features (open document, read documents, edit notes).
 - FR-004: When offline, the app must disable all AI API calls (provocation generation).
 - FR-005: Imported documents must be referenced at their original path (no workspace file copy in v0).
 - FR-005A: Document import must use the native macOS file picker (`NSOpenPanel`) instead of manual absolute-path entry.
@@ -41,55 +41,56 @@ In-scope v0 outcomes:
 - FR-006B: The native macOS app menu bar name must display `Free Thoughts`.
 - FR-006C: The app must provide a macOS Electron bundling workflow that outputs an app named `Free Thoughts`.
 
-### 3.2 Document ingestion and sectioning
+### 3.2 Document ingestion and structure
 
 - FR-010: The app must import `.pdf`, `.txt`, and `.md` files.
 - FR-011: The app must reject scanned/non-text PDFs with a clear OCR-not-supported error.
 - FR-012: The app must reject documents over size limits with a clear error (`.pdf` > 50 pages; `.txt`/`.md` > 25,000 words).
-- FR-013: The app must auto-generate sections with stable section anchors.
-- FR-014: Sectioning is fully automatic in v0 (no manual split/merge/edit tools).
-- FR-015: When document structure shifts after re-import/re-index, affected notes must be marked `needs reassignment`.
-- FR-016: The app must provide a manual note reassignment workflow to choose a new target section.
+- FR-013: Each document must be stored as a single continuous section with heading `Document`.
+- FR-014: Outline/section navigation must not be shown in the UI.
+- FR-015: Re-import must preserve the single document section and keep notes anchored without manual reassignment in normal cases.
+- FR-016: If a re-import cannot map the document anchor, affected notes must be marked `needs reassignment`.
 - FR-016A: The app must provide a persistent `Unassigned notes` view listing all `needs reassignment` notes for the active document.
 - FR-016B: `Skip for now` in reassignment flow must keep notes visible in `Unassigned notes` until reassigned.
-- FR-017: Anchor generation must be deterministic per revision using `anchor_key = <normalized_heading_slug>#<ordinal>`.
+- FR-017: Anchor generation must be deterministic per revision using `anchor_key = <normalized_heading_slug>#<ordinal>` (document anchor must be `document#1`).
 - FR-018: On re-import/re-index, note remapping must use exact `anchor_key` matching only.
 - FR-019: If no exact anchor match exists, notes must remain `needs reassignment` until manually assigned (no fuzzy/semantic remapping in v0).
-- FR-019A: `.md` sectioning must use Markdown headings (`#`, `##`, etc.) and setext headings as section boundaries.
-- FR-019B: `.txt` sectioning must detect heading-like lines (`^\d+(\.\d+)*\s+`, short all-caps lines, or `Title:`-style labels). If no headings are detected, the app must split by paragraph into deterministic ~900-word sections with no overlap.
-- FR-019C: `.pdf` sectioning must use PDF outline/bookmarks when present; otherwise detect heading-like lines from extracted text; otherwise fall back to deterministic 2-page section buckets.
-- FR-019D: Section order must remain source order and sectioning must not use AI/fuzzy segmentation.
+- FR-019A: `.md` documents must be stored as a single document section; headings do not create sections.
+- FR-019B: `.txt` documents must be stored as a single document section (no heading-based splitting).
+- FR-019C: `.pdf` documents must be stored as a single document section; outlines/bookmarks do not create sections.
+- FR-019D: Document structure must remain source order and must not use AI/fuzzy segmentation.
 - FR-019E: `normalized_heading_slug` must be generated by: Unicode NFKD normalization, diacritic stripping, lowercasing, replacing non-alphanumeric runs with `-`, collapsing duplicate `-`, trimming boundary `-`, fallback to `section` when empty, and truncation to 80 characters.
 - FR-019F: `.txt`/`.md` word counting for the 25,000-word limit must be deterministic. `.md` counting must use plain text with Markdown syntax and code fences removed, using Unicode letter/number tokenization.
 
 ### 3.3 Reader and notes
 
-- FR-020: The app must display one active document at a time with section navigation.
+- FR-020: The app must display one active document at a time with document-level navigation (no outline/section list).
+- FR-020I: The top-bar document navigation control must be labeled `Documents` and open the document drawer.
 - FR-020A: Reader text presentation must apply a readability-focused typography system (line length, line height, spacing, and contrast) consistently across `.txt`, `.md`, and `.pdf`.
 - FR-020B: `.pdf` documents must render in a native PDF viewing surface on macOS with selectable text and standard zoom/scroll behavior.
-- FR-020C: If native `.pdf` rendering is unavailable for a document, the app must show a clear fallback state and preserve access to section text + notes.
+- FR-020C: If native `.pdf` rendering is unavailable for a document, the app must show a clear fallback state and preserve access to document text + notes.
 - FR-020D: For `.pdf` documents with native PDF rendering available, the app must use a controllable PDF renderer path (replacing iframe/embed path) that exposes text-selection events and programmatic zoom/scroll state.
-- FR-020E: `.pdf` text selections must map deterministically to normalized section-text offsets for the active revision and store existing note selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`).
+- FR-020E: `.pdf` text selections must map deterministically to normalized document-text offsets for the active revision and store existing note selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`).
 - FR-020F: Reader mode must default to a notes-first two-pane layout (`center reader` + `right sidebar`) with no persistent left pane.
-- FR-020G: The controllable `.pdf` renderer path in FR-020D must preserve zoom/scroll UX parity, comply with FR-060 through FR-069 security baseline constraints, and maintain NFR-001 section navigation latency target.
+- FR-020G: The controllable `.pdf` renderer path in FR-020D must preserve zoom/scroll UX parity, comply with FR-060 through FR-069 security baseline constraints, and maintain NFR-001 document navigation latency target.
 - FR-020H: When the `.pdf` reader is zoomed beyond the available center-pane width, the view must provide horizontal panning/scrolling so the document is not obscured by the right sidebar.
-- FR-021: Users must be able to create, edit, and delete notes attached to a section, with optional paragraph-level or text-selection-level anchors inside that section.
+- FR-021: Users must be able to create, edit, and delete notes attached to a document, with optional paragraph-level or text-selection-level anchors inside that document.
 - FR-021A: Every rendered note item must expose a visible delete affordance (`x`) in the top-right corner.
 - FR-021B: The note editor must support pointer selection, keyboard caret movement, and text entry in both new and existing notes.
-- FR-021C: Creating a note from selected paragraph/text must capture selection metadata without changing the deterministic section anchor model.
+- FR-021C: Creating a note from selected paragraph/text must capture selection metadata without changing the deterministic document anchor model.
 - FR-021D: In native `.pdf` view mode, selection-anchored note creation must be supported directly from `.pdf` text selections using the deterministic mapping rules in FR-020E and ND-012.
 - FR-021E: Notes created with paragraph/text-selection anchors must display only the selected text excerpt in the notes pane; paragraph ordinals and character offsets must not be shown.
 - FR-021F: Creating a note from selected text must open an in-context overlay composer anchored near the selection origin.
 - FR-022: Notes must persist across app restarts.
-- FR-023: Notes keep their existing section anchors unless the document is re-imported/re-indexed.
-- FR-023A: Optional paragraph/text-selection anchors are revision-scoped metadata; section remapping on re-import remains exact `anchor_key` only.
-- FR-024: Notes flagged `needs reassignment` must be excluded from section note lists until reassigned.
+- FR-023: Notes keep their existing document anchors unless the document is re-imported/re-indexed.
+- FR-023A: Optional paragraph/text-selection anchors are revision-scoped metadata; document remapping on re-import remains exact `anchor_key` only.
+- FR-024: Notes flagged `needs reassignment` must be excluded from document note lists until reassigned.
 - FR-024A: Notes flagged `needs reassignment` must remain visible and actionable in `Unassigned notes`.
 - FR-025: Notes must store plain text only.
 - FR-026: The right sidebar must use one unified feed that contains both notes and provocations.
 - FR-026A: The right sidebar must extend to the full window height and scroll internally when feed content exceeds the viewport.
 - FR-026: Notes shall be ordered by the position of their anchor in the document, from earliest to latest. The position is determined by the anchor’s location in the document’s linear reading order (e.g., page number, then intra-page position).
-- FR-027: The selected unified-feed filter (`All`, `Notes`, `Provocation`) must persist per document across section navigation.
+- FR-027: The selected unified-feed filter (`All`, `Notes`, `Provocation`) must persist per document across document navigation.
 - FR-028: Notes must autosave on short debounce and on editor blur.
 - FR-029: `Unassigned notes` must be reachable directly from the right sidebar in reader mode.
 - FR-029A: `Unassigned notes` must be pinned above the unified feed and remain actionable while reading.
@@ -101,10 +102,10 @@ In-scope v0 outcomes:
 ### 3.4 Provocations
 
 - FR-040: Provocations must be on-demand only (never auto-triggered).
-- FR-041: Users must be able to request a provocation for the active section while reading.
+- FR-041: Users must be able to request a provocation for the active document while reading.
 - FR-042: Users must be able to request a provocation for a selected note or selected paragraph/text while writing.
 - FR-042A: Each note card must include a `✨` provocation button to the left of the delete `x`; clicking it reveals the provocation style selector and generate controls inline under the note, then appends the generated provocation at the bottom of that note.
-- FR-043: Provocations must accumulate per section (new requests append; existing entries remain until deleted).
+- FR-043: Provocations must accumulate per document (new requests append; existing entries remain until deleted).
 - FR-044: Users must be able to generate additional provocations without replacing prior entries.
 - FR-044A: Every rendered provocation item must expose a visible delete affordance (`x`) in the top-right corner.
 - FR-045: Users must be able to disable provocations per document.
@@ -116,7 +117,7 @@ In-scope v0 outcomes:
   - Methodological
 - FR-048: Provocation style precedence must be: request-level selector overrides workspace default; if unset, use workspace default.
 - FR-049: Unified feed items (notes and provocations) must be deterministically ordered by document appearance, not by creation time.
-- FR-049A: Deterministic unified-feed sort key must be `section.order_index ASC`, then `paragraph_ordinal ASC` (null treated as section-level), then `start_offset ASC` (null treated as section-level), then `created_at ASC`, tie-break `id ASC`.
+- FR-049A: Deterministic unified-feed sort key must be `paragraph_ordinal ASC` (null treated as document-level), then `start_offset ASC` (null treated as document-level), then `created_at ASC`, tie-break `id ASC`.
 
 ### 3.5 Settings and providers
 
@@ -157,7 +158,7 @@ In-scope v0 outcomes:
 ### 3.7 Revision model and IPC contracts
 
 - FR-070: Persistence must include a `document_revisions` model with immutable per-import revision records and a `current_revision_id` pointer on each document.
-- FR-071: Re-import/re-index must execute atomically in one transaction: create revision, write sections, exact-anchor remap notes, queue unmatched notes, invalidate prior revision outputs, switch `current_revision_id`.
+- FR-071: Re-import/re-index must execute atomically in one transaction: create revision, write document content, exact-anchor remap notes, queue unmatched notes, invalidate prior revision outputs, switch `current_revision_id`.
 - FR-072: If re-import transaction fails, no partial revision state may be visible.
 - FR-073: IPC must use an explicit namespaced allowlist including: `workspace.open`, `workspace.create`, `document.import`, `document.reimport`, `document.locate`, `section.list`, `section.get`, `note.create`, `note.update`, `note.delete`, `note.reassign`, `ai.generateProvocation`, `ai.cancel`, `settings.get`, `settings.update`, `network.status`.
 - FR-074: All IPC responses must use a standard envelope: `{ ok: true, data }` or `{ ok: false, error: { code, message, details? } }`.
@@ -181,40 +182,40 @@ In-scope v0 outcomes:
 
 ## 4. Non-functional requirements
 
-- NFR-001 Performance: section navigation/render must complete in `<200ms` on indexed docs within size limit.
+- NFR-001 Performance: document navigation/render must complete in `<200ms` on indexed docs within size limit.
 - NFR-002 Performance: AI operations (provocation) should return in `<8s` under normal network/OpenAI conditions.
 - NFR-002A Benchmark network profile for pass/fail: stable connection to OpenAI with no VPN/proxy, packet loss `<1%`, and median RTT to OpenAI endpoint `<150ms` during benchmark run.
-- NFR-003 Reliability: local data (sections, notes, cached AI outputs, settings metadata) must survive restart/crash.
+- NFR-003 Reliability: local data (document content, notes, cached AI outputs, settings metadata) must survive restart/crash.
 - NFR-004 Offline: when offline, non-AI features must remain usable and AI actions must be blocked with actionable offline errors.
 - NFR-005 Security: secrets must remain in Keychain; logs must not include raw API keys.
 - NFR-006 UX clarity: all blocked actions must show explicit causes and next-step guidance.
 - NFR-007 Benchmark hardware: performance measurements must run on Apple Silicon macOS hardware (M1/M2 class, 16GB RAM).
 - NFR-008 Benchmark fixtures: use 12 representative documents across `.pdf`, `.txt`, `.md`, including near-limit files for each type.
-- NFR-009 Benchmark reporting: measure section navigation on a warm-cache 200-navigation run and AI latency on 100 provocation calls; report p50/p90 and verify NFR-001/NFR-002 targets.
-- NFR-010 v0 blocking benchmark gate: run a smoke benchmark with 20 warm-cache section navigations and 10 provocation calls; report p50 and verify NFR-001/NFR-002 targets.
+- NFR-009 Benchmark reporting: measure document navigation on a warm-cache 200-navigation run and AI latency on 100 provocation calls; report p50/p90 and verify NFR-001/NFR-002 targets.
+- NFR-010 v0 blocking benchmark gate: run a smoke benchmark with 20 warm-cache document navigations and 10 provocation calls; report p50 and verify NFR-001/NFR-002 targets.
 - NFR-011 Full benchmark protocol in NFR-007 through NFR-009 is required for hardening milestone completion and is non-blocking for initial hobby v0 delivery.
 
 ## 5. Data requirements
 
 - DR-001 Persistence must use SQLite + local files.
-- DR-002 Store source file path, fingerprint metadata (`size`, `mtime`, `sha256`), and parsed section text per document revision.
-- DR-003 Store section anchors and note-to-section mappings.
+- DR-002 Store source file path, fingerprint metadata (`size`, `mtime`, `sha256`), and parsed document text per document revision.
+- DR-003 Store document anchors and note-to-document mappings.
 - DR-003A Store optional note selection metadata for paragraph/text-selection anchors (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`).
-- DR-004 Store cached AI outputs keyed by document and section metadata.
+- DR-004 Store cached AI outputs keyed by document metadata.
 - DR-005 Invalidate all cached provocation outputs for a document revision after re-import/re-index.
 - DR-006 Store provocation style used for each generated provocation.
 - DR-006A Store optional provocation selection metadata for ordering and preview (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`) when provocation is generated from selected text.
 - DR-007 Do not store API keys in SQLite.
 - DR-008 Do not duplicate/copy original source files into workspace storage in v0.
-- DR-009 Store `anchor_key` in deterministic `<normalized_heading_slug>#<ordinal>` form.
+- DR-009 Store `anchor_key` in deterministic `<normalized_heading_slug>#<ordinal>` form (document anchor uses `document#1`).
 - DR-010 Store document revision metadata sufficient to determine re-import/re-index invalidation boundaries.
-- DR-011 Store immutable revision records in `document_revisions` and link AI outputs/sections to a revision ID.
+- DR-011 Store immutable revision records in `document_revisions` and link AI outputs/document content to a revision ID.
 - DR-012 Keep `documents.current_revision_id` consistent with the latest committed revision.
 - DR-013 Store active auth mode per workspace.
 - DR-014 Store only non-secret Codex auth session metadata (status, account label if available, last validated timestamp); never store bearer/refresh tokens.
 - DR-015 API key mode continues to use Keychain-only storage for secrets.
 - DR-016 Codex App Server transport logs must not include Codex bearer tokens, refresh tokens, or raw auth headers.
-- DR-017 Store provocation records as append-only history rows per section until explicit user deletion.
+- DR-017 Store provocation records as append-only history rows per document until explicit user deletion.
 
 ## 6. Error and edge-case requirements
 
@@ -223,8 +224,8 @@ In-scope v0 outcomes:
 - ER-003 Over-limit file: reject with explicit limit message (`50 pages` for `.pdf`, `25,000 words` for `.txt`/`.md`).
 - ER-004 OpenAI timeout/rate-limit: show retry option and preserve unsaved note edits.
 - ER-005 Missing/invalid API key: route user to settings.
-- ER-006 Re-import/re-index anchor shift: mark note as `needs reassignment` and prompt manual section selection.
-- ER-006A If user skips reassignment, note remains in `Unassigned notes` with original section metadata for later reassignment.
+- ER-006 Re-import/re-index anchor shift: mark note as `needs reassignment` and prompt manual document reassignment.
+- ER-006A If user skips reassignment, note remains in `Unassigned notes` with original document metadata for later reassignment.
 - ER-007 Offline AI request: fail fast with offline guidance; keep user in current context.
 - ER-008 Missing/moved source file: provide `Locate file` and `Re-import` actions.
 - ER-009 User-cancelled `Codex subscription login`: return to settings with clear cancellation state and retry action.
@@ -238,13 +239,13 @@ In-scope v0 outcomes:
 ## 7. Acceptance criteria
 
 1. Import accepts `.pdf` text documents (up to 50 pages), `.txt`, `.md` (up to 25,000 words); rejects scanned PDFs and over-limit files.
-2. Reader loads sections with `<200ms` median navigation latency on representative test docs.
+2. Reader loads documents with `<200ms` median navigation latency on representative test docs.
 3. User can create/edit/delete plain-text notes, including paragraph/text-selection anchored notes, and keep them after restart.
-4. Re-import/re-index flags affected notes for manual reassignment, and users can reassign them to a section.
+4. Re-import/re-index flags affected notes for manual reassignment, and users can reassign them to the document.
 5. Notes skipped during reassignment remain discoverable and actionable in a persistent `Unassigned notes` view.
-6. Reader mode uses a notes-first two-pane layout (`center reader` + `right sidebar`) without a persistent left pane; section navigation remains accessible.
+6. Reader mode uses a notes-first two-pane layout (`center reader` + `right sidebar`) without a persistent left pane; document navigation remains accessible.
 7. Notes autosave on debounce/blur
-8. User can request section-, note-, or selected-text-targeted provocations on demand only.
+8. User can request document-, note-, or selected-text-targeted provocations on demand only.
 9. Right-sidebar unified feed includes notes and provocations ordered by document appearance and each item can be deleted via an `x` control.
 10. User can disable provocations per document.
 11. User can select provocation style from skeptical/creative/methodological.
@@ -256,7 +257,7 @@ In-scope v0 outcomes:
 17. Re-import/re-index remaps notes only via exact `anchor_key`; unmatched notes require manual reassignment.
 18. Missing/moved source files trigger `Locate file` / `Re-import` recovery flows.
 19. Electron security baseline requirements FR-060 through FR-069 are enforced.
-20. Sectioning behavior is deterministic by file type per FR-019A through FR-019F and ND-001 through ND-003.
+20. Document structure behavior follows the single-section rules in FR-013 through FR-019F and ND-001 through ND-003.
 21. Re-import/re-index is atomic and revisioned per FR-070 through FR-072.
 22. IPC contracts and validation follow FR-073 through FR-076.
 23. AI runtime defaults follow FR-080 through FR-084 and ND-004.
@@ -298,15 +299,15 @@ In-scope v0 outcomes:
 
 - ND-001 Heading detection thresholds for `.txt`: `short all-caps` means a trimmed line with 3-80 visible characters, at least 2 words, at least 80% uppercase letters (ignoring digits/punctuation), and no trailing terminal punctuation (`.`, `?`, `!`).
 - ND-002 `Title:`-style heading detection for `.txt` and `.pdf` text fallback uses `^[A-Za-z][A-Za-z0-9 /&()'\\-]{1,80}:$`.
-- ND-003 `.pdf` heading-like detection fallback applies the same deterministic heading rules as `.txt` to extracted text in source order; if no matches, sectioning falls back to deterministic 2-page buckets.
-- ND-004 Deterministic AI context assembly for provocations uses a fixed window: active section plus up to one previous and one next section. Assembly order is active, previous, next. Input clipping is deterministic: keep active first, then previous, then next; truncate from the tail of the last included section to satisfy the input budget.
+- ND-003 `.pdf` documents are treated as a single section; outline and heading detection do not split sections.
+- ND-004 Deterministic AI context assembly for provocations uses the active document only (no adjacent sections).
 - ND-005 Provocations are not user-editable in v0. Invalidation requirements apply to cached generated provocations only.
-- ND-006 Reassignment source of truth: unresolved notes must have `notes.section_id = NULL` and an open `note_reassignment_queue` row containing original section metadata. Section note lists must exclude rows with `section_id = NULL`. Reassignment sets `notes.section_id` to a section in `documents.current_revision_id` and resolves the queue row.
+- ND-006 Reassignment source of truth: unresolved notes must have `notes.section_id = NULL` and an open `note_reassignment_queue` row containing original document metadata. Document note lists must exclude rows with `section_id = NULL`. Reassignment sets `notes.section_id` to the current document section and resolves the queue row.
 - ND-007 Default auth mode for new workspaces is `API key`.
 - ND-008 Auth mode switch is deterministic per workspace and takes effect for the next AI request without requiring process restart.
 - ND-009 Codex-mode generation transport default is Codex App Server; direct OpenAI `/v1/responses` bearer-token calls are reserved for API-key mode only.
-- ND-010 Unified feed ordering in UI and queries is deterministic by document position: `section.order_index ASC`, then `paragraph_ordinal ASC` (null as section-level, before paragraph-specific items), then `start_offset ASC` (null as section-level, before offset-specific items), then `created_at ASC`, then `id ASC`.
-- ND-011 Note selection anchors use deterministic offsets computed on normalized section text for the active revision; remap logic remains anchored to section `anchor_key` only.
-- ND-012 `.pdf` selection-anchor behavior in v0 is deterministic through controllable renderer events: resolved selections map to normalized active-revision section-text offsets and persist standard selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`); ambiguous/unresolved mappings must fail without write and return ER-014 guidance.
+- ND-010 Unified feed ordering in UI and queries is deterministic by document position: `paragraph_ordinal ASC` (null as document-level, before paragraph-specific items), then `start_offset ASC` (null as document-level, before offset-specific items), then `created_at ASC`, then `id ASC`.
+- ND-011 Note selection anchors use deterministic offsets computed on normalized document text for the active revision; remap logic remains anchored to document `anchor_key` only.
+- ND-012 `.pdf` selection-anchor behavior in v0 is deterministic through controllable renderer events: resolved selections map to normalized active-revision document-text offsets and persist standard selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`); ambiguous/unresolved mappings must fail without write and return ER-014 guidance.
 - ND-013 Footer status mapping is deterministic: show `Status: <SourceFileStatus.message>` when the source file is unavailable; otherwise show `Status: offline` when offline; otherwise `Status: AI <AiAvailability.reason>` when AI is unavailable; otherwise `Status: ok`.
 - ND-014 Reader settings interaction is modal-first: open via native app menu, block background settings edits while modal is open, and preserve reader scroll/selection on close.

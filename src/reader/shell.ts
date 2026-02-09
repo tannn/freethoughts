@@ -11,7 +11,7 @@ export interface ReaderShellSnapshot {
 }
 
 const RIGHT_PANE_TABS: readonly RightPaneTab[] = ['all', 'notes', 'provocation'];
-const LEFT_NAV_ITEMS: readonly string[] = ['sections', 'unassigned-notes'];
+const LEFT_NAV_ITEMS: readonly string[] = ['documents', 'unassigned-notes'];
 
 export class ReaderShellController {
   private activeDocumentId: string | null = null;

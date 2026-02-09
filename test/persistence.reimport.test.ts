@@ -40,18 +40,16 @@ const seedRevisionOne = (sqlite: SqliteCli): void => {
     );
 
     INSERT INTO sections (id, document_id, revision_id, anchor_key, heading, ordinal, order_index, content)
-    VALUES
-      ('sec-1a', 'doc-1', 'rev-1', 'intro#1', 'Intro', 1, 0, 'Intro text'),
-      ('sec-1b', 'doc-1', 'rev-1', 'method#1', 'Method', 1, 1, 'Method text');
+    VALUES ('sec-1', 'doc-1', 'rev-1', 'document#1', 'Document', 1, 0, 'Document text');
 
     INSERT INTO notes (id, document_id, section_id, content)
     VALUES
-      ('note-1', 'doc-1', 'sec-1a', 'keep me mapped'),
-      ('note-2', 'doc-1', 'sec-1b', 'will become unassigned');
+      ('note-1', 'doc-1', 'sec-1', 'keep me mapped'),
+      ('note-2', 'doc-1', 'sec-1', 'still mapped');
 
     INSERT INTO provocations (id, document_id, section_id, revision_id, request_id, style, output_text, is_active)
     VALUES
-      ('prov-1', 'doc-1', 'sec-1a', 'rev-1', 'req-1', 'skeptical', 'Old output', 1);
+      ('prov-1', 'doc-1', 'sec-1', 'rev-1', 'req-1', 'skeptical', 'Old output', 1);
   `);
 };
 
@@ -65,26 +63,18 @@ const buildReimportInput = (): ReimportTransactionInput => ({
   sourceSha256: 'sha-new',
   sections: [
     {
-      id: 'sec-2a',
-      anchorKey: 'intro#1',
-      heading: 'Intro',
+      id: 'sec-2',
+      anchorKey: 'document#1',
+      heading: 'Document',
       ordinal: 1,
       orderIndex: 0,
-      content: 'Intro v2 text'
-    },
-    {
-      id: 'sec-2c',
-      anchorKey: 'results#1',
-      heading: 'Results',
-      ordinal: 1,
-      orderIndex: 1,
-      content: 'Results text'
+      content: 'Updated document text'
     }
   ]
 });
 
 describe('re-import transaction', () => {
-  it('remaps by exact anchor_key and queues unmatched notes atomically', () => {
+  it('remaps by exact anchor_key and keeps notes assigned atomically', () => {
     const { dbPath, sqlite } = createTempDb();
     seedRevisionOne(sqlite);
 
@@ -99,18 +89,14 @@ describe('re-import transaction', () => {
       "SELECT id, section_id FROM notes WHERE document_id = 'doc-1' ORDER BY id"
     );
     expect(notes).toEqual([
-      { id: 'note-1', section_id: 'sec-2a' },
-      { id: 'note-2', section_id: null }
+      { id: 'note-1', section_id: 'sec-2' },
+      { id: 'note-2', section_id: 'sec-2' }
     ]);
 
-    const queue = sqlite.queryJson<{
-      note_id: string;
-      previous_anchor_key: string;
-      status: string;
-    }>(
-      "SELECT note_id, previous_anchor_key, status FROM note_reassignment_queue ORDER BY note_id"
+    const queue = sqlite.queryJson<{ note_id: string }>(
+      'SELECT note_id FROM note_reassignment_queue ORDER BY note_id'
     );
-    expect(queue).toEqual([{ note_id: 'note-2', previous_anchor_key: 'method#1', status: 'open' }]);
+    expect(queue).toEqual([]);
 
     const provocation = sqlite.queryJson<{ is_active: number }>(
       "SELECT is_active FROM provocations WHERE id = 'prov-1'"
@@ -143,8 +129,8 @@ describe('re-import transaction', () => {
       "SELECT id, section_id FROM notes WHERE document_id = 'doc-1' ORDER BY id"
     );
     expect(notes).toEqual([
-      { id: 'note-1', section_id: 'sec-1a' },
-      { id: 'note-2', section_id: 'sec-1b' }
+      { id: 'note-1', section_id: 'sec-1' },
+      { id: 'note-2', section_id: 'sec-1' }
     ]);
 
     const queue = sqlite.queryJson<{ note_id: string }>(
@@ -178,9 +164,9 @@ describe('re-import transaction', () => {
         'note-1',
         'doc-1',
         'rev-1',
-        'sec-1a',
-        'intro#1',
-        'Intro',
+        'sec-1',
+        'document#1',
+        'Document',
         'open',
         NULL
       );

@@ -865,7 +865,6 @@ const elements = {
   importForm: required(document.querySelector<HTMLFormElement>('#import-form'), 'import-form'),
   importMessage: required(document.querySelector<HTMLParagraphElement>('#import-message'), 'import-message'),
   documentList: required(document.querySelector<HTMLUListElement>('#document-list'), 'document-list'),
-  sectionList: required(document.querySelector<HTMLUListElement>('#section-list'), 'section-list'),
   unassignedNavButton: required(
     document.querySelector<HTMLButtonElement>('#unassigned-nav-button'),
     'unassigned-nav-button'
@@ -1351,32 +1350,9 @@ const renderDocuments = (): void => {
   }
 };
 
-const renderSections = (): void => {
-  elements.sectionList.replaceChildren();
-
-  for (const section of state.sections) {
-    const item = document.createElement('li');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'nav-item-button';
-    if (section.id === state.activeSection?.section.id) {
-      button.classList.add('active');
-    }
-
-    button.textContent = `${section.orderIndex + 1}. ${section.heading}`;
-    button.addEventListener('click', () => {
-      closeOutlineDrawer();
-      void openSection(section.id);
-    });
-
-    item.append(button);
-    elements.sectionList.append(item);
-  }
-};
-
 const renderSectionView = (): void => {
   if (!state.activeSection) {
-    elements.sectionHeading.textContent = 'No section selected';
+    elements.sectionHeading.textContent = 'No document selected';
     elements.sectionContent.textContent = 'Import a document to begin.';
     elements.sectionContent.classList.remove('hidden');
     elements.pdfSurface.classList.add('hidden');
@@ -1391,7 +1367,7 @@ const renderSectionView = (): void => {
     return;
   }
 
-  elements.sectionHeading.textContent = state.activeSection.section.heading;
+  elements.sectionHeading.textContent = state.activeSection.document.title;
   elements.sectionContent.textContent = state.activeSection.section.content;
 
   const isPdf = state.activeSection.document.fileType === 'pdf';
@@ -1517,7 +1493,7 @@ const renderUnassignedView = (): void => {
 
     const oldSection = document.createElement('p');
     oldSection.className = 'hint';
-    oldSection.textContent = `Old section: ${item.previousHeading ?? 'Unknown section'}`;
+    oldSection.textContent = `Previous document: ${item.previousHeading ?? 'Unknown document'}`;
     card.append(oldSection);
 
     const select = document.createElement('select');
@@ -1603,7 +1579,7 @@ const buildProvocationCard = (row: UnifiedFeedItem): HTMLElement => {
 
   const sectionHint = document.createElement('p');
   sectionHint.className = 'hint';
-  sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
+  sectionHint.textContent = `Document: ${state.activeSection?.document.title ?? row.sectionHeading}`;
   cardHeader.append(sectionHint);
 
   const deleteButton = document.createElement('button');
@@ -1635,7 +1611,7 @@ const buildProvocationCard = (row: UnifiedFeedItem): HTMLElement => {
     const openButton = document.createElement('button');
     openButton.type = 'button';
     openButton.className = 'secondary';
-    openButton.textContent = 'Open Section';
+    openButton.textContent = 'Open Location';
     openButton.addEventListener('click', () => {
       void withUiErrorHandling(async () => {
         await openSection(row.sectionId);
@@ -1734,7 +1710,7 @@ const renderUnifiedFeed = (): void => {
 
       const sectionHint = document.createElement('p');
       sectionHint.className = 'hint';
-      sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
+      sectionHint.textContent = `Document: ${state.activeSection?.document.title ?? row.sectionHeading}`;
       cardHeader.append(sectionHint);
 
       const actionGroup = document.createElement('div');
@@ -1882,7 +1858,7 @@ const renderUnifiedFeed = (): void => {
         const openButton = document.createElement('button');
         openButton.type = 'button';
         openButton.className = 'secondary';
-        openButton.textContent = 'Open Section';
+        openButton.textContent = 'Open Location';
         openButton.addEventListener('click', () => {
           void withUiErrorHandling(async () => {
             await openSection(row.sectionId);
@@ -2271,7 +2247,7 @@ const renderReassignmentModal = (): void => {
 
   elements.reassignmentCount.textContent = `${state.reassignmentQueue.length} notes need reassignment`;
   elements.reassignmentNote.textContent = `Note: ${current.content}`;
-  elements.reassignmentOldSection.textContent = `Old section: ${current.previousHeading ?? 'Unknown section'}`;
+  elements.reassignmentOldSection.textContent = `Previous document: ${current.previousHeading ?? 'Unknown document'}`;
 
   elements.reassignmentSectionSelect.replaceChildren();
   for (const section of state.sections) {
@@ -2341,7 +2317,6 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   renderWorkspaceMode(true);
   updateTopBar();
   renderDocuments();
-  renderSections();
   renderSectionView();
   renderUnassignedView();
   renderFeedFilters();
@@ -2370,7 +2345,6 @@ const refreshActiveDocumentLists = async (): Promise<void> => {
   state.unassignedNotes = listing.unassignedNotes;
   updateTopBar();
   renderDocuments();
-  renderSections();
   renderUnassignedView();
   renderStatusBar();
 };
@@ -2413,7 +2387,6 @@ const openDocument = async (documentId: string): Promise<void> => {
 
   updateTopBar();
   renderDocuments();
-  renderSections();
   renderUnassignedView();
   renderFeedFilters();
   renderCenterView();
@@ -2487,7 +2460,6 @@ const openSection = async (
 
   updateTopBar();
   renderDocuments();
-  renderSections();
   renderSectionView();
   renderUnifiedFeed();
   renderProvocation();
@@ -2530,7 +2502,6 @@ const handleReimport = async (): Promise<void> => {
 
   updateTopBar();
   renderDocuments();
-  renderSections();
   renderUnassignedView();
 
   if (snapshot.firstSectionId) {
@@ -2591,7 +2562,7 @@ const handleNewNoteFromSelection = async (noteText: string): Promise<void> => {
     throw new Error(
       isPdfDocumentWithNativeSurface()
         ? 'Select text in the PDF reader before creating a note from selection.'
-        : 'Select text in the section reader before creating a note from selection.'
+        : 'Select text in the document reader before creating a note from selection.'
     );
   }
 

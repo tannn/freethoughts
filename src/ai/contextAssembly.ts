@@ -49,14 +49,7 @@ export const buildDeterministicProvocationContext = (
   }
 
   const active = orderedSections[activeIndex];
-  const previous = activeIndex > 0 ? orderedSections[activeIndex - 1] : null;
-  const next = activeIndex < orderedSections.length - 1 ? orderedSections[activeIndex + 1] : null;
-
-  const candidates = [
-    { label: 'Active', section: active },
-    ...(previous ? [{ label: 'Previous', section: previous }] : []),
-    ...(next ? [{ label: 'Next', section: next }] : [])
-  ];
+  const candidates = [{ label: 'Active', section: active }];
 
   let remaining = inputTokenBudget;
   const blocks: string[] = [];

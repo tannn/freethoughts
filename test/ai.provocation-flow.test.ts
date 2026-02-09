@@ -27,16 +27,12 @@ describe('provocation generation flow', () => {
     seedDocumentRevision(seeded.sqlite, {
       documentId: 'doc-1',
       revisionId: 'rev-1',
-      sections: [
-        { id: 'sec-1', anchorKey: 'a#1', heading: 'A', orderIndex: 0, content: 'alpha' },
-        { id: 'sec-2', anchorKey: 'b#1', heading: 'B', orderIndex: 1, content: 'beta' },
-        { id: 'sec-3', anchorKey: 'c#1', heading: 'C', orderIndex: 2, content: 'gamma' }
-      ]
+      sections: [{ id: 'sec-1', anchorKey: 'a#1', heading: 'A', orderIndex: 0, content: 'alpha' }]
     });
 
     seeded.sqlite.exec(`
       INSERT INTO notes (id, document_id, section_id, content)
-      VALUES ('note-1', 'doc-1', 'sec-2', 'Selected note content');
+      VALUES ('note-1', 'doc-1', 'sec-1', 'Selected note content');
     `);
 
     const settings = new AiSettingsRepository(seeded.dbPath);
@@ -57,18 +53,18 @@ describe('provocation generation flow', () => {
     const first = await service.generate({
       requestId: 'req-1',
       documentId: 'doc-1',
-      sectionId: 'sec-2'
+      sectionId: 'sec-1'
     });
 
     expect(first.style).toBe('creative');
     expect(first.isActive).toBe(true);
     expect(first.noteId).toBeNull();
-    expect(service.getActive('doc-1', 'sec-2')?.id).toBe(first.id);
+    expect(service.getActive('doc-1', 'sec-1')?.id).toBe(first.id);
 
     const second = await service.generate({
       requestId: 'req-2',
       documentId: 'doc-1',
-      sectionId: 'sec-2',
+      sectionId: 'sec-1',
       noteId: 'note-1',
       style: 'skeptical'
     });
@@ -77,19 +73,19 @@ describe('provocation generation flow', () => {
     expect(second.id).not.toBe(first.id);
     expect(second.noteId).toBe('note-1');
 
-    const history = service.listHistory('doc-1', 'sec-2');
+    const history = service.listHistory('doc-1', 'sec-1');
     expect(history.map((entry) => entry.id)).toEqual([second.id, first.id]);
 
-    const active = service.getActive('doc-1', 'sec-2');
+    const active = service.getActive('doc-1', 'sec-1');
     expect(active?.id).toBe(second.id);
 
     expect(service.deleteById(second.id)).toBe(true);
-    const remaining = service.listHistory('doc-1', 'sec-2');
+    const remaining = service.listHistory('doc-1', 'sec-1');
     expect(remaining.map((entry) => entry.id)).toEqual([first.id]);
 
-    expect(transport.prompts[0]).toContain('[Active] B');
-    expect(transport.prompts[0]).toContain('[Previous] A');
-    expect(transport.prompts[0]).toContain('[Next] C');
+    expect(transport.prompts[0]).toContain('[Active] A');
+    expect(transport.prompts[0]).not.toContain('[Previous]');
+    expect(transport.prompts[0]).not.toContain('[Next]');
     expect(transport.prompts[1]).toContain('Target note:');
   });
 
