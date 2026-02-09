@@ -38,5 +38,6 @@ describe('renderer note selection anchors', () => {
     expect(formatNoteAnchorExcerpt('A short selected excerpt from the document.')).toBe(
       '"A short selected excerpt from the document."'
     );
+    expect(formatNoteAnchorExcerpt('A'.repeat(90), 10)).toBe('"AAAAAAA..."');
   });
 });
