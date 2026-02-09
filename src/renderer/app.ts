@@ -1463,22 +1463,13 @@ const syncSelectedNoteCard = (): void => {
 };
 
 const appendNoteAnchorMeta = (card: HTMLElement, note: NoteRecord): void => {
-  if (!note.selectedTextExcerpt && note.paragraphOrdinal === null) {
+  if (!note.selectedTextExcerpt) {
     return;
   }
 
   const anchorMeta = document.createElement('p');
   anchorMeta.className = 'note-anchor hint';
-
-  const segments = [`Anchor paragraph ${note.paragraphOrdinal !== null ? note.paragraphOrdinal + 1 : '?'}`];
-  if (note.startOffset !== null && note.endOffset !== null) {
-    segments.push(`chars ${note.startOffset}-${note.endOffset}`);
-  }
-  if (note.selectedTextExcerpt) {
-    segments.push(`"${trimExcerpt(note.selectedTextExcerpt, 80)}"`);
-  }
-
-  anchorMeta.textContent = segments.join(' | ');
+  anchorMeta.textContent = trimExcerpt(note.selectedTextExcerpt, 80);
   card.append(anchorMeta);
 };
 

@@ -31,4 +31,12 @@ describe('renderer note selection anchors', () => {
     expect(html).toContain('id="selection-note-create-button"');
     expect(html).toContain('id="pdf-document"');
   });
+
+  it('renders selection-anchored notes with excerpt-only metadata', () => {
+    const appTs = readFileSync(appTsPath, 'utf8');
+
+    expect(appTs).toContain('trimExcerpt(note.selectedTextExcerpt');
+    expect(appTs).not.toContain('Anchor paragraph');
+    expect(appTs).not.toContain('chars ');
+  });
 });
