@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { formatNoteAnchorExcerpt } from '../src/renderer/noteAnchors.js';
+import { trimExcerpt } from '../src/renderer/text.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,5 +32,20 @@ describe('renderer note selection anchors', () => {
     expect(html).toContain('id="selection-note-input"');
     expect(html).toContain('id="selection-note-create-button"');
     expect(html).toContain('id="pdf-document"');
+  });
+
+  it('renders selection-anchored notes with excerpt-only metadata', () => {
+    expect(formatNoteAnchorExcerpt(null)).toBeNull();
+    expect(formatNoteAnchorExcerpt('A short selected excerpt from the document.')).toBe(
+      '"A short selected excerpt from the document."'
+    );
+    expect(formatNoteAnchorExcerpt('A'.repeat(90), 10)).toBe('"AAAAAAA..."');
+  });
+
+  it('trims excerpts to the requested max length', () => {
+    expect(trimExcerpt('ABCDE', 5)).toBe('ABCDE');
+    expect(trimExcerpt('A'.repeat(90), 10)).toBe('AAAAAAA...');
+    expect(trimExcerpt('ABCDE', 4)).toBe('A...');
+    expect(trimExcerpt('ABCDE', 2)).toBe('..');
   });
 });
