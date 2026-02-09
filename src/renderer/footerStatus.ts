@@ -3,7 +3,7 @@ export type FooterStatusSource = {
   message: string;
 };
 
-export type FooterStatusAiAvailability =
+export type AiAvailability =
   | {
       enabled: true;
       reason: 'ok';
@@ -16,8 +16,8 @@ export type FooterStatusAiAvailability =
     };
 
 export const deriveFooterStatusLabel = (input: {
-  sourceStatus?: FooterStatusSource;
-  aiAvailability: FooterStatusAiAvailability;
+  sourceStatus: FooterStatusSource;
+  aiAvailability: AiAvailability;
 }): string => {
   const { sourceStatus, aiAvailability } = input;
   if (sourceStatus?.status === 'missing') {

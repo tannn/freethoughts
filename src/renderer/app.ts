@@ -1,6 +1,6 @@
 import { NoteAutosaveController } from '../reader/autosave.js';
 import { getDesktopApi } from './desktopApi.js';
-import { deriveFooterStatusLabel } from './footerStatus.js';
+import { deriveFooterStatusLabel, type AiAvailability } from './footerStatus.js';
 import { formatNoteAnchorExcerpt } from './noteAnchors.js';
 import { trimExcerpt } from './text.js';
 
@@ -122,18 +122,6 @@ interface UnifiedFeedItem {
   createdAt: string;
   textContent: string;
 }
-
-type AiAvailability =
-  | {
-      enabled: true;
-      reason: 'ok';
-      message: string;
-    }
-  | {
-      enabled: false;
-      reason: 'offline' | 'provocations-disabled' | 'auth-unavailable';
-      message: string;
-    };
 
 interface AuthStatusSnapshot {
   mode: AuthMode;
@@ -2078,7 +2066,13 @@ const renderProvocation = (): void => {
 };
 
 const renderStatusBar = (): void => {
-  const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus;
+  const sourceStatus =
+    state.activeSection?.sourceFileStatus ??
+    getActiveDocument()?.sourceFileStatus ?? {
+      status: 'available',
+      message: 'Source file available',
+      actions: []
+    };
   const aiAvailability = deriveAiAvailability();
   elements.footerStatus.textContent = deriveFooterStatusLabel({
     sourceStatus,
