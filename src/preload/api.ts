@@ -1,13 +1,20 @@
-import type { IpcChannel } from '../shared/ipc/channels.js';
+import { SETTINGS_OPEN_EVENT, type IpcChannel, type IpcEventChannel } from '../shared/ipc/channels.js';
 import type { IpcEnvelope } from '../shared/ipc/envelope.js';
+
+type IpcEventListener = (...args: unknown[]) => void;
 
 export interface IpcRendererLike {
   invoke(channel: IpcChannel, payload: unknown): Promise<IpcEnvelope>;
+  on(channel: IpcEventChannel, listener: IpcEventListener): void;
+  removeListener(channel: IpcEventChannel, listener: IpcEventListener): void;
 }
 
 export type AuthMode = 'api_key' | 'codex_subscription';
 
 export interface DesktopApi {
+  app: {
+    onSettingsOpen(handler: () => void): () => void;
+  };
   workspace: {
     open(payload: { workspacePath: string }): Promise<IpcEnvelope>;
     create(payload: { workspacePath: string }): Promise<IpcEnvelope>;
@@ -76,6 +83,15 @@ export interface DesktopApi {
 }
 
 export const createDesktopApi = (ipcRenderer: IpcRendererLike): DesktopApi => ({
+  app: {
+    onSettingsOpen: (handler) => {
+      const listener: IpcEventListener = () => handler();
+      ipcRenderer.on(SETTINGS_OPEN_EVENT, listener);
+      return () => {
+        ipcRenderer.removeListener(SETTINGS_OPEN_EVENT, listener);
+      };
+    }
+  },
   workspace: {
     open: (payload) => ipcRenderer.invoke('workspace.open', payload),
     create: (payload) => ipcRenderer.invoke('workspace.create', payload),

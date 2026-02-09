@@ -1,9 +1,19 @@
-import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  session,
+  shell,
+  type MenuItemConstructorOptions
+} from 'electron';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { FetchOpenAiTransport } from '../ai/index.js';
 import { createDefaultBusinessHandlers, registerValidatedIpcHandlers } from './ipc/index.js';
 import { MacOsKeychainApiKeyProvider } from './security/index.js';
+import { SETTINGS_OPEN_EVENT } from '../shared/ipc/channels.js';
 import {
   CONTENT_SECURITY_POLICY,
   MAIN_WINDOW_WEB_PREFERENCES,
@@ -189,6 +199,48 @@ const configureSecurityGuards = (): void => {
   });
 };
 
+const openSettingsFromMenu = (): void => {
+  const window = BrowserWindow.getAllWindows()[0];
+  if (!window) {
+    return;
+  }
+  window.webContents.send(SETTINGS_OPEN_EVENT);
+};
+
+const configureAppMenu = (): void => {
+  if (process.platform !== 'darwin') {
+    return;
+  }
+
+  const template: MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Settings...',
+          accelerator: 'CommandOrControl+,',
+          click: () => openSettingsFromMenu()
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' }
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+};
+
 const createMainWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     width: 1280,
@@ -208,6 +260,7 @@ const createMainWindow = (): BrowserWindow => {
 
 const bootstrap = async (): Promise<void> => {
   await app.whenReady();
+  configureAppMenu();
   configureSecurityGuards();
   registerMainIpc(createRuntime());
   createMainWindow();

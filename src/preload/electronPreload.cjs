@@ -1,6 +1,15 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const api = {
+  app: {
+    onSettingsOpen: (handler) => {
+      const listener = () => handler();
+      ipcRenderer.on('settings.open', listener);
+      return () => {
+        ipcRenderer.removeListener('settings.open', listener);
+      };
+    }
+  },
   workspace: {
     open: (payload) => ipcRenderer.invoke('workspace.open', payload),
     create: (payload) => ipcRenderer.invoke('workspace.create', payload),

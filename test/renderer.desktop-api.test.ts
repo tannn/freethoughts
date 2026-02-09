@@ -4,6 +4,9 @@ import { getDesktopApi } from '../src/renderer/desktopApi.js';
 describe('renderer desktop preload bridge', () => {
   it('returns the bridge object when required namespaces exist', () => {
     const api = {
+      app: {
+        onSettingsOpen: () => () => {}
+      },
       workspace: {
         open: async () => ({ ok: true, data: null }),
         create: async () => ({ ok: true, data: null }),

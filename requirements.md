@@ -122,11 +122,11 @@ In-scope v0 outcomes:
 - FR-052: In API key mode, API keys must be stored in macOS Keychain (not SQLite).
 - FR-053: Users must be able to set the OpenAI generation model name.
 - FR-054: Users must be able to set a workspace default provocation style.
-- FR-054A: Settings must be opened from a top navigation `gear` button in reader mode.
-- FR-054B: Clicking the top navigation `gear` button must open a modal settings panel (non-route, overlay interaction).
+- FR-054A: Settings must be opened from the native macOS app menu in reader mode.
+- FR-054B: Selecting Settings (or using `Command + ,`) must open a modal settings panel (non-route, overlay interaction).
 - FR-054C: Settings modal must include controls for `auth mode`, `generation model`, and `default workspace provocation style`.
 - FR-054D: Reader mode must not require a separate settings pane to edit these controls; settings edits are completed in the modal flow.
-- FR-054E: Settings must also be accessible from the native macOS app menu (`Command + ,`) and open the same modal.
+- FR-054E: Settings must be accessible from the native macOS app menu (`Command + ,`) and open the same modal.
 - FR-054F: Settings must include a `Re-import` action for the active document.
 - FR-055: The app must support a second authentication mode: `Codex subscription login`.
 - FR-056: In `Codex subscription login` mode, users must be able to initiate browser-based sign-in and complete login without entering an API key.
@@ -275,7 +275,7 @@ In-scope v0 outcomes:
 39. `Unassigned notes` are pinned in the right sidebar above the unified feed and remain actionable while reading.
 40. Selection-triggered provocation flow opens a style-selector overlay with workspace default preselected, dropdown alternatives, and a right-edge checkmark for the active style.
 41. Reader footer always shows `Network: <state>` and only shows `Generating provocation from selected text...` with animated status indicator when the request is active.
-42. Reader settings are opened from a top-nav gear button and presented in a modal containing `auth mode`, `generation model`, and `default workspace provocation style`.
+42. Reader settings are opened from the native macOS app menu and presented in a modal containing `auth mode`, `generation model`, and `default workspace provocation style`.
 43. Reader settings edits are completed in the top-nav modal flow without requiring navigation to a separate settings pane.
 
 ## 8. Out of scope (explicit)
@@ -306,4 +306,4 @@ In-scope v0 outcomes:
 - ND-011 Note selection anchors use deterministic offsets computed on normalized section text for the active revision; remap logic remains anchored to section `anchor_key` only.
 - ND-012 `.pdf` selection-anchor behavior in v0 is deterministic through controllable renderer events: resolved selections map to normalized active-revision section-text offsets and persist standard selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`); ambiguous/unresolved mappings must fail without write and return ER-014 guidance.
 - ND-013 Footer generation-status indicator is request-scoped; it appears only for active selection-triggered provocation requests and clears immediately on success, error, or cancel.
-- ND-014 Reader settings interaction is modal-first: open via top-nav gear, block background settings edits while modal is open, and preserve reader scroll/selection on close.
+- ND-014 Reader settings interaction is modal-first: open via native app menu, block background settings edits while modal is open, and preserve reader scroll/selection on close.
