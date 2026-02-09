@@ -21,7 +21,9 @@ describe('preload api boundary', () => {
     };
 
     const ipcRenderer = {
-      invoke: async (): Promise<IpcEnvelope> => ({ ok: true, data: null })
+      invoke: async (): Promise<IpcEnvelope> => ({ ok: true, data: null }),
+      on: () => {},
+      removeListener: () => {}
     };
 
     exposeDesktopApi(contextBridge, ipcRenderer);
@@ -29,6 +31,7 @@ describe('preload api boundary', () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.apiKey).toBe(PRELOAD_API_KEY);
     expect(Object.keys((calls[0]?.api as object) ?? {})).toEqual([
+      'app',
       'workspace',
       'document',
       'section',
@@ -47,7 +50,9 @@ describe('preload api boundary', () => {
       invoke: async (channel: IpcChannel, payload: unknown): Promise<IpcEnvelope> => {
         seen.push({ channel, payload });
         return { ok: true, data: { channel } };
-      }
+      },
+      on: () => {},
+      removeListener: () => {}
     };
 
     const api = createDesktopApi(ipcRenderer);

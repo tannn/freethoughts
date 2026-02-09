@@ -11,6 +11,7 @@ export const getDesktopApi = (host: Record<string, unknown>): DesktopApi => {
   }
 
   if (
+    !isRecord(api.app) ||
     !isRecord(api.workspace) ||
     !isRecord(api.document) ||
     !isRecord(api.section) ||

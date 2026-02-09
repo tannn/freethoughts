@@ -3,6 +3,7 @@ declare module 'electron' {
     setWindowOpenHandler(handler: (details: unknown) => { action: 'allow' | 'deny' }): void;
     on(event: 'will-navigate', listener: (event: { preventDefault(): void }, targetUrl: string) => void): void;
     getURL(): string;
+    send(channel: string, ...args: unknown[]): void;
   }
 
   export interface BrowserWindowConstructorOptions {
@@ -18,6 +19,7 @@ declare module 'electron' {
     constructor(options?: BrowserWindowConstructorOptions);
     loadFile(path: string): Promise<void>;
     static getAllWindows(): BrowserWindow[];
+    webContents: WebContents;
   }
 
   export interface OpenDialogOptions {
@@ -70,9 +72,24 @@ declare module 'electron' {
     on(event: 'web-contents-created', listener: (event: unknown, contents: WebContents) => void): void;
     quit(): void;
     getPath(name: string): string;
+    name: string;
   }
 
   export const app: App;
+
+  export interface MenuItemConstructorOptions {
+    label?: string;
+    submenu?: MenuItemConstructorOptions[];
+    role?: string;
+    accelerator?: string;
+    click?: () => void;
+    type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
+  }
+
+  export class Menu {
+    static buildFromTemplate(template: MenuItemConstructorOptions[]): Menu;
+    static setApplicationMenu(menu: Menu | null): void;
+  }
 
   export interface ContextBridge {
     exposeInMainWorld(apiKey: string, api: unknown): void;

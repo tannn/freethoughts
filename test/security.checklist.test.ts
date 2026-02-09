@@ -41,13 +41,16 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
     };
 
     const ipcRenderer = {
-      invoke: async (): Promise<IpcEnvelope> => ({ ok: true, data: null })
+      invoke: async (): Promise<IpcEnvelope> => ({ ok: true, data: null }),
+      on: () => {},
+      removeListener: () => {}
     };
 
     exposeDesktopApi(contextBridge, ipcRenderer);
     expect(exposed).toHaveLength(1);
     expect(exposed[0]?.apiKey).toBe(PRELOAD_API_KEY);
     expect(Object.keys((exposed[0]?.api as object) ?? {})).toEqual([
+      'app',
       'workspace',
       'document',
       'section',
@@ -87,7 +90,9 @@ describe('phase 5 security checklist (FR-060 to FR-069)', () => {
       invoke: async (channel: IpcChannel, payload: unknown): Promise<IpcEnvelope> => {
         seen.push({ channel, payload });
         return { ok: true, data: null };
-      }
+      },
+      on: () => {},
+      removeListener: () => {}
     });
 
     await api.auth.switchMode({ mode: 'api_key' });

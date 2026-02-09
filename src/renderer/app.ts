@@ -747,10 +747,6 @@ const elements = {
     document.querySelector<HTMLButtonElement>('#outline-close-button'),
     'outline-close-button'
   ),
-  settingsOpenButton: required(
-    document.querySelector<HTMLButtonElement>('#settings-open-button'),
-    'settings-open-button'
-  ),
   refreshNetworkButton: required(
     document.querySelector<HTMLButtonElement>('#refresh-network-button'),
     'refresh-network-button'
@@ -2646,7 +2642,7 @@ const wireEvents = (): void => {
     closeOutlineDrawer();
   });
 
-  elements.settingsOpenButton.addEventListener('click', () => {
+  desktopApi.app.onSettingsOpen(() => {
     void withUiErrorHandling(async () => {
       await openSettingsModal();
     });

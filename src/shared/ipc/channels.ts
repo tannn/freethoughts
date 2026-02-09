@@ -26,3 +26,9 @@ export const IPC_CHANNELS = [
 ] as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[number];
+
+export const IPC_EVENT_CHANNELS = ['settings.open'] as const;
+
+export type IpcEventChannel = (typeof IPC_EVENT_CHANNELS)[number];
+
+export const SETTINGS_OPEN_EVENT: IpcEventChannel = 'settings.open';

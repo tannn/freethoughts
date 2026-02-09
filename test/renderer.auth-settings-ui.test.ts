@@ -9,10 +9,10 @@ const htmlPath = join(__dirname, '..', 'src', 'renderer', 'index.html');
 const appTsPath = join(__dirname, '..', 'src', 'renderer', 'app.ts');
 
 describe('renderer auth settings markup', () => {
-  it('includes top-nav gear trigger and settings modal controls', () => {
+  it('includes settings modal controls', () => {
     const html = readFileSync(htmlPath, 'utf8');
 
-    expect(html).toContain('id="settings-open-button"');
+    expect(html).not.toContain('id="settings-open-button"');
     expect(html).toContain('id="settings-modal"');
     expect(html).toContain('id="refresh-network-button"');
     expect(html).toContain('id="settings-close-button"');
@@ -57,7 +57,7 @@ describe('renderer auth settings markup', () => {
     expect(appTs).toContain('setSettingsModalOpen');
     expect(appTs).toContain('openSettingsModal');
     expect(appTs).toContain('closeSettingsModal');
-    expect(appTs).toContain("elements.settingsOpenButton.addEventListener('click'");
+    expect(appTs).toContain('desktopApi.app.onSettingsOpen');
     expect(appTs).toContain("elements.settingsModal.addEventListener('click'");
     expect(appTs).toContain("event.key === 'Escape' && state.settingsModalOpen");
   });

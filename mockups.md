@@ -9,7 +9,7 @@ Historical wireframes are archived in `mockups.archive.md`.
 
 ```text
 +----------------------------------------------------------------------------------+
-| Top Bar: Workspace | Active Document | [Outline] | [Gear]                        |
+| Top Bar: Workspace | Active Document | [Outline]                                 |
 +---------------------------------------------+------------------------------------+
 | Center Pane                                  | Right Sidebar                      |
 | Section Reader                               | Unified Feed                       |
@@ -99,11 +99,11 @@ Behavior refs:
 - PDF renderer replacement must preserve zoom/scroll parity + security/perf baselines: `FR-020H`, `FR-060` to `FR-069`, `NFR-001`
 - Mapping failure handling keeps context and supports retry: `ER-014`
 
-## 7. Settings modal (top-nav gear)
+## 7. Settings modal (app menu)
 
 ```text
 +----------------------------------------------------------------------------------+
-| Top Nav: Workspace | Active Document | [Gear]                                    |
+| Top Nav: Workspace | Active Document                                              |
 |                 +-------------------------------------------+                     |
 |                 | Settings                                  |                     |
 |                 | Auth mode                                 |                     |

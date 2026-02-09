@@ -65,7 +65,7 @@ Notes-first two-pane layout:
 - Center pane: document reader (section-focused)
 - Right sidebar: unified context feed (`All`, `Notes`, `Provocation`)
 - No persistent left pane in reader mode; section navigation is exposed through top-bar controls and/or a transient outline drawer.
-- Top navigation includes a `gear` settings entry that opens a modal.
+- Settings are opened from the native macOS app menu (`Command + ,`) and displayed in a modal.
 
 Core interaction model:
 
@@ -182,8 +182,7 @@ These controls are mandatory for v0:
 ## 7.6 Settings
 
 - OpenAI-backed configuration only in v0
-  - Settings entry point: top-nav `gear` button opens modal settings panel
-  - Settings must also be reachable from the native macOS app menu (`Command + ,`).
+  - Settings entry point: native macOS app menu (`Command + ,`) opens modal settings panel
   - Reader settings edits are completed in this modal flow (no separate settings pane required in reader mode)
   - Auth mode selector:
     - `API key`
@@ -409,7 +408,7 @@ v0 is complete when all are true:
 31. `Unassigned notes` are pinned above the unified feed in the right sidebar and remain actionable while reading.
 32. Selection-triggered provocation flow opens a style-selector overlay with workspace default preselected, dropdown alternatives, and a right-edge active-style checkmark.
 33. Reader footer always shows network state and conditionally shows selection-triggered provocation in-flight status with animated indicator.
-34. Reader settings open from top-nav gear button and are edited in a modal with auth mode, generation model, and workspace default style controls.
+34. Reader settings open from the native app menu and are edited in a modal with auth mode, generation model, and workspace default style controls.
 
 ## 14. Implementation phases
 
