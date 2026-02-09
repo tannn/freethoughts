@@ -1950,10 +1950,13 @@ const renderStatusBar = (): void => {
   const isGenerating = state.activeProvocationRequestId !== null;
   elements.generationStatus.classList.toggle('hidden', !isGenerating);
 
+  elements.sourceActions.replaceChildren();
+  elements.sourceActions.classList.add('hidden');
+  elements.sourceStatus.classList.add('hidden');
+
   if (sourceStatus?.status === 'missing') {
     elements.sourceStatus.textContent = `Source: ${sourceStatus.message}`;
     elements.sourceStatus.classList.remove('hidden');
-    elements.sourceActions.replaceChildren();
     elements.sourceActions.classList.remove('hidden');
 
     const locateButton = document.createElement('button');
@@ -1973,10 +1976,6 @@ const renderStatusBar = (): void => {
     });
 
     elements.sourceActions.append(locateButton, reimportButton);
-  } else {
-    elements.sourceStatus.classList.add('hidden');
-    elements.sourceActions.replaceChildren();
-    elements.sourceActions.classList.add('hidden');
   }
 };
 
