@@ -1947,7 +1947,8 @@ const renderStatusBar = (): void => {
   }
 
   const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
-  elements.generationStatus.classList.toggle('hidden', state.activeProvocationRequestId === null);
+  const isGenerating = state.activeProvocationRequestId !== null;
+  elements.generationStatus.classList.toggle('hidden', !isGenerating);
 
   if (sourceStatus?.status === 'missing') {
     elements.sourceStatus.textContent = `Source: ${sourceStatus.message}`;
