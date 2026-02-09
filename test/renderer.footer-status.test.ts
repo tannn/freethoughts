@@ -25,18 +25,10 @@ describe('renderer footer status label', () => {
     const renderStart = appTs.indexOf('const renderStatusBar');
     const renderEnd = appTs.indexOf('const renderReassignmentModal');
     const renderBody = appTs.slice(renderStart, renderEnd);
-    const missingIndex = renderBody.indexOf("sourceStatus?.status === 'missing'");
-    const offlineIndex = renderBody.indexOf('Status: offline');
-    const aiUnavailableIndex = renderBody.indexOf('Status: AI');
 
-    expect(renderBody).toContain('Status: offline');
-    expect(renderBody).toContain('Status: AI');
+    expect(renderBody).toMatch(
+      /sourceStatus\?\.status === 'missing'[\s\S]*Status: offline[\s\S]*Status: AI[\s\S]*Status: ok/
+    );
     expect(renderBody).toContain('aiAvailability.reason');
-    expect(renderBody).toContain('Status: ok');
-    expect(missingIndex).toBeGreaterThan(-1);
-    expect(offlineIndex).toBeGreaterThan(-1);
-    expect(aiUnavailableIndex).toBeGreaterThan(-1);
-    expect(missingIndex).toBeLessThan(offlineIndex);
-    expect(offlineIndex).toBeLessThan(aiUnavailableIndex);
   });
 });
