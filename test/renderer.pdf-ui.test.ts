@@ -56,13 +56,13 @@ describe('renderer pdf surface markup', () => {
       }
 
       let depth = 0;
-      for (let index = braceStart; index < css.length; index += 1) {
-        if (css[index] === '{') {
+      for (let charIndex = braceStart; charIndex < css.length; charIndex += 1) {
+        if (css[charIndex] === '{') {
           depth += 1;
-        } else if (css[index] === '}') {
+        } else if (css[charIndex] === '}') {
           depth -= 1;
           if (depth === 0) {
-            return css.slice(braceStart + 1, index);
+            return css.slice(braceStart + 1, charIndex);
           }
         }
       }
