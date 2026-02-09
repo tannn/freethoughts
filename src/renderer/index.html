@@ -106,9 +106,12 @@
 
       <footer class="status-bar">
         <span id="network-status">Network: unknown</span>
-        <span id="source-status">Source: -</span>
-        <span id="ai-status">AI: -</span>
-        <span id="source-actions" class="status-actions"></span>
+        <span id="generation-status" class="status-indicator hidden">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Generating provocation from selected text...</span>
+        </span>
+        <span id="source-status" class="hidden">Source: -</span>
+        <span id="source-actions" class="status-actions hidden"></span>
       </footer>
 
       <section

@@ -921,8 +921,8 @@ const elements = {
     'provocation-style-message'
   ),
   networkStatus: required(document.querySelector<HTMLElement>('#network-status'), 'network-status'),
+  generationStatus: required(document.querySelector<HTMLElement>('#generation-status'), 'generation-status'),
   sourceStatus: required(document.querySelector<HTMLElement>('#source-status'), 'source-status'),
-  aiStatus: required(document.querySelector<HTMLElement>('#ai-status'), 'ai-status'),
   sourceActions: required(document.querySelector<HTMLElement>('#source-actions'), 'source-actions'),
   reassignmentModal: required(document.querySelector<HTMLElement>('#reassignment-modal'), 'reassignment-modal'),
   reassignmentCount: required(
@@ -1937,47 +1937,48 @@ const renderProvocation = (): void => {
   // Sidebar provocation controls were removed; only selection popover states need re-rendering here.
   renderSelectionActionOverlay();
   renderProvocationStyleOverlay();
+  renderStatusBar();
 };
 
 const renderStatusBar = (): void => {
   if (state.networkStatus) {
-    elements.networkStatus.textContent = state.networkStatus.online
-      ? `Network: online (${state.networkStatus.checkedAt})`
-      : 'Network: offline';
+    elements.networkStatus.textContent = state.networkStatus.online ? 'Network: online' : 'Network: offline';
   } else {
     elements.networkStatus.textContent = 'Network: unknown';
   }
 
   const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
-  if (!sourceStatus) {
-    elements.sourceStatus.textContent = 'Source: -';
-    elements.sourceActions.replaceChildren();
-  } else {
+  elements.generationStatus.classList.toggle('hidden', state.activeProvocationRequestId === null);
+
+  if (sourceStatus?.status === 'missing') {
     elements.sourceStatus.textContent = `Source: ${sourceStatus.message}`;
+    elements.sourceStatus.classList.remove('hidden');
     elements.sourceActions.replaceChildren();
+    elements.sourceActions.classList.remove('hidden');
 
-    if (sourceStatus.status === 'missing') {
-      const locateButton = document.createElement('button');
-      locateButton.type = 'button';
-      locateButton.className = 'secondary';
-      locateButton.textContent = 'Locate File';
-      locateButton.addEventListener('click', () => {
-        void withUiErrorHandling(handleLocateFile);
-      });
+    const locateButton = document.createElement('button');
+    locateButton.type = 'button';
+    locateButton.className = 'secondary';
+    locateButton.textContent = 'Locate File';
+    locateButton.addEventListener('click', () => {
+      void withUiErrorHandling(handleLocateFile);
+    });
 
-      const reimportButton = document.createElement('button');
-      reimportButton.type = 'button';
-      reimportButton.className = 'secondary';
-      reimportButton.textContent = 'Re-import';
-      reimportButton.addEventListener('click', () => {
-        void withUiErrorHandling(handleReimport);
-      });
+    const reimportButton = document.createElement('button');
+    reimportButton.type = 'button';
+    reimportButton.className = 'secondary';
+    reimportButton.textContent = 'Re-import';
+    reimportButton.addEventListener('click', () => {
+      void withUiErrorHandling(handleReimport);
+    });
 
-      elements.sourceActions.append(locateButton, reimportButton);
-    }
+    elements.sourceActions.append(locateButton, reimportButton);
+  } else {
+    elements.sourceStatus.textContent = '';
+    elements.sourceStatus.classList.add('hidden');
+    elements.sourceActions.replaceChildren();
+    elements.sourceActions.classList.add('hidden');
   }
-
-  elements.aiStatus.textContent = `AI: ${deriveAiAvailability().message}`;
 };
 
 const renderReassignmentModal = (): void => {
