@@ -22,13 +22,16 @@ describe('renderer footer status label', () => {
 
   it('maps status content in renderer logic', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
-    const missingIndex = appTs.indexOf("sourceStatus?.status === 'missing'");
-    const offlineIndex = appTs.indexOf("Status: offline");
-    const aiUnavailableIndex = appTs.indexOf('`Status: AI ${aiAvailability.reason}`');
+    const renderStart = appTs.indexOf('const renderStatusBar');
+    const renderEnd = appTs.indexOf('const renderReassignmentModal');
+    const renderBody = appTs.slice(renderStart, renderEnd);
+    const missingIndex = renderBody.indexOf("sourceStatus?.status === 'missing'");
+    const offlineIndex = renderBody.indexOf('Status: offline');
+    const aiUnavailableIndex = renderBody.indexOf('Status: AI ${aiAvailability.reason}');
 
-    expect(appTs).toContain('Status: offline');
-    expect(appTs).toContain('Status: AI ${aiAvailability.reason}');
-    expect(appTs).toContain('Status: ok');
+    expect(renderBody).toContain('Status: offline');
+    expect(renderBody).toContain('Status: AI ${aiAvailability.reason}');
+    expect(renderBody).toContain('Status: ok');
     expect(missingIndex).toBeGreaterThan(-1);
     expect(offlineIndex).toBeGreaterThan(-1);
     expect(aiUnavailableIndex).toBeGreaterThan(-1);
