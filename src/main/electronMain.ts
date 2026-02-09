@@ -23,6 +23,8 @@ import {
   type UpdateSettingsPayload
 } from './runtime/index.js';
 
+app.setName('Free Thought');
+
 class UnsupportedPlatformApiKeyProvider implements RuntimeApiKeyProvider {
   private unsupported(message: string): never {
     throw new AppError('E_INTERNAL', message);

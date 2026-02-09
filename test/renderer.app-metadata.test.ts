@@ -19,6 +19,7 @@ describe('app branding', () => {
   it('uses Free Thought as the main window title', () => {
     const main = readFileSync(mainPath, 'utf8');
 
+    expect(main).toContain("app.setName('Free Thought')");
     expect(main).toContain("title: 'Free Thought'");
   });
 });
