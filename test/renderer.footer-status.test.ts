@@ -33,6 +33,7 @@ describe('renderer footer status', () => {
 
     expect(appTs).toContain('generationStatus');
     expect(appTs).toContain('activeProvocationRequestId');
+    expect(appTs).toContain("generationStatus.classList.toggle('hidden'");
     expect(appTs).not.toContain('Network: online (');
   });
 });

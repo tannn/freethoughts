@@ -1937,7 +1937,6 @@ const renderProvocation = (): void => {
   // Sidebar provocation controls were removed; only selection popover states need re-rendering here.
   renderSelectionActionOverlay();
   renderProvocationStyleOverlay();
-  renderStatusBar();
 };
 
 const renderStatusBar = (): void => {
@@ -2325,6 +2324,7 @@ const generateProvocation = async (initial: {
     const currentRequestId = requestId();
     state.activeProvocationRequestId = currentRequestId;
     renderProvocation();
+    renderStatusBar();
 
     try {
       const envelope = (await desktopApi.ai.generateProvocation({
@@ -2365,6 +2365,7 @@ const generateProvocation = async (initial: {
         state.activeProvocationRequestId = null;
       }
       renderProvocation();
+      renderStatusBar();
     }
   }
 };
