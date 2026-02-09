@@ -437,9 +437,39 @@ pre {
   padding: 0;
 }
 
+.note-provocation-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #c9d6c7;
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.note-provocation-button:hover {
+  background: #f5faf4;
+  border-color: #bccbb9;
+}
+
 .note-delete-button:hover {
   background: #fff4f4;
   border-color: #e2b8b8;
+}
+
+.note-provocation-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  background: #f6faf4;
+}
+
+.note-provocation-attachment {
+  margin-left: 12px;
 }
 
 .provocation-output {

@@ -29,4 +29,14 @@ describe('renderer note delete affordance', () => {
     expect(appTs).toContain("deleteButton.addEventListener('click'");
     expect(appTs).toContain('desktopApi.note.delete({ noteId: row.id })');
   });
+
+  it('adds a note-level provocation button next to delete', () => {
+    const appTs = readFileSync(appTsPath, 'utf8');
+    const styles = readFileSync(stylesPath, 'utf8');
+
+    expect(appTs).toContain("provocationButton.className = 'note-provocation-button'");
+    expect(appTs).toContain("provocationButton.textContent = '✨'");
+    expect(styles).toContain('.note-provocation-button');
+    expect(styles).toContain('.note-provocation-panel');
+  });
 });

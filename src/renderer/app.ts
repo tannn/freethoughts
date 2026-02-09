@@ -1091,6 +1091,11 @@ const state = {
   provocationStyleOverlayOpen: false,
   provocationStyleOverlayOpenedAtMs: 0,
   provocationStyleMenuOpen: false,
+  noteProvocationPanelNoteId: null as string | null,
+  noteProvocationStyle: 'skeptical' as ProvocationStyle,
+  noteProvocationMessage: '' as string,
+  noteProvocationPendingNoteId: null as string | null,
+  noteProvocationAttachments: new Map<string, string>(),
   selectionPopoverMode: 'chooser' as SelectionPopoverMode,
   selectionPopoverAnchorRect: null as ViewportRect | null,
   pendingSelectionProvocationTarget: null as SelectionTriggeredProvocationTarget | null,
@@ -1584,6 +1589,59 @@ const appendNoteAnchorMeta = (card: HTMLElement, note: NoteRecord): void => {
   card.append(anchorMeta);
 };
 
+const buildProvocationCard = (row: UnifiedFeedItem): HTMLElement => {
+  const card = document.createElement('article');
+  card.className = 'note-card provocation-card';
+
+  const cardHeader = document.createElement('div');
+  cardHeader.className = 'note-card-header';
+
+  const sectionHint = document.createElement('p');
+  sectionHint.className = 'hint';
+  sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
+  cardHeader.append(sectionHint);
+
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.className = 'note-delete-button';
+  deleteButton.textContent = 'x';
+  deleteButton.setAttribute('aria-label', 'Delete provocation');
+  deleteButton.title = 'Delete provocation';
+  deleteButton.addEventListener('click', () => {
+    void withUiErrorHandling(async () => {
+      const envelope = (await desktopApi.ai.deleteProvocation({
+        provocationId: row.id
+      })) as Envelope<{ provocationId: string; deleted: boolean }>;
+      unwrapEnvelope(envelope);
+      if (state.activeSection) {
+        await openSection(state.activeSection.section.id, { preserveView: true });
+      }
+    });
+  });
+  cardHeader.append(deleteButton);
+  card.append(cardHeader);
+
+  const provocationText = document.createElement('pre');
+  provocationText.className = 'provocation-output';
+  provocationText.textContent = row.textContent;
+  card.append(provocationText);
+
+  if (row.sectionId !== state.activeSection?.section.id) {
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'secondary';
+    openButton.textContent = 'Open Section';
+    openButton.addEventListener('click', () => {
+      void withUiErrorHandling(async () => {
+        await openSection(row.sectionId);
+      });
+    });
+    card.append(openButton);
+  }
+
+  return card;
+};
+
 const renderUnifiedFeed = (): void => {
   elements.unifiedFeedList.replaceChildren();
 
@@ -1625,6 +1683,36 @@ const renderUnifiedFeed = (): void => {
     elements.unifiedFeedList.append(placeholder);
   }
 
+  const attachedProvocations = new Map<string, UnifiedFeedItem>();
+  if (state.noteProvocationAttachments.size > 0) {
+    const activeNoteIds = new Set(
+      state.activeSection.unifiedFeed.filter((item) => item.itemType === 'note').map((item) => item.id)
+    );
+    const toDelete: string[] = [];
+
+    for (const [noteId, provocationId] of state.noteProvocationAttachments) {
+      if (!activeNoteIds.has(noteId)) {
+        toDelete.push(noteId);
+        continue;
+      }
+
+      const row = state.activeSection.unifiedFeed.find(
+        (candidate) => candidate.itemType === 'provocation' && candidate.id === provocationId
+      );
+      if (row) {
+        attachedProvocations.set(noteId, row);
+      } else {
+        toDelete.push(noteId);
+      }
+    }
+
+    for (const noteId of toDelete) {
+      state.noteProvocationAttachments.delete(noteId);
+    }
+  }
+
+  const attachedProvocationIds = new Set(Array.from(attachedProvocations.values(), (row) => row.id));
+
   for (const row of rows) {
     if (row.itemType === 'note') {
       const note = state.activeSection.notes.find((candidate) => candidate.id === row.id);
@@ -1644,6 +1732,22 @@ const renderUnifiedFeed = (): void => {
       sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
       cardHeader.append(sectionHint);
 
+      const actionGroup = document.createElement('div');
+      actionGroup.className = 'note-actions';
+
+      const provocationButton = document.createElement('button');
+      provocationButton.type = 'button';
+      provocationButton.className = 'note-provocation-button';
+      provocationButton.textContent = '✨';
+      provocationButton.setAttribute('aria-label', 'Generate provocation');
+      provocationButton.title = 'Generate provocation';
+      provocationButton.addEventListener('click', () => {
+        void withUiErrorHandling(async () => {
+          await openNoteProvocationPanel(row.id, row.sectionId);
+        });
+      });
+      actionGroup.append(provocationButton);
+
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
       deleteButton.className = 'note-delete-button';
@@ -1659,7 +1763,8 @@ const renderUnifiedFeed = (): void => {
           }
         });
       });
-      cardHeader.append(deleteButton);
+      actionGroup.append(deleteButton);
+      cardHeader.append(actionGroup);
       card.append(cardHeader);
 
       if (note && inActiveSection) {
@@ -1687,6 +1792,82 @@ const renderUnifiedFeed = (): void => {
 
         card.append(textarea);
         appendNoteAnchorMeta(card, note);
+
+        if (state.noteProvocationPanelNoteId === note.id) {
+          const isPending =
+            state.noteProvocationPendingNoteId === note.id && state.activeProvocationRequestId !== null;
+
+          if (!isPending) {
+            const panel = document.createElement('div');
+            panel.className = 'note-provocation-panel';
+
+            const panelLabel = document.createElement('p');
+            panelLabel.className = 'hint';
+            panelLabel.textContent = 'Provocation style';
+            panel.append(panelLabel);
+
+            const styleMenu = document.createElement('div');
+            styleMenu.className = 'style-menu';
+
+            for (const style of PROVOCATION_STYLES) {
+              const option = document.createElement('button');
+              option.type = 'button';
+              option.className = 'style-option';
+              if (style === state.noteProvocationStyle) {
+                option.classList.add('active');
+              }
+              option.dataset.style = style;
+
+              const label = document.createElement('span');
+              label.textContent = style;
+
+              const check = document.createElement('span');
+              check.className = 'style-option-check';
+              check.setAttribute('aria-hidden', 'true');
+              check.textContent = '✓';
+
+              option.append(label, check);
+              option.addEventListener('click', () => {
+                state.noteProvocationStyle = style;
+                renderUnifiedFeed();
+              });
+              styleMenu.append(option);
+            }
+
+            panel.append(styleMenu);
+
+            const actions = document.createElement('div');
+            actions.className = 'provocation-actions';
+
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'secondary';
+            cancelButton.textContent = 'Cancel';
+            cancelButton.addEventListener('click', () => {
+              closeNoteProvocationPanel();
+              renderUnifiedFeed();
+            });
+
+            const generateButton = document.createElement('button');
+            generateButton.type = 'button';
+            generateButton.textContent = 'Generate';
+            generateButton.addEventListener('click', () => {
+              void withUiErrorHandling(async () => {
+                await handleNoteProvocationGenerate(note.id);
+              });
+            });
+
+            actions.append(cancelButton, generateButton);
+            panel.append(actions);
+
+            const message = document.createElement('p');
+            message.className = 'message';
+            message.textContent = state.noteProvocationMessage;
+            panel.append(message);
+
+            card.append(panel);
+          }
+        }
       } else {
         const preview = document.createElement('p');
         preview.className = 'feed-text';
@@ -1708,58 +1889,20 @@ const renderUnifiedFeed = (): void => {
       }
 
       elements.unifiedFeedList.append(card);
+      const attached = attachedProvocations.get(row.id);
+      if (attached && filter === 'all') {
+        const attachedCard = buildProvocationCard(attached);
+        attachedCard.classList.add('note-provocation-attachment');
+        elements.unifiedFeedList.append(attachedCard);
+      }
       continue;
     }
 
-    const card = document.createElement('article');
-    card.className = 'note-card provocation-card';
-
-    const cardHeader = document.createElement('div');
-    cardHeader.className = 'note-card-header';
-
-    const sectionHint = document.createElement('p');
-    sectionHint.className = 'hint';
-    sectionHint.textContent = `Section ${row.sectionOrderIndex + 1}: ${row.sectionHeading}`;
-    cardHeader.append(sectionHint);
-
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.className = 'note-delete-button';
-    deleteButton.textContent = 'x';
-    deleteButton.setAttribute('aria-label', 'Delete provocation');
-    deleteButton.title = 'Delete provocation';
-    deleteButton.addEventListener('click', () => {
-      void withUiErrorHandling(async () => {
-        const envelope = (await desktopApi.ai.deleteProvocation({
-          provocationId: row.id
-        })) as Envelope<{ provocationId: string; deleted: boolean }>;
-        unwrapEnvelope(envelope);
-        if (state.activeSection) {
-          await openSection(state.activeSection.section.id, { preserveView: true });
-        }
-      });
-    });
-    cardHeader.append(deleteButton);
-    card.append(cardHeader);
-
-    const provocationText = document.createElement('pre');
-    provocationText.className = 'provocation-output';
-    provocationText.textContent = row.textContent;
-    card.append(provocationText);
-
-    if (row.sectionId !== activeSectionId) {
-      const openButton = document.createElement('button');
-      openButton.type = 'button';
-      openButton.className = 'secondary';
-      openButton.textContent = 'Open Section';
-      openButton.addEventListener('click', () => {
-        void withUiErrorHandling(async () => {
-          await openSection(row.sectionId);
-        });
-      });
-      card.append(openButton);
+    if (filter !== 'provocation' && attachedProvocationIds.has(row.id)) {
+      continue;
     }
 
+    const card = buildProvocationCard(row);
     elements.unifiedFeedList.append(card);
   }
 
@@ -1865,6 +2008,35 @@ const renderAuthSettings = (): void => {
 
 const getWorkspaceDefaultProvocationStyle = (): ProvocationStyle =>
   state.settings?.defaultProvocationStyle ?? 'skeptical';
+
+const closeNoteProvocationPanel = (): void => {
+  state.noteProvocationPanelNoteId = null;
+  state.noteProvocationMessage = '';
+  state.noteProvocationPendingNoteId = null;
+};
+
+const openNoteProvocationPanel = async (noteId: string, sectionId: string): Promise<void> => {
+  if (!state.activeSection) {
+    return;
+  }
+
+  if (state.noteProvocationPanelNoteId === noteId) {
+    closeNoteProvocationPanel();
+    renderUnifiedFeed();
+    return;
+  }
+
+  if (state.activeSection.section.id !== sectionId) {
+    await openSection(sectionId);
+  }
+
+  state.selectedNoteId = noteId;
+  state.noteProvocationPanelNoteId = noteId;
+  state.noteProvocationStyle = getWorkspaceDefaultProvocationStyle();
+  state.noteProvocationMessage = '';
+  renderUnifiedFeed();
+  renderProvocation();
+};
 
 const getSelectionTriggeredProvocationTarget = (): SelectionTriggeredProvocationTarget | null => {
   const section = state.activeSection;
@@ -2143,6 +2315,10 @@ const openWorkspace = async (mode: 'open' | 'create'): Promise<void> => {
   state.unassignedNotes = [];
   state.activeSection = null;
   state.selectedNoteId = null;
+  state.noteProvocationPanelNoteId = null;
+  state.noteProvocationMessage = '';
+  state.noteProvocationPendingNoteId = null;
+  state.noteProvocationAttachments.clear();
   state.selectedFeedFilterByDocument.clear();
   state.reassignmentQueue = [];
   state.selectionAnchor = null;
@@ -2201,6 +2377,10 @@ const openDocument = async (documentId: string): Promise<void> => {
     state.selectionAnchor = null;
     state.pdfSelectionMappingFailed = false;
     state.selectionPopoverAnchorRect = null;
+    state.noteProvocationPanelNoteId = null;
+    state.noteProvocationMessage = '';
+    state.noteProvocationPendingNoteId = null;
+    state.noteProvocationAttachments.clear();
     clearPdfDocument();
   }
 
@@ -2274,6 +2454,12 @@ const openSection = async (
 
   if (!snapshot.notes.some((note) => note.id === state.selectedNoteId)) {
     state.selectedNoteId = snapshot.notes[0]?.id ?? null;
+  }
+
+  if (!snapshot.notes.some((note) => note.id === state.noteProvocationPanelNoteId)) {
+    state.noteProvocationPanelNoteId = null;
+    state.noteProvocationMessage = '';
+    state.noteProvocationPendingNoteId = null;
   }
 
   if (!options.preserveView) {
@@ -2412,10 +2598,10 @@ const generateProvocation = async (initial: {
   acknowledgeCloudWarning?: boolean;
   noteId?: string;
   style?: ProvocationStyle;
-} = {}): Promise<void> => {
+} = {}): Promise<ProvocationRecord | null> => {
   const section = state.activeSection;
   if (!section) {
-    return;
+    return null;
   }
 
   let acknowledgeCloudWarning = initial.acknowledgeCloudWarning ?? false;
@@ -2437,10 +2623,10 @@ const generateProvocation = async (initial: {
         acknowledgeCloudWarning
       })) as Envelope<ProvocationRecord>;
 
-      unwrapEnvelope(envelope);
+      const created = unwrapEnvelope(envelope);
       await openSection(section.section.id, { preserveView: true });
       appendLog('Provocation generated.');
-      return;
+      return created;
     } catch (error) {
       if (error instanceof EnvelopeError) {
         if (
@@ -2456,7 +2642,7 @@ const generateProvocation = async (initial: {
             acknowledgeCloudWarning = true;
             continue;
           }
-          return;
+          return null;
         }
       }
 
@@ -2494,6 +2680,41 @@ const handleSelectionActionChooseProvocation = (): void => {
     return;
   }
   openProvocationStyleOverlay();
+};
+
+const handleNoteProvocationGenerate = async (noteId: string): Promise<void> => {
+  if (!state.activeSection) {
+    return;
+  }
+
+  const aiAvailability = deriveAiAvailability();
+  if (!aiAvailability.enabled) {
+    state.noteProvocationMessage = aiAvailability.message;
+    renderUnifiedFeed();
+    return;
+  }
+
+  state.noteProvocationMessage = '';
+  state.noteProvocationPendingNoteId = noteId;
+  renderUnifiedFeed();
+
+  try {
+    const created = await generateProvocation({
+      noteId,
+      style: state.noteProvocationStyle
+    });
+    if (created) {
+      state.noteProvocationAttachments.set(noteId, created.id);
+    }
+  } finally {
+    if (state.noteProvocationPendingNoteId === noteId) {
+      state.noteProvocationPendingNoteId = null;
+    }
+    if (state.noteProvocationPanelNoteId === noteId) {
+      state.noteProvocationPanelNoteId = null;
+    }
+    renderUnifiedFeed();
+  }
 };
 
 const handleSelectionTriggeredProvocationGenerate = async (): Promise<void> => {
