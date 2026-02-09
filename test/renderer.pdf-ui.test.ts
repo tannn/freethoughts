@@ -78,4 +78,11 @@ describe('renderer pdf surface markup', () => {
     expect(pdfDocumentRule).toContain('width: max-content;');
     expect(pdfDocumentRule).toContain('min-width: 100%;');
   });
+
+  it('excludes br elements from user selection in the pdf text layer', () => {
+    const css = readFileSync(cssPath, 'utf8');
+
+    expect(css).toContain('.pdf-text-layer br');
+    expect(css).toContain('user-select: none');
+  });
 });

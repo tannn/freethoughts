@@ -310,6 +310,10 @@ pre {
   margin: 0;
 }
 
+.pdf-text-layer br {
+  user-select: none;
+}
+
 .pdf-text-layer ::selection {
   background: rgba(36, 76, 135, 0.35);
 }
