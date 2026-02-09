@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { formatNoteAnchorExcerpt } from '../src/renderer/noteAnchors.js';
+import { trimExcerpt } from '../src/renderer/text.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +40,12 @@ describe('renderer note selection anchors', () => {
       '"A short selected excerpt from the document."'
     );
     expect(formatNoteAnchorExcerpt('A'.repeat(90), 10)).toBe('"AAAAAAA..."');
-    expect(formatNoteAnchorExcerpt('ABCDE', 5)).toBe('"ABCDE"');
-    expect(formatNoteAnchorExcerpt('ABCDE', 2)).toBe('".."');
+  });
+
+  it('trims excerpts to the requested max length', () => {
+    expect(trimExcerpt('ABCDE', 5)).toBe('ABCDE');
+    expect(trimExcerpt('A'.repeat(90), 10)).toBe('AAAAAAA...');
+    expect(trimExcerpt('ABCDE', 4)).toBe('A...');
+    expect(trimExcerpt('ABCDE', 2)).toBe('..');
   });
 });
