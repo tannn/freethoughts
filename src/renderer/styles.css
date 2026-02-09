@@ -540,6 +540,10 @@ pre {
   flex: 1;
 }
 
+.selection-note-input {
+  padding: 6px 8px;
+}
+
 .style-picker {
   display: grid;
   gap: 8px;

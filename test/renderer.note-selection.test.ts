@@ -18,6 +18,7 @@ describe('renderer note selection anchors', () => {
     expect(appTs).toContain('paragraphOrdinal');
     expect(appTs).toContain('startOffset');
     expect(appTs).toContain('endOffset');
+    expect(appTs).toContain('selectionNoteInput');
     expect(appTs).toContain('handleNewNoteFromSelection');
     expect(appTs).toContain('Unable to map PDF selection to a deterministic anchor');
   });
@@ -26,6 +27,7 @@ describe('renderer note selection anchors', () => {
     const html = readFileSync(htmlPath, 'utf8');
     expect(html).toContain('id="selection-action-note-button"');
     expect(html).toContain('id="selection-note-panel"');
+    expect(html).toContain('id="selection-note-input"');
     expect(html).toContain('id="selection-note-create-button"');
     expect(html).toContain('id="pdf-document"');
   });
