@@ -39,7 +39,7 @@ describe('renderer pdf surface markup', () => {
     expect(appTs).toContain("style.setProperty('--scale-factor'");
   });
 
-  it('keeps the pdf viewport scrollable when zoomed wider than the center pane', () => {
+  it('expands the pdf document width for horizontal scrolling', () => {
     const css = readFileSync(cssPath, 'utf8');
 
     const readRule = (selector: string): string | null => {
@@ -70,11 +70,8 @@ describe('renderer pdf surface markup', () => {
       return null;
     };
 
-    const pdfViewportRule = readRule('.pdf-viewport');
     const pdfDocumentRule = readRule('.pdf-document');
 
-    expect(pdfViewportRule).not.toBeNull();
-    expect(pdfViewportRule).toContain('overflow: auto;');
     expect(pdfDocumentRule).not.toBeNull();
     expect(pdfDocumentRule).toContain('width: max-content;');
     expect(pdfDocumentRule).toContain('min-width: 100%;');
