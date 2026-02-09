@@ -128,6 +128,7 @@ Provocations are optional, user-triggered (not automatic), and accumulate until 
 - `.pdf` rendering uses a controllable renderer path (replacing iframe/embed path) so the app owns text-selection events and zoom/scroll state.
 - In native `.pdf` view mode, selection-anchored note creation is supported directly from `.pdf` text selections.
 - `.pdf` selections must map deterministically to normalized active-revision section-text offsets before note creation.
+- When `.pdf` zoom exceeds the center-pane width, provide horizontal panning/scrolling so the document remains visible alongside the sidebar.
 - `.pdf` renderer replacement must preserve zoom/scroll UX parity, meet section-navigation latency targets, and comply with Electron/CSP security baseline constraints.
 - Create/edit/delete notes attached to a section, with optional paragraph/text-selection metadata.
 - Notes are plain text for v0.
@@ -140,9 +141,8 @@ Provocations are optional, user-triggered (not automatic), and accumulate until 
 - Show a top-right `x` delete control on each note card.
 - Use one unified right-sidebar feed for notes + provocations, with sticky per-document filter chips (`All`, `Notes`, `Provocation`).
 - `Unassigned notes` is pinned at the top of the right sidebar and remains actionable while reading.
-- Footer always shows `Network: <state>`.
-- Footer shows `Generating provocation from selected text...` with an animated indicator only while a selection-triggered provocation request is active.
-- Footer does not show timestamp, source path, or generic `AI actions available` text.
+- Footer shows only `Status: <state>` and omits timestamp, source-path labels, and AI availability labels.
+- Status values follow the deterministic mapping in `FR-029C`.
 
 ## 7.4 Provocations
 
@@ -151,6 +151,7 @@ Provocations are optional, user-triggered (not automatic), and accumulate until 
   - Current section (reading mode)
   - Specific note (writing mode)
   - Selected paragraph/text (writing mode)
+- Note cards expose a `✨` provocation button left of the delete `x`; clicking it reveals the style selector + generate controls inline under the note, and generated provocations appear beneath that note.
 - Output constraints:
   - Short critique/question/counterpoint style
   - Provocations accumulate per section and are shown in the unified feed ordered by document appearance
@@ -342,7 +343,7 @@ Local files:
 - Target interactions:
   - open indexed section: near-instant local response
   - provocation generation: network-bound, show spinner + cancel
-- User-facing footer shows connectivity (`Network: <state>`) and active generation status only while request is in-flight; AI latency display is debug-only.
+- User-facing footer shows `Status: <state>` only (per `FR-029C`); AI latency display is debug-only.
 - Cache AI outputs to avoid repeated cost on unchanged inputs.
 - On any document re-import/re-index, invalidate all cached provocation outputs for that document revision.
 - When offline, disable AI generation controls.
@@ -407,7 +408,7 @@ v0 is complete when all are true:
 30. `.pdf` selection anchors are created directly from native `.pdf` text selections through deterministic selection-to-offset mapping, with recoverable guidance on unresolved mappings.
 31. `Unassigned notes` are pinned above the unified feed in the right sidebar and remain actionable while reading.
 32. Selection-triggered provocation flow opens a style-selector overlay with workspace default preselected, dropdown alternatives, and a right-edge active-style checkmark.
-33. Reader footer always shows network state and conditionally shows selection-triggered provocation in-flight status with animated indicator.
+33. Reader footer only shows `Status: <state>` and follows the source-file/offline/AI/ok status rules.
 34. Reader settings open from the native app menu and are edited in a modal with auth mode, generation model, and workspace default style controls.
 
 ## 14. Implementation phases

@@ -71,6 +71,7 @@ In-scope v0 outcomes:
 - FR-020E: `.pdf` text selections must map deterministically to normalized section-text offsets for the active revision and store existing note selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`).
 - FR-020F: Reader mode must default to a notes-first two-pane layout (`center reader` + `right sidebar`) with no persistent left pane.
 - FR-020G: The controllable `.pdf` renderer path in FR-020D must preserve zoom/scroll UX parity, comply with FR-060 through FR-069 security baseline constraints, and maintain NFR-001 section navigation latency target.
+- FR-020H: When the `.pdf` reader is zoomed beyond the available center-pane width, the view must provide horizontal panning/scrolling so the document is not obscured by the right sidebar.
 - FR-021: Users must be able to create, edit, and delete notes attached to a section, with optional paragraph-level or text-selection-level anchors inside that section.
 - FR-021A: Every rendered note item must expose a visible delete affordance (`x`) in the top-right corner.
 - FR-021B: The note editor must support pointer selection, keyboard caret movement, and text entry in both new and existing notes.
@@ -91,8 +92,8 @@ In-scope v0 outcomes:
 - FR-028: Notes must autosave on short debounce and on editor blur.
 - FR-029: `Unassigned notes` must be reachable directly from the right sidebar in reader mode.
 - FR-029A: `Unassigned notes` must be pinned above the unified feed and remain actionable while reading.
-- FR-029B: Reader footer must always display `Network: <state>`
-- FR-029C: Reader footer must not display timestamp, source file path, or generic `AI actions available` text.
+- FR-029B: Reader footer must display only `Status: <state>` (no timestamp, source path label, or AI availability label).
+- FR-029C: Status must report `Status: <SourceFileStatus.message>` when the source file is unavailable; otherwise `Status: offline` when offline; otherwise `Status: AI <AiAvailability.reason>` when AI is unavailable; otherwise `Status: ok`.
 - FR-030: Provocations must display `Generating provocation from selected text...` in a placeholder on the sidebar only while a selection-triggered provocation request is active.
 - FR-030A: Selection-triggered provocation overlays must dismiss on `Generate` while the request runs in the background; reading and note editing must remain available during the request.
 
@@ -101,6 +102,7 @@ In-scope v0 outcomes:
 - FR-040: Provocations must be on-demand only (never auto-triggered).
 - FR-041: Users must be able to request a provocation for the active section while reading.
 - FR-042: Users must be able to request a provocation for a selected note or selected paragraph/text while writing.
+- FR-042A: Each note card must include a `✨` provocation button to the left of the delete `x`; clicking it reveals the provocation style selector and generate controls inline under the note, then appends the generated provocation at the bottom of that note.
 - FR-043: Provocations must accumulate per section (new requests append; existing entries remain until deleted).
 - FR-044: Users must be able to generate additional provocations without replacing prior entries.
 - FR-044A: Every rendered provocation item must expose a visible delete affordance (`x`) in the top-right corner.
@@ -274,7 +276,7 @@ In-scope v0 outcomes:
 38. For `.pdf` documents, selection-anchored notes can be created directly from native `.pdf` text selections via deterministic offset mapping, and unresolved mappings surface recoverable guidance without data loss.
 39. `Unassigned notes` are pinned in the right sidebar above the unified feed and remain actionable while reading.
 40. Selection-triggered provocation flow opens a style-selector overlay with workspace default preselected, dropdown alternatives, and a right-edge checkmark for the active style.
-41. Reader footer always shows `Network: <state>` and only shows `Generating provocation from selected text...` with animated status indicator when the request is active.
+41. Reader footer only shows `Status: <state>` and follows the source-file/offline/AI/ok status rules in FR-029C.
 42. Reader settings are opened from the native macOS app menu and presented in a modal containing `auth mode`, `generation model`, and `default workspace provocation style`.
 43. Reader settings edits are completed in the top-nav modal flow without requiring navigation to a separate settings pane.
 
@@ -305,5 +307,5 @@ In-scope v0 outcomes:
 - ND-010 Unified feed ordering in UI and queries is deterministic by document position: `section.order_index ASC`, then `paragraph_ordinal ASC` (null as section-level, before paragraph-specific items), then `start_offset ASC` (null as section-level, before offset-specific items), then `created_at ASC`, then `id ASC`.
 - ND-011 Note selection anchors use deterministic offsets computed on normalized section text for the active revision; remap logic remains anchored to section `anchor_key` only.
 - ND-012 `.pdf` selection-anchor behavior in v0 is deterministic through controllable renderer events: resolved selections map to normalized active-revision section-text offsets and persist standard selection metadata fields (`paragraph_ordinal`, `start_offset`, `end_offset`, `selected_text_excerpt`); ambiguous/unresolved mappings must fail without write and return ER-014 guidance.
-- ND-013 Footer generation-status indicator is request-scoped; it appears only for active selection-triggered provocation requests and clears immediately on success, error, or cancel.
+- ND-013 Footer status mapping is deterministic: show `Status: <SourceFileStatus.message>` when the source file is unavailable; otherwise show `Status: offline` when offline; otherwise `Status: AI <AiAvailability.reason>` when AI is unavailable; otherwise `Status: ok`.
 - ND-014 Reader settings interaction is modal-first: open via native app menu, block background settings edits while modal is open, and preserve reader scroll/selection on close.
