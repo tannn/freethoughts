@@ -43,12 +43,14 @@ describe('renderer pdf surface markup', () => {
     const css = readFileSync(cssPath, 'utf8');
 
     const readRule = (selector: string): string | null => {
-      const selectorIndex = css.indexOf(selector);
-      if (selectorIndex < 0) {
+      const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const selectorPattern = new RegExp(`(^|[\\s,])${escapedSelector}\\s*\\{`, 'm');
+      const match = css.match(selectorPattern);
+      if (!match || match.index === undefined) {
         return null;
       }
 
-      const braceStart = css.indexOf('{', selectorIndex);
+      const braceStart = css.indexOf('{', match.index);
       if (braceStart < 0) {
         return null;
       }
