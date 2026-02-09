@@ -61,7 +61,7 @@ describe('persistence migrations', () => {
         'selected_text_excerpt'
       ])
     );
-    expect(listColumns(dbPath, 'provocations')).toEqual(expect.arrayContaining(['revision_id', 'style']));
+    expect(listColumns(dbPath, 'provocations')).toEqual(expect.arrayContaining(['revision_id', 'style', 'note_id']));
     expect(listColumns(dbPath, 'workspace_settings')).toEqual(
       expect.arrayContaining(['generation_model', 'default_provocation_style'])
     );

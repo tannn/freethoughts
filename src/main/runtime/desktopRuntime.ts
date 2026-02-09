@@ -81,6 +81,7 @@ interface DbUnifiedFeedRow {
   section_order_index: number;
   paragraph_ordinal: number | null;
   start_offset: number | null;
+  note_id: string | null;
   created_at: string;
   text_content: string;
 }
@@ -138,6 +139,7 @@ export interface UnifiedFeedItem {
   sectionOrderIndex: number;
   paragraphOrdinal: number | null;
   startOffset: number | null;
+  noteId: string | null;
   createdAt: string;
   textContent: string;
 }
@@ -981,6 +983,7 @@ export class DesktopRuntime {
           s.order_index AS section_order_index,
           n.paragraph_ordinal AS paragraph_ordinal,
           n.start_offset AS start_offset,
+          NULL AS note_id,
           n.created_at AS created_at,
           n.content AS text_content
         FROM notes n
@@ -999,6 +1002,7 @@ export class DesktopRuntime {
           s.order_index AS section_order_index,
           NULL AS paragraph_ordinal,
           NULL AS start_offset,
+          p.note_id AS note_id,
           p.created_at AS created_at,
           p.output_text AS text_content
         FROM provocations p
@@ -1017,6 +1021,7 @@ export class DesktopRuntime {
         section_order_index,
         paragraph_ordinal,
         start_offset,
+        note_id,
         created_at,
         text_content
       FROM feed
@@ -1042,6 +1047,7 @@ export class DesktopRuntime {
       sectionOrderIndex: row.section_order_index,
       paragraphOrdinal: row.paragraph_ordinal,
       startOffset: row.start_offset,
+      noteId: row.note_id ?? null,
       createdAt: row.created_at,
       textContent: row.text_content
     }));

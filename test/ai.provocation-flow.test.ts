@@ -62,6 +62,7 @@ describe('provocation generation flow', () => {
 
     expect(first.style).toBe('creative');
     expect(first.isActive).toBe(true);
+    expect(first.noteId).toBeNull();
     expect(service.getActive('doc-1', 'sec-2')?.id).toBe(first.id);
 
     const second = await service.generate({
@@ -74,6 +75,7 @@ describe('provocation generation flow', () => {
 
     expect(second.style).toBe('skeptical');
     expect(second.id).not.toBe(first.id);
+    expect(second.noteId).toBe('note-1');
 
     const history = service.listHistory('doc-1', 'sec-2');
     expect(history.map((entry) => entry.id)).toEqual([second.id, first.id]);

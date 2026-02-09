@@ -104,6 +104,7 @@ interface ProvocationRecord {
   documentId: string;
   sectionId: string;
   revisionId: string;
+  noteId: string | null;
   requestId: string;
   style: ProvocationStyle;
   outputText: string;
@@ -119,6 +120,7 @@ interface UnifiedFeedItem {
   sectionOrderIndex: number;
   paragraphOrdinal: number | null;
   startOffset: number | null;
+  noteId: string | null;
   createdAt: string;
   textContent: string;
 }
@@ -2467,6 +2469,16 @@ const openSection = async (
     state.noteProvocationPanelNoteId = null;
     state.noteProvocationMessage = '';
     state.noteProvocationPendingNoteId = null;
+  }
+
+  state.noteProvocationAttachments.clear();
+  for (const provocation of snapshot.provocations) {
+    if (!provocation.noteId) {
+      continue;
+    }
+    if (!state.noteProvocationAttachments.has(provocation.noteId)) {
+      state.noteProvocationAttachments.set(provocation.noteId, provocation.id);
+    }
   }
 
   if (!options.preserveView) {
