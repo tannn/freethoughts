@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const htmlPath = join(__dirname, '..', 'src', 'renderer', 'index.html');
+const cssPath = join(__dirname, '..', 'src', 'renderer', 'styles.css');
 const appTsPath = join(__dirname, '..', 'src', 'renderer', 'app.ts');
 
 describe('renderer pdf surface markup', () => {
@@ -36,5 +37,14 @@ describe('renderer pdf surface markup', () => {
     expect(appTs).toContain('window.devicePixelRatio');
     expect(appTs).toContain('transform: outputScale > 1');
     expect(appTs).toContain("style.setProperty('--scale-factor'");
+  });
+
+  it('keeps the pdf viewport scrollable when zoomed wider than the center pane', () => {
+    const css = readFileSync(cssPath, 'utf8');
+
+    expect(css).toContain('.pdf-viewport');
+    expect(css).toContain('overflow: auto;');
+    expect(css).toContain('width: max-content;');
+    expect(css).toContain('min-width: 100%;');
   });
 });
