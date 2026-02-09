@@ -1,4 +1,4 @@
-# Free Thought v0
+# Free Thoughts v0
 
 ## Current UX Mockups
 

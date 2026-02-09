@@ -1,4 +1,4 @@
-# Free Thought
+# Free Thoughts
 
 ## v0 Product Specification
 
@@ -49,7 +49,8 @@ The v0 must deliver these two outcomes:
 
 - Platform: macOS only
 - Distribution target: local hobby/dev distribution on macOS only
-- App menu bar name: `Free Thought`
+- Bundling: provide an Electron bundling workflow that outputs an app named `Free Thoughts`
+- App menu bar name: `Free Thoughts`
 - Input files:
   - `.pdf` (text PDFs only)
   - `.txt`
