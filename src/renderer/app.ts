@@ -1035,11 +1035,7 @@ const elements = {
     document.querySelector<HTMLParagraphElement>('#provocation-style-message'),
     'provocation-style-message'
   ),
-  networkStatus: required(document.querySelector<HTMLElement>('#network-status'), 'network-status'),
-  sourceStatus: required(document.querySelector<HTMLElement>('#source-status'), 'source-status'),
-  aiStatus: required(document.querySelector<HTMLElement>('#ai-status'), 'ai-status'),
-  generationStatus: required(document.querySelector<HTMLElement>('#generation-status'), 'generation-status'),
-  sourceActions: required(document.querySelector<HTMLElement>('#source-actions'), 'source-actions'),
+  footerStatus: required(document.querySelector<HTMLElement>('#footer-status'), 'footer-status'),
   reassignmentModal: required(document.querySelector<HTMLElement>('#reassignment-modal'), 'reassignment-modal'),
   reassignmentCount: required(
     document.querySelector<HTMLParagraphElement>('#reassignment-count'),
@@ -2075,45 +2071,24 @@ const renderProvocation = (): void => {
 };
 
 const renderStatusBar = (): void => {
-  if (state.networkStatus) {
-    elements.networkStatus.textContent = state.networkStatus.online
-      ? `Network: online (${state.networkStatus.checkedAt})`
-      : 'Network: offline';
-  } else {
-    elements.networkStatus.textContent = 'Network: unknown';
-  }
-
   const sourceStatus = state.activeSection?.sourceFileStatus ?? getActiveDocument()?.sourceFileStatus ?? null;
-  if (!sourceStatus) {
-    elements.sourceStatus.textContent = 'Source: -';
-    elements.sourceActions.replaceChildren();
-  } else {
-    elements.sourceStatus.textContent = `Source: ${sourceStatus.message}`;
-    elements.sourceActions.replaceChildren();
-
-    if (sourceStatus.status === 'missing') {
-      const locateButton = document.createElement('button');
-      locateButton.type = 'button';
-      locateButton.className = 'secondary';
-      locateButton.textContent = 'Locate File';
-      locateButton.addEventListener('click', () => {
-        void withUiErrorHandling(handleLocateFile);
-      });
-
-      const reimportButton = document.createElement('button');
-      reimportButton.type = 'button';
-      reimportButton.className = 'secondary';
-      reimportButton.textContent = 'Re-import';
-      reimportButton.addEventListener('click', () => {
-        void withUiErrorHandling(handleReimport);
-      });
-
-      elements.sourceActions.append(locateButton, reimportButton);
-    }
+  if (sourceStatus?.status === 'missing') {
+    elements.footerStatus.textContent = `Status: ${sourceStatus.message}`;
+    return;
   }
 
-  elements.aiStatus.textContent = `AI: ${deriveAiAvailability().message}`;
-  elements.generationStatus.classList.toggle('hidden', state.activeProvocationRequestId === null);
+  const aiAvailability = deriveAiAvailability();
+  if (aiAvailability.reason === 'offline' || state.networkStatus?.online === false) {
+    elements.footerStatus.textContent = 'Status: offline';
+    return;
+  }
+
+  if (!aiAvailability.enabled) {
+    elements.footerStatus.textContent = `Status: AI ${aiAvailability.reason}`;
+    return;
+  }
+
+  elements.footerStatus.textContent = 'Status: ok';
 };
 
 const renderReassignmentModal = (): void => {
