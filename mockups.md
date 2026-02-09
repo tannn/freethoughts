@@ -9,7 +9,7 @@ Historical wireframes are archived in `mockups.archive.md`.
 
 ```text
 +----------------------------------------------------------------------------------+
-| Top Bar: Workspace | Active Document | [Outline]                                 |
+| Top Bar: Workspace | Active Document | [Documents]                               |
 +---------------------------------------------+------------------------------------+
 | Center Pane                                  | Right Sidebar                      |
 | Section Reader                               | Unified Feed                       |
