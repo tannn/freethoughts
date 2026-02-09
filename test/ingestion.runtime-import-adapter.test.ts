@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  buildRuntimePath,
   IMPORT_ERROR_MESSAGES,
   importDocumentFromPath,
   type RuntimeImportCommandRunner
@@ -191,5 +192,23 @@ describe('runtime import adapter', () => {
         message: IMPORT_ERROR_MESSAGES.pdfOcrNotSupported
       }
     );
+  });
+
+  it('builds a runtime PATH that includes Homebrew fallbacks', () => {
+    const previousPath = process.env.PATH;
+    process.env.PATH = '/usr/bin';
+
+    try {
+      const runtimePath = buildRuntimePath();
+      expect(runtimePath.startsWith('/usr/bin')).toBe(true);
+      expect(runtimePath).toContain('/opt/homebrew/bin');
+      expect(runtimePath).toContain('/usr/local/bin');
+    } finally {
+      if (previousPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = previousPath;
+      }
+    }
   });
 });
