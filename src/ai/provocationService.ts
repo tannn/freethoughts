@@ -12,6 +12,7 @@ interface DbProvocationRow {
   document_id: string;
   section_id: string;
   revision_id: string;
+  note_id: string | null;
   request_id: string;
   style: ProvocationStyle;
   output_text: string;
@@ -37,6 +38,7 @@ export interface ProvocationRecord {
   documentId: string;
   sectionId: string;
   revisionId: string;
+  noteId: string | null;
   requestId: string;
   style: ProvocationStyle;
   outputText: string;
@@ -58,6 +60,7 @@ const mapProvocationRow = (row: DbProvocationRow): ProvocationRecord => ({
   documentId: row.document_id,
   sectionId: row.section_id,
   revisionId: row.revision_id,
+  noteId: row.note_id ?? null,
   requestId: row.request_id,
   style: row.style,
   outputText: row.output_text,
@@ -137,6 +140,7 @@ export class ProvocationService {
       documentId: input.documentId,
       sectionId: input.sectionId,
       revisionId: currentRevisionId,
+      noteId: input.noteId ?? null,
       requestId: input.requestId,
       style,
       outputText: generated.text,
@@ -212,6 +216,7 @@ export class ProvocationService {
     documentId: string;
     sectionId: string;
     revisionId: string;
+    noteId: string | null;
     requestId: string;
     style: ProvocationStyle;
     outputText: string;
@@ -235,6 +240,7 @@ export class ProvocationService {
           document_id,
           section_id,
           revision_id,
+          note_id,
           request_id,
           style,
           output_text,
@@ -244,6 +250,7 @@ export class ProvocationService {
           ${sqlString(input.documentId)},
           ${sqlString(input.sectionId)},
           ${sqlString(input.revisionId)},
+          ${input.noteId ? sqlString(input.noteId) : 'NULL'},
           ${sqlString(input.requestId)},
           ${sqlString(input.style)},
           ${sqlString(input.outputText)},
@@ -396,7 +403,7 @@ export class ProvocationService {
   ): ProvocationRecord[] {
     const limitClause = limit ? `\n      LIMIT ${limit}` : '';
     const rows = this.sqlite.queryJson<DbProvocationRow>(`
-      SELECT id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at
+      SELECT id, document_id, section_id, revision_id, note_id, request_id, style, output_text, is_active, created_at
       FROM provocations
       WHERE document_id = ${sqlString(documentId)}
         AND section_id = ${sqlString(sectionId)}
@@ -410,7 +417,7 @@ export class ProvocationService {
 
   getById(id: string): ProvocationRecord | null {
     const rows = this.sqlite.queryJson<DbProvocationRow>(`
-      SELECT id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at
+      SELECT id, document_id, section_id, revision_id, note_id, request_id, style, output_text, is_active, created_at
       FROM provocations
       WHERE id = ${sqlString(id)}
       LIMIT 1;

@@ -239,5 +239,16 @@ export const MIGRATIONS: Migration[] = [
       ON provocations(document_id, section_id, revision_id)
       WHERE is_active = 1;
     `
+  },
+  {
+    version: 8,
+    name: 'provocation_note_links',
+    upSql: `
+      ALTER TABLE provocations ADD COLUMN note_id TEXT;
+      CREATE INDEX IF NOT EXISTS idx_provocations_note_id ON provocations(note_id);
+    `,
+    downSql: `
+      DROP INDEX IF EXISTS idx_provocations_note_id;
+    `
   }
 ];

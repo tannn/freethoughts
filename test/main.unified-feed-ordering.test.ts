@@ -60,10 +60,10 @@ describe('desktop runtime unified feed ordering', () => {
         ('note-s2-para', '${imported.document.id}', '${secondSectionId}', 'second section paragraph note', 1, 1, 5, NULL, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
 
       INSERT INTO provocations (
-        id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at
+        id, document_id, section_id, revision_id, request_id, style, output_text, is_active, created_at, note_id
       ) VALUES
-        ('prov-s1-root', '${imported.document.id}', '${firstSectionId}', '${revisionId}', 'req-s1', 'skeptical', 'provocation in first section', 1, '2026-01-01T00:00:02.000Z'),
-        ('prov-s2-root', '${imported.document.id}', '${secondSectionId}', '${revisionId}', 'req-s2', 'creative', 'provocation in second section', 1, '2026-01-01T00:00:00.000Z');
+        ('prov-s1-root', '${imported.document.id}', '${firstSectionId}', '${revisionId}', 'req-s1', 'skeptical', 'provocation in first section', 1, '2026-01-01T00:00:02.000Z', 'note-s1-root'),
+        ('prov-s2-root', '${imported.document.id}', '${secondSectionId}', '${revisionId}', 'req-s2', 'creative', 'provocation in second section', 1, '2026-01-01T00:00:00.000Z', NULL);
     `);
 
     const snapshot = runtime.getSection(firstSectionId);
@@ -76,5 +76,8 @@ describe('desktop runtime unified feed ordering', () => {
       'provocation:prov-s2-root',
       'note:note-s2-para'
     ]);
+
+    expect(snapshot.unifiedFeed.find((item) => item.id === 'prov-s1-root')?.noteId).toBe('note-s1-root');
+    expect(snapshot.unifiedFeed.find((item) => item.id === 'prov-s2-root')?.noteId).toBeNull();
   });
 });
