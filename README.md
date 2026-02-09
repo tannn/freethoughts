@@ -1,6 +1,6 @@
 # freethoughts
 
-Free Thought v0 workspace.
+Free Thoughts v0 workspace.
 
 ## Run the desktop app
 

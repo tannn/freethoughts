@@ -1,6 +1,6 @@
-# Free Thought v0 - Agent Operating Guide
+# Free Thoughts v0 - Agent Operating Guide
 
-Free Thought is a macOS-first Electron app for reviewing documents and annotating alongside AI. Data is stored locally (SQLite + files), supported inputs are `.pdf` (text), `.txt`, and `.md`, and AI generation uses OpenAI APIs or Codex App Server depending on auth mode; no web/mobile clients or OCR/search/export features are in scope.
+Free Thoughts is a macOS-first Electron app for reviewing documents and annotating alongside AI. Data is stored locally (SQLite + files), supported inputs are `.pdf` (text), `.txt`, and `.md`, and AI generation uses OpenAI APIs or Codex App Server depending on auth mode; no web/mobile clients or OCR/search/export features are in scope.
 
 ## 1) Purpose
 
