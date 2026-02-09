@@ -41,5 +41,6 @@ describe('renderer note selection anchors', () => {
     expect(formatNoteAnchorExcerpt('A'.repeat(90), 10)).toBe('"AAAAAAA..."');
     expect(formatNoteAnchorExcerpt('ABCDE', 5)).toBe('"ABCDE"');
     expect(formatNoteAnchorExcerpt('ABCDE', 2)).toBe('"AB"');
+    expect(formatNoteAnchorExcerpt('ABCDE', 3)).toBe('"ABC"');
   });
 });
