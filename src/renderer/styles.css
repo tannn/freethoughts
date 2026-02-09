@@ -448,6 +448,19 @@ pre {
   background: #fbfdf9;
 }
 
+.provocation-placeholder {
+  border-style: dashed;
+  background: #f6faf4;
+}
+
+.provocation-placeholder-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .toggle-row {
   display: flex;
   gap: 8px;
@@ -466,6 +479,32 @@ pre {
   padding: 10px 14px;
   border-top: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.85);
+}
+
+.generation-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: status-blink 1s ease-in-out infinite;
+}
+
+@keyframes status-blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .status-actions {

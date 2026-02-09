@@ -923,6 +923,7 @@ const elements = {
   networkStatus: required(document.querySelector<HTMLElement>('#network-status'), 'network-status'),
   sourceStatus: required(document.querySelector<HTMLElement>('#source-status'), 'source-status'),
   aiStatus: required(document.querySelector<HTMLElement>('#ai-status'), 'ai-status'),
+  generationStatus: required(document.querySelector<HTMLElement>('#generation-status'), 'generation-status'),
   sourceActions: required(document.querySelector<HTMLElement>('#source-actions'), 'source-actions'),
   reassignmentModal: required(document.querySelector<HTMLElement>('#reassignment-modal'), 'reassignment-modal'),
   reassignmentCount: required(
@@ -1499,6 +1500,25 @@ const renderUnifiedFeed = (): void => {
     return row.itemType === 'provocation';
   });
 
+  if (state.activeProvocationRequestId !== null && filter !== 'notes') {
+    const placeholder = document.createElement('article');
+    placeholder.className = 'note-card provocation-card provocation-placeholder';
+
+    const placeholderBody = document.createElement('div');
+    placeholderBody.className = 'provocation-placeholder-body';
+
+    const dot = document.createElement('span');
+    dot.className = 'status-dot';
+    dot.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.textContent = 'Generating provocation from selected text...';
+
+    placeholderBody.append(dot, text);
+    placeholder.append(placeholderBody);
+    elements.unifiedFeedList.append(placeholder);
+  }
+
   for (const row of rows) {
     if (row.itemType === 'note') {
       const note = state.activeSection.notes.find((candidate) => candidate.id === row.id);
@@ -1978,6 +1998,7 @@ const renderStatusBar = (): void => {
   }
 
   elements.aiStatus.textContent = `AI: ${deriveAiAvailability().message}`;
+  elements.generationStatus.classList.toggle('hidden', state.activeProvocationRequestId === null);
 };
 
 const renderReassignmentModal = (): void => {
@@ -2324,6 +2345,8 @@ const generateProvocation = async (initial: {
     const currentRequestId = requestId();
     state.activeProvocationRequestId = currentRequestId;
     renderProvocation();
+    renderUnifiedFeed();
+    renderStatusBar();
 
     try {
       const envelope = (await desktopApi.ai.generateProvocation({
@@ -2364,6 +2387,8 @@ const generateProvocation = async (initial: {
         state.activeProvocationRequestId = null;
       }
       renderProvocation();
+      renderUnifiedFeed();
+      renderStatusBar();
     }
   }
 };
@@ -2403,11 +2428,12 @@ const handleSelectionTriggeredProvocationGenerate = async (): Promise<void> => {
   }
 
   elements.provocationStyleMessage.textContent = '';
+  const noteId = state.pendingSelectionProvocationTarget.noteId;
+  closeProvocationStyleOverlay();
   await generateProvocation({
-    noteId: state.pendingSelectionProvocationTarget.noteId,
+    noteId,
     style: state.pendingSelectionProvocationStyle
   });
-  closeProvocationStyleOverlay();
 };
 
 const handleSelectionTriggeredNoteCreate = async (): Promise<void> => {
