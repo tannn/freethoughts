@@ -4,7 +4,7 @@ export const trimExcerpt = (text: string, maxLength: number): string => {
   }
 
   if (maxLength <= 3) {
-    return text.slice(0, maxLength);
+    return '.'.repeat(maxLength);
   }
 
   return `${text.slice(0, maxLength - 3)}...`;
