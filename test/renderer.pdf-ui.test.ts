@@ -43,7 +43,9 @@ describe('renderer pdf surface markup', () => {
     const css = readFileSync(cssPath, 'utf8');
 
     const readRule = (selector: string): string | null => {
-      const escapedSelector = selector.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const escapedSelector = Array.from(selector)
+        .map((char) => (/[\w-]/.test(char) ? char : `\\${char}`))
+        .join('');
       const selectorPattern = new RegExp(`(^|[\\s,])${escapedSelector}\\s*\\{`, 'm');
       const match = css.match(selectorPattern);
       if (!match || match.index === undefined) {
