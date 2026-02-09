@@ -31,4 +31,20 @@ describe('renderer pdf selection mapping', () => {
     expect(appTs).toContain('Unable to map PDF selection to a deterministic anchor. Adjust the selection and try again.');
     expect(appTs).toContain('selection-action-message');
   });
+
+  it('computes offsets via cloneContents textContent for br-safe consistency', () => {
+    const appTs = readFileSync(appTsPath, 'utf8');
+
+    expect(appTs).toContain('(startRange.cloneContents().textContent');
+    expect(appTs).toContain('(endRange.cloneContents().textContent');
+    expect(appTs).not.toContain('startRange.toString().length');
+    expect(appTs).not.toContain('endRange.toString().length');
+  });
+
+  it('uses getClientRects to filter degenerate margin rects for multi-line selections', () => {
+    const appTs = readFileSync(appTsPath, 'utf8');
+
+    expect(appTs).toContain('range.getClientRects()');
+    expect(appTs).toContain('r.width > 1 && r.height > 1');
+  });
 });

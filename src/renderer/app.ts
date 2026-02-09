@@ -466,8 +466,8 @@ const computeSelectionAnchor = (container: HTMLElement): NoteSelectionAnchor | n
   const endRange = containerRange.cloneRange();
   endRange.setEnd(range.endContainer, range.endOffset);
 
-  const startOffset = startRange.toString().length;
-  const endOffset = endRange.toString().length;
+  const startOffset = (startRange.cloneContents().textContent ?? '').length;
+  const endOffset = (endRange.cloneContents().textContent ?? '').length;
   const rawSelectedText = selection.toString();
   const selectedTextExcerpt = rawSelectedText.trim();
 
@@ -624,13 +624,38 @@ const readSelectionViewportRect = (container: HTMLElement): ViewportRect | null 
     return null;
   }
 
+  const rects = range.getClientRects();
+  if (rects.length > 0) {
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    let valid = false;
+
+    for (let i = 0; i < rects.length; i += 1) {
+      const r = rects[i];
+      if (r.width > 1 && r.height > 1) {
+        left = Math.min(left, r.left);
+        top = Math.min(top, r.top);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+        valid = true;
+      }
+    }
+
+    if (valid) {
+      return { left, top, right, bottom, width: right - left, height: bottom - top };
+    }
+
+    return toViewportRect(rects[0]);
+  }
+
   const rect = range.getBoundingClientRect();
   if (rect.width > 0 || rect.height > 0) {
     return toViewportRect(rect);
   }
 
-  const clientRect = range.getClientRects()[0];
-  return clientRect ? toViewportRect(clientRect) : null;
+  return null;
 };
 
 interface PdfJsRenderTask {
