@@ -3,3 +3,4 @@ dist/
 coverage/
 *.log
 .code/agents/
+release/
