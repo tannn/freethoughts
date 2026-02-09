@@ -3,10 +3,15 @@ export type FooterStatusSource = {
   message: string;
 };
 
-export type FooterStatusAiAvailability = {
-  enabled: boolean;
-  reason: 'ok' | 'offline' | 'provocations-disabled' | 'auth-unavailable';
-};
+export type FooterStatusAiAvailability =
+  | {
+      enabled: true;
+      reason: 'ok';
+    }
+  | {
+      enabled: false;
+      reason: 'offline' | 'provocations-disabled' | 'auth-unavailable';
+    };
 
 export const deriveFooterStatusLabel = (input: {
   sourceStatus?: FooterStatusSource;

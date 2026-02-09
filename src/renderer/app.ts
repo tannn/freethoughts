@@ -123,11 +123,17 @@ interface UnifiedFeedItem {
   textContent: string;
 }
 
-interface AiAvailability {
-  enabled: boolean;
-  reason: 'ok' | 'offline' | 'provocations-disabled' | 'auth-unavailable';
-  message: string;
-}
+type AiAvailability =
+  | {
+      enabled: true;
+      reason: 'ok';
+      message: string;
+    }
+  | {
+      enabled: false;
+      reason: 'offline' | 'provocations-disabled' | 'auth-unavailable';
+      message: string;
+    };
 
 interface AuthStatusSnapshot {
   mode: AuthMode;
