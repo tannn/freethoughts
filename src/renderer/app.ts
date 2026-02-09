@@ -774,7 +774,6 @@ const elements = {
   pdfZoomLabel: required(document.querySelector<HTMLElement>('#pdf-zoom-label'), 'pdf-zoom-label'),
   pdfFallback: required(document.querySelector<HTMLDivElement>('#pdf-fallback'), 'pdf-fallback'),
   sectionContent: required(document.querySelector<HTMLPreElement>('#section-content'), 'section-content'),
-  reimportButton: required(document.querySelector<HTMLButtonElement>('#reimport-button'), 'reimport-button'),
   unassignedSummary: required(
     document.querySelector<HTMLParagraphElement>('#unassigned-summary'),
     'unassigned-summary'
@@ -821,6 +820,10 @@ const elements = {
     'generation-model-input'
   ),
   defaultStyleInput: required(document.querySelector<HTMLSelectElement>('#default-style-input'), 'default-style-input'),
+  settingsReimportButton: required(
+    document.querySelector<HTMLButtonElement>('#settings-reimport-button'),
+    'settings-reimport-button'
+  ),
   apiKeyInput: required(document.querySelector<HTMLInputElement>('#api-key-input'), 'api-key-input'),
   clearApiKeyInput: required(
     document.querySelector<HTMLInputElement>('#clear-api-key-input'),
@@ -1053,6 +1056,7 @@ const updateTopBar = (): void => {
   const activeDocument = getActiveDocument();
   elements.topDocumentTitle.textContent = activeDocument?.title ?? '-';
   elements.unassignedNavButton.textContent = `Unassigned Notes (${state.unassignedNotes.length})`;
+  elements.settingsReimportButton.disabled = !state.activeDocumentId;
 };
 
 const renderWorkspaceMode = (workspaceOpen: boolean): void => {
@@ -2712,7 +2716,7 @@ const wireEvents = (): void => {
     }
   });
 
-  elements.reimportButton.addEventListener('click', () => {
+  elements.settingsReimportButton.addEventListener('click', () => {
     void withUiErrorHandling(async () => {
       await handleReimport();
       appendLog('Document re-imported.');

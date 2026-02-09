@@ -24,6 +24,8 @@ describe('renderer auth settings markup', () => {
     expect(html).toContain('id="auth-login-start-button"');
     expect(html).toContain('id="auth-login-complete-button"');
     expect(html).toContain('id="auth-logout-button"');
+    expect(html).toContain('id="settings-reimport-button"');
+    expect(html).not.toContain('id="reimport-button"');
     expect(html).not.toContain('class="panel settings-panel"');
   });
 

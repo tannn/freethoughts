@@ -67,9 +67,6 @@
           <section id="section-view" class="panel view">
             <div class="section-header">
               <h2 id="section-heading">No section selected</h2>
-              <div class="section-actions">
-                <button id="reimport-button" type="button" class="secondary">Re-import</button>
-              </div>
             </div>
             <div id="pdf-surface" class="pdf-surface hidden">
               <div class="pdf-toolbar">
@@ -242,6 +239,9 @@
                 <option value="methodological">methodological</option>
               </select>
             </label>
+            <div class="modal-actions">
+              <button id="settings-reimport-button" type="button" class="secondary">Re-import current document</button>
+            </div>
             <label>
               OpenAI API key
               <input id="api-key-input" name="openAiApiKey" type="password" autocomplete="off" />
