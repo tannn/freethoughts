@@ -1,2 +1,11 @@
-export const trimExcerpt = (text: string, maxLength: number): string =>
-  text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
+export const trimExcerpt = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  if (maxLength <= 3) {
+    return text.slice(0, maxLength);
+  }
+
+  return `${text.slice(0, maxLength - 3)}...`;
+};
