@@ -61,10 +61,17 @@ export interface RuntimeImportOptions {
   runCommand?: RuntimeImportCommandRunner;
 }
 
+export const buildRuntimePath = (): string => {
+  const extraPaths = ['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'];
+  const currentPath = process.env.PATH ?? '';
+  return [currentPath, ...extraPaths].filter((entry) => entry && entry.trim().length > 0).join(':');
+};
+
 const defaultRunCommand: RuntimeImportCommandRunner = (file, args) =>
   execFileSync(file, args, {
     encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, PATH: buildRuntimePath() }
   });
 
 const parseInputKind = (sourcePath: string): ParsedInputKind => {
