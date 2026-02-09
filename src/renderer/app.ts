@@ -1,5 +1,7 @@
 import { NoteAutosaveController } from '../reader/autosave.js';
 import { getDesktopApi } from './desktopApi.js';
+import { formatNoteAnchorExcerpt } from './noteAnchors.js';
+import { trimExcerpt } from './text.js';
 
 type ProvocationStyle = 'skeptical' | 'creative' | 'methodological';
 type UnifiedFeedFilter = 'all' | 'notes' | 'provocation';
@@ -574,9 +576,6 @@ const loadPdfJsModule = async (): Promise<PdfJsModule> => {
   }
   return pdfjs;
 };
-
-const trimExcerpt = (text: string, maxLength: number): string =>
-  text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
 
 const isPdfDocumentWithNativeSurface = (): boolean =>
   Boolean(
@@ -1463,13 +1462,14 @@ const syncSelectedNoteCard = (): void => {
 };
 
 const appendNoteAnchorMeta = (card: HTMLElement, note: NoteRecord): void => {
-  if (!note.selectedTextExcerpt) {
+  const excerpt = formatNoteAnchorExcerpt(note.selectedTextExcerpt);
+  if (!excerpt) {
     return;
   }
 
   const anchorMeta = document.createElement('p');
   anchorMeta.className = 'note-anchor hint';
-  anchorMeta.textContent = trimExcerpt(note.selectedTextExcerpt, 80);
+  anchorMeta.textContent = excerpt;
   card.append(anchorMeta);
 };
 

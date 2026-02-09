@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { formatNoteAnchorExcerpt } from '../src/renderer/noteAnchors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,10 +34,9 @@ describe('renderer note selection anchors', () => {
   });
 
   it('renders selection-anchored notes with excerpt-only metadata', () => {
-    const appTs = readFileSync(appTsPath, 'utf8');
-
-    expect(appTs).toContain('trimExcerpt(note.selectedTextExcerpt');
-    expect(appTs).not.toContain('Anchor paragraph');
-    expect(appTs).not.toContain('chars ');
+    expect(formatNoteAnchorExcerpt(null)).toBeNull();
+    expect(formatNoteAnchorExcerpt('A short selected excerpt from the document.')).toBe(
+      '"A short selected excerpt from the document."'
+    );
   });
 });
