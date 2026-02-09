@@ -1974,7 +1974,6 @@ const renderStatusBar = (): void => {
 
     elements.sourceActions.append(locateButton, reimportButton);
   } else {
-    elements.sourceStatus.textContent = '';
     elements.sourceStatus.classList.add('hidden');
     elements.sourceActions.replaceChildren();
     elements.sourceActions.classList.add('hidden');

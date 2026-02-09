@@ -32,7 +32,7 @@ describe('renderer footer status', () => {
     const appTs = readFileSync(appTsPath, 'utf8');
 
     expect(appTs).toContain('generationStatus');
-    expect(appTs).toContain('activeProvocationRequestId');
+    expect(appTs).toContain('activeProvocationRequestId !== null');
     expect(appTs).toContain("generationStatus.classList.toggle('hidden'");
     expect(appTs).not.toContain('Network: online (');
   });
