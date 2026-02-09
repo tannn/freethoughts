@@ -15,7 +15,7 @@ Historical wireframes are archived in `mockups.archive.md`.
 | Section Reader                               | Unified Feed                       |
 |                                              | (Unassigned + Notes + Provocation) |
 +---------------------------------------------+------------------------------------+
-| Footer: Network: <state> | (active only) [●] Generating provocation from selected text... |
+| Footer: Status: <state>                                                         |
 +----------------------------------------------------------------------------------+
 ```
 
@@ -96,7 +96,8 @@ Behavior refs:
 Behavior refs:
 - Native PDF/fallback: `FR-020B`, `FR-020C`
 - Controllable renderer + deterministic PDF selection anchors: `FR-020D`, `FR-020E`, `FR-021D`, `ND-012`
-- PDF renderer replacement must preserve zoom/scroll parity + security/perf baselines: `FR-020H`, `FR-060` to `FR-069`, `NFR-001`
+- PDF renderer replacement must preserve zoom/scroll parity + security/perf baselines: `FR-020G`, `FR-060` to `FR-069`, `NFR-001`
+- Zoomed PDF uses horizontal panning/scroll when content exceeds the center-pane width: `FR-020H`
 - Mapping failure handling keeps context and supports retry: `ER-014`
 
 ## 7. Settings modal (app menu)
@@ -127,3 +128,31 @@ Behavior refs:
 - Keep reading context stable across AI completion (`FR-029B`, `ND-013`).
 - Keep deterministic feed ordering by document position (`FR-049A`, `ND-010`).
 - Selection-anchored notes show excerpt only (no paragraph/offset numbers) (`FR-021E`).
+
+## 9. Note card provocation action
+
+```text
++---------------------------------------------+
+| Note card title                    [✨] [x] |
+| Note content...                             |
+|   Style: [Skeptical] [✓]                    |
+|   [Cancel]                      [Generate]  |
+|                                             |
++---------------------------------------------+
+```
+
+How provocation appears after generation:
+
+```text
++---------------------------------------------+
+| Note card title                    [✨] [x] |
+| Note content...                             |
+|  ---    ---   ---   --- [faint dashed line] |
+|   [Display Provocation here]                |
+|                                             |
++---------------------------------------------+
+```
+
+Behavior refs:
+- Note-targeted provocation trigger + placement: `FR-042`, `FR-042A`
+- Style selector behavior: `FR-046A`, `FR-048`
