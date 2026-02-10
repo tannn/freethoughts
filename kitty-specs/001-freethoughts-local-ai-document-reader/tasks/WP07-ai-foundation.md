@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "doing"
+lane: "planned"
 dependencies: []
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
@@ -9,6 +9,8 @@ created_at: '2026-02-10T18:52:41.213719+00:00'
 subtasks: [T036, T037, T038, T039, T040, T041]
 shell_pid: "54864"
 agent: "github-copilot"
+review_status: "has_feedback"
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -649,3 +651,4 @@ struct ProvocationFeature {
 - 2026-02-10T18:52:41Z – claude-opus – shell_pid=52236 – lane=doing – Assigned agent via workflow command
 - 2026-02-10T19:00:06Z – claude-opus – shell_pid=52236 – lane=for_review – Ready for review: FoundationModelsClient, PromptsClient, PromptSeeder, DefaultPrompts.json, full ProvocationFeature reducer, availability checking in AppFeature. Build verified.
 - 2026-02-10T19:01:22Z – github-copilot – shell_pid=54864 – lane=doing – Started review via workflow command
+- 2026-02-10T19:04:24Z – github-copilot – shell_pid=54864 – lane=planned – Moved to planned
