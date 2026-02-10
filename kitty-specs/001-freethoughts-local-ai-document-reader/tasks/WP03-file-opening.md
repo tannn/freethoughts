@@ -8,6 +8,7 @@ base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
 created_at: '2026-02-10T10:35:34.092423+00:00'
 subtasks: [T015, T016, T017, T018, T019]
 shell_pid: "23884"
+agent: "claude-opus"
 history:
 - date: '2026-02-09'
   action: created
@@ -380,3 +381,7 @@ var body: some View {
 2. Verify keyboard shortcut works from all focus states
 3. Test drag-drop with files from Finder, Desktop, etc.
 4. Check status bar updates correctly when switching documents
+
+## Activity Log
+
+- 2026-02-10T10:35:34Z – claude-opus – shell_pid=23884 – lane=doing – Assigned agent via workflow command
