@@ -1,0 +1,11 @@
+vcs:
+  type: git
+agents:
+  available:
+  - copilot
+  - claude
+  - codex
+  selection:
+    strategy: preferred
+    preferred_implementer: claude
+    preferred_reviewer: copilot
