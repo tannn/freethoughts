@@ -79,11 +79,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~300
 
 **Included Subtasks**:
-- [ ] T015: Implement File > Open menu command
-- [ ] T016: Implement ⌘O keyboard shortcut
-- [ ] T017: Implement drag-and-drop file opening on window
-- [ ] T018: Create empty state view (mockup #2)
-- [ ] T019: Create status bar with page info, zoom, and document type
+- [x] T015: Implement File > Open menu command
+- [x] T016: Implement ⌘O keyboard shortcut
+- [x] T017: Implement drag-and-drop file opening on window
+- [x] T018: Create empty state view (mockup #2)
+- [x] T019: Create status bar with page info, zoom, and document type
 
 **Success Criteria**:
 - Files open via menu, keyboard, and drag-drop
