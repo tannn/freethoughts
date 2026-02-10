@@ -120,26 +120,24 @@ In-scope v0 outcomes:
 
 ### 3.5 Settings and providers
 
-- FR-050: v0 must integrate OpenAI-backed generation only.
-- FR-051: The app must support OpenAI API key authentication mode.
-- FR-052: In API key mode, API keys must be stored in macOS Keychain (not SQLite).
-- FR-053: Users must be able to set the OpenAI generation model name.
-- FR-054: Users must be able to set a workspace default provocation style.
-- FR-054A: Settings must be opened from the native macOS app menu in reader mode.
-- FR-054B: Selecting Settings (or using `Command + ,`) must open a modal settings panel (non-route, overlay interaction).
-- FR-054C: Settings modal must include controls for `auth mode`, `generation model`, and `default workspace provocation style`.
-- FR-054D: Reader mode must not require a separate settings pane to edit these controls; settings edits are completed in the modal flow.
-- FR-054E: Settings must be accessible from the native macOS app menu (`Command + ,`) and open the same modal.
+Here’s a generalized version that’s provider‑ and implementation‑agnostic, while keeping the behavior you care about.
+
+***
+
+### 3.5 Settings and providers
+
+- FR-050: v0 must support at least one LLM provider for text generation.  
+- FR-051: Any credentials or secrets, if present (e.g., for future LLM providers), must be stored in a secure OS-level credential store, not in plaintext or general app storage.  
+- FR-052: Users must be able to set the active generation model or configuration for the selected LLM provider.  
+- FR-053: Users must be able to set a workspace-level default provocation style.  
+- FR-054A: Settings must be opened from the native macOS app menu in reader mode.  
+- FR-054B: Selecting Settings (or using `Command + ,`) must open a modal settings panel (non-route, overlay interaction).  
+- FR-054C: Settings modal must include controls for:
+  - The active LLM provider and its model/configuration.  
+  - The default workspace provocation style.  
+- FR-054D: Reader mode must not require a separate settings pane to edit these controls; settings edits are completed in the modal flow.  
+- FR-054E: Settings must be accessible from the native macOS app menu (`Command + ,`) and open the same modal.  
 - FR-054F: Settings must include a `Re-import` action for the active document.
-- FR-055: The app must support a second authentication mode: `Codex subscription login`.
-- FR-056: In `Codex subscription login` mode, users must be able to initiate browser-based sign-in and complete login without entering an API key.
-- FR-057: `Codex subscription login` credentials/tokens must never be persisted in SQLite or logs; only non-secret session metadata may be stored.
-- FR-058: Users must be able to switch between `API key` and `Codex subscription login` modes without restarting the app.
-- FR-059: If active `Codex subscription login` state is invalid/expired, AI requests must fail with actionable re-auth guidance.
-- FR-059A: In `Codex subscription login` mode, provocation generation must execute through Codex App Server runtime transport; the app must not call OpenAI `/v1/responses` directly with Codex session bearer tokens.
-- FR-059B: If Codex App Server runtime is unavailable or inaccessible (including local session-path permission failures), AI requests in `Codex subscription login` mode must fail with actionable fallback to `API key` mode.
-- FR-059C: `Codex subscription login` mode requests must support timeout and request-scoped cancellation behavior equivalent to FR-080 and FR-082.
-- FR-059D: Permission/scope errors surfaced through Codex-mode generation must map to actionable auth guidance that includes `switch_to_api_key`.
 
 ### 3.6 Electron security baseline
 
