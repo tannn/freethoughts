@@ -8,6 +8,7 @@ base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
 created_at: '2026-02-10T18:52:41.213719+00:00'
 subtasks: [T036, T037, T038, T039, T040, T041]
 shell_pid: "52236"
+agent: "claude-opus"
 history:
 - date: '2026-02-09'
   action: created
@@ -642,3 +643,7 @@ struct ProvocationFeature {
 3. Test first-launch seeding
 4. Check streaming response accumulation
 5. Verify unavailable state handling
+
+## Activity Log
+
+- 2026-02-10T18:52:41Z – claude-opus – shell_pid=52236 – lane=doing – Assigned agent via workflow command
