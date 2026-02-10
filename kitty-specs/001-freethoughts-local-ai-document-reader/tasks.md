@@ -177,12 +177,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~380
 
 **Included Subtasks**:
-- [ ] T036: Create FoundationModelsClient TCA dependency
-- [ ] T037: Implement availability checking (isSupported)
-- [ ] T038: Create ProvocationPrompt persistence operations
-- [ ] T039: Create DefaultPrompts.json with 4 default styles
-- [ ] T040: Seed default prompts on first launch
-- [ ] T041: Create ProvocationFeature reducer with state/actions
+- [x] T036: Create FoundationModelsClient TCA dependency
+- [x] T037: Implement availability checking (isSupported)
+- [x] T038: Create ProvocationPrompt persistence operations
+- [x] T039: Create DefaultPrompts.json with 4 default styles
+- [x] T040: Seed default prompts on first launch
+- [x] T041: Create ProvocationFeature reducer with state/actions
 
 **Success Criteria**:
 - AI availability correctly detected
