@@ -104,11 +104,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~320
 
 **Included Subtasks**:
-- [ ] T020: Track PDF text selection via PDFSelection delegate
-- [ ] T021: Track text selection for markdown/plain text views
-- [ ] T022: Create unified TextSelection model with position data
-- [ ] T023: Create selection action popover (mockup #3)
-- [ ] T024: Handle popover positioning and dismissal
+- [x] T020: Track PDF text selection via PDFSelection delegate
+- [x] T021: Track text selection for markdown/plain text views
+- [x] T022: Create unified TextSelection model with position data
+- [x] T023: Create selection action popover (mockup #3)
+- [x] T024: Handle popover positioning and dismissal
 
 **Success Criteria**:
 - Text selection works in all three formats
