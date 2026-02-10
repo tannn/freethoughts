@@ -433,3 +433,4 @@ if store.isSidebarCollapsed {
 - 2026-02-10T23:28:33Z – claude-opus – shell_pid=51736 – lane=for_review – Ready for review: page-aware sorting, improved inline editing with cancel/save-on-blur, swipe-to-delete, note-to-anchor navigation with highlight flash, sidebar collapse with Cmd+Shift+N. Build succeeds.
 - 2026-02-10T23:29:28Z – GitHub Copilot – shell_pid=75128 – lane=doing – Started review via workflow command
 - 2026-02-10T23:32:58Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
+- 2026-02-10T23:33:24Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
