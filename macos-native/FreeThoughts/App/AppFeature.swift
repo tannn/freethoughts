@@ -8,6 +8,8 @@ struct AppFeature {
         var document: DocumentFeature.State = .init()
         var notes: NotesFeature.State = .init()
         var provocation: ProvocationFeature.State = .init()
+        var isAIAvailable: Bool = false
+        var aiAvailabilityChecked: Bool = false
     }
 
     enum Action {
@@ -15,7 +17,11 @@ struct AppFeature {
         case notes(NotesFeature.Action)
         case provocation(ProvocationFeature.Action)
         case onAppear
+        case checkAIAvailability
+        case aiAvailabilityResult(Bool)
     }
+
+    @Dependency(\.foundationModelsClient) var foundationModelsClient
 
     var body: some ReducerOf<Self> {
         Scope(state: \.document, action: \.document) {
@@ -31,7 +37,23 @@ struct AppFeature {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                return .merge(
+                    .send(.checkAIAvailability),
+                    .send(.provocation(.seedDefaultPrompts))
+                )
+
+            case .checkAIAvailability:
+                return .run { send in
+                    let available = await foundationModelsClient.isAvailable()
+                    await send(.aiAvailabilityResult(available))
+                }
+
+            case .aiAvailabilityResult(let available):
+                state.isAIAvailable = available
+                state.aiAvailabilityChecked = true
+                state.provocation.isAIAvailable = available
                 return .none
+
             case .document, .notes, .provocation:
                 return .none
             }

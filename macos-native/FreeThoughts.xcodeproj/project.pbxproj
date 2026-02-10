@@ -18,15 +18,11 @@
 		A1B2C3D4E5F60718293A4B85 /* ProvocationPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */; };
 		A1B2C3D4E5F60718293A4B86 /* DataContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B7C /* DataContainer.swift */; };
 		A1B2C3D4E5F60718293A4B89 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60718293A4B88 /* ComposableArchitecture */; };
-		B1B2C3D4E5F60718293A4B11 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B01 /* Document.swift */; };
-		B1B2C3D4E5F60718293A4B12 /* DocumentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */; };
-		B1B2C3D4E5F60718293A4B13 /* PDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B03 /* PDFRenderer.swift */; };
-		B1B2C3D4E5F60718293A4B14 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */; };
-		B1B2C3D4E5F60718293A4B15 /* PlainTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */; };
-		B1B2C3D4E5F60718293A4B16 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */; };
-		B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */; };
-		D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */; };
-		D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */; };
+		E1B2C3D4E5F60718293A4B11 /* FoundationModelsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */; };
+		E1B2C3D4E5F60718293A4B12 /* PromptsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */; };
+		E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */; };
+		E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */; };
+		E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,15 +37,11 @@
 		A1B2C3D4E5F60718293A4B7A /* Provocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provocation.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationPrompt.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B7C /* DataContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataContainer.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B01 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentClient.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B03 /* PDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFRenderer.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextRenderer.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
-		B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextView.swift; sourceTree = "<group>"; };
-		D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSelection.swift; sourceTree = "<group>"; };
-		D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionPopover.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsClient.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptsClient.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSeeder.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainerDependency.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultPrompts.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,9 +102,6 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B76 /* DocumentFeature.swift */,
-				B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */,
-				B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */,
-				D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */,
 			);
 			path = Document;
 			sourceTree = "<group>";
@@ -129,6 +118,9 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B78 /* ProvocationFeature.swift */,
+				E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */,
+				E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */,
+				E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */,
 			);
 			path = Provocation;
 			sourceTree = "<group>";
@@ -136,11 +128,9 @@
 		A1B2C3D4E5F60718293A4B6F /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B1B2C3D4E5F60718293A4B01 /* Document.swift */,
 				A1B2C3D4E5F60718293A4B79 /* Note.swift */,
 				A1B2C3D4E5F60718293A4B7A /* Provocation.swift */,
 				A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */,
-				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -148,10 +138,6 @@
 		A1B2C3D4E5F60718293A4B70 /* Renderers */ = {
 			isa = PBXGroup;
 			children = (
-				B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */,
-				B1B2C3D4E5F60718293A4B03 /* PDFRenderer.swift */,
-				B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */,
-				B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */,
 			);
 			path = Renderers;
 			sourceTree = "<group>";
@@ -160,6 +146,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B7C /* DataContainer.swift */,
+				E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -167,6 +154,7 @@
 		A1B2C3D4E5F60718293A4B72 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -234,6 +222,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,21 +237,16 @@
 				A1B2C3D4E5F60718293A4B7E /* ContentView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B7F /* AppFeature.swift in Sources */,
 				A1B2C3D4E5F60718293A4B80 /* DocumentFeature.swift in Sources */,
-				B1B2C3D4E5F60718293A4B12 /* DocumentClient.swift in Sources */,
-				B1B2C3D4E5F60718293A4B16 /* DocumentView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B81 /* NotesFeature.swift in Sources */,
 				A1B2C3D4E5F60718293A4B82 /* ProvocationFeature.swift in Sources */,
-				B1B2C3D4E5F60718293A4B11 /* Document.swift in Sources */,
 				A1B2C3D4E5F60718293A4B83 /* Note.swift in Sources */,
 				A1B2C3D4E5F60718293A4B84 /* Provocation.swift in Sources */,
 				A1B2C3D4E5F60718293A4B85 /* ProvocationPrompt.swift in Sources */,
 				A1B2C3D4E5F60718293A4B86 /* DataContainer.swift in Sources */,
-				B1B2C3D4E5F60718293A4B13 /* PDFRenderer.swift in Sources */,
-				B1B2C3D4E5F60718293A4B14 /* MarkdownRenderer.swift in Sources */,
-				B1B2C3D4E5F60718293A4B15 /* PlainTextRenderer.swift in Sources */,
-				B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */,
-				D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */,
-				D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */,
+				E1B2C3D4E5F60718293A4B11 /* FoundationModelsClient.swift in Sources */,
+				E1B2C3D4E5F60718293A4B12 /* PromptsClient.swift in Sources */,
+				E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */,
+				E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

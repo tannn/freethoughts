@@ -3,7 +3,6 @@ import ComposableArchitecture
 
 struct ContentView: View {
     @Bindable var store: StoreOf<AppFeature>
-    @State private var textSelection: String?
 
     var body: some View {
         NavigationSplitView {
@@ -25,11 +24,9 @@ struct ContentView: View {
             }
             .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
         } detail: {
-            DocumentView(
-                store: store.scope(state: \.document, action: \.document),
-                textSelection: $textSelection
-            )
-            .frame(minWidth: 500)
+            Text("Open a document to begin")
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 500)
         }
         .frame(minWidth: 800, minHeight: 600)
         .onAppear {
