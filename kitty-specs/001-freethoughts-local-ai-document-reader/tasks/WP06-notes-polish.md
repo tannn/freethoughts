@@ -1,9 +1,13 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: planned
+lane: "doing"
 dependencies: []
+base_branch: main
+base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
+created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
+shell_pid: "51736"
 history:
 - date: '2026-02-09'
   action: created
