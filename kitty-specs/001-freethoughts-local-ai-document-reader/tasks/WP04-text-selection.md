@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Text Selection
-lane: "done"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca
@@ -474,3 +474,4 @@ struct DocumentView: View {
 - 2026-02-10T11:10:09Z – GitHub-Copilot – shell_pid=42592 – lane=for_review – Ready for review: fixed selection range tracking, popover positioning, and dismissal; build failed locally due to macros not enabled in dependencies
 - 2026-02-10T18:39:55Z – claude-opus – shell_pid=49195 – lane=doing – Started review via workflow command
 - 2026-02-10T18:43:15Z – claude-opus – shell_pid=49195 – lane=done – Review passed: All 5 subtasks implemented correctly. TextSelection model clean with PDF/text range variants. SelectionPopover matches spec UI. Selection tracking works across all renderers via NSTextViewDelegate and PDFView notifications. Popover positioning uses correct screen-to-local coordinate conversion. Escape and click-outside dismissal both implemented with proper cleanup.
+- 2026-02-10T23:00:49Z – claude-opus – shell_pid=49195 – lane=doing – Automated: start implementation
