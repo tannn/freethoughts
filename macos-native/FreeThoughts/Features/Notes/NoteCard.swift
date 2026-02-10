@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct NoteCard: View {
-    let note: Note
+    let note: NoteItem
     let isEditing: Bool
     let onTap: () -> Void
     let onEdit: () -> Void
@@ -14,7 +14,6 @@ struct NoteCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Selected text excerpt (clickable to navigate)
             Button(action: onTap) {
                 Text(truncatedExcerpt)
                     .font(.caption)
@@ -26,7 +25,6 @@ struct NoteCard: View {
             }
             .buttonStyle(.plain)
 
-            // Note content
             if isEditing {
                 editingView
             } else {
@@ -61,7 +59,8 @@ struct NoteCard: View {
             Text(note.content.isEmpty ? "No content" : note.content)
                 .foregroundStyle(note.content.isEmpty ? .tertiary : .primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .onTapGesture(count: 2) {
+                .contentShape(Rectangle())
+                .onTapGesture {
                     editText = note.content
                     onEdit()
                 }

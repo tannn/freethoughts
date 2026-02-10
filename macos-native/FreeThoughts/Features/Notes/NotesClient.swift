@@ -4,8 +4,9 @@ import Foundation
 
 @DependencyClient
 struct NotesClient {
-    var loadNotes: @Sendable (_ documentPath: String) async throws -> [Note]
-    var saveNote: @Sendable (_ note: Note) async throws -> Note
+    var loadNotes: @Sendable (_ documentPath: String) async throws -> [NoteItem]
+    var saveNote: @Sendable (_ note: NoteItem) async throws -> NoteItem
+    var updateNote: @Sendable (_ id: UUID, _ content: String) async throws -> Void
     var deleteNote: @Sendable (_ id: UUID) async throws -> Void
 }
 
@@ -20,13 +21,36 @@ extension NotesClient: DependencyKey {
                     note.documentPath == documentPath
                 }
                 let descriptor = FetchDescriptor(predicate: predicate, sortBy: [SortDescriptor(\.anchorStart)])
-                return try context.fetch(descriptor)
+                return try context.fetch(descriptor).map { NoteItem(from: $0) }
             },
-            saveNote: { note in
+            saveNote: { noteItem in
                 let context = ModelContext(container)
+                let note = Note(
+                    id: noteItem.id,
+                    documentPath: noteItem.documentPath,
+                    anchorStart: noteItem.anchorStart,
+                    anchorEnd: noteItem.anchorEnd,
+                    anchorPage: noteItem.anchorPage,
+                    selectedText: noteItem.selectedText,
+                    content: noteItem.content,
+                    createdAt: noteItem.createdAt,
+                    updatedAt: noteItem.updatedAt
+                )
                 context.insert(note)
                 try context.save()
-                return note
+                return noteItem
+            },
+            updateNote: { id, content in
+                let context = ModelContext(container)
+                let predicate = #Predicate<Note> { note in
+                    note.id == id
+                }
+                let descriptor = FetchDescriptor(predicate: predicate)
+                if let note = try context.fetch(descriptor).first {
+                    note.content = content
+                    note.updatedAt = Date()
+                    try context.save()
+                }
             },
             deleteNote: { id in
                 let context = ModelContext(container)
@@ -45,6 +69,7 @@ extension NotesClient: DependencyKey {
     static let testValue = NotesClient(
         loadNotes: { _ in [] },
         saveNote: { $0 },
+        updateNote: { _, _ in },
         deleteNote: { _ in }
     )
 }

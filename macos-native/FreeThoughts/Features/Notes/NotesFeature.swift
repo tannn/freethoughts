@@ -1,12 +1,11 @@
 import ComposableArchitecture
-import SwiftData
 import Foundation
 
 @Reducer
 struct NotesFeature {
     @ObservableState
     struct State: Equatable {
-        var notes: [Note] = []
+        var notes: [NoteItem] = []
         var currentDocumentPath: String?
         var isCreatingNote: Bool = false
         var noteCreationSelection: TextSelection?
@@ -16,12 +15,12 @@ struct NotesFeature {
 
     enum Action {
         case loadNotes(documentPath: String)
-        case notesLoaded([Note])
+        case notesLoaded([NoteItem])
         case startNoteCreation(TextSelection)
         case cancelNoteCreation
         case updateNoteContent(String)
         case saveNote
-        case noteSaved(Note)
+        case noteSaved(NoteItem)
         case deleteNote(UUID)
         case noteDeleted(UUID)
         case startEditing(UUID)
@@ -67,7 +66,7 @@ struct NotesFeature {
                     return .none
                 }
 
-                let note = Note(
+                let noteItem = NoteItem(
                     documentPath: selection.documentPath,
                     anchorStart: selection.range.startOffset,
                     anchorEnd: selection.range.endOffset,
@@ -81,7 +80,7 @@ struct NotesFeature {
                 state.noteCreationContent = ""
 
                 return .run { send in
-                    let saved = try await notesClient.saveNote(note)
+                    let saved = try await notesClient.saveNote(noteItem)
                     await send(.noteSaved(saved))
                 }
 
@@ -112,15 +111,14 @@ struct NotesFeature {
                 if let index = state.notes.firstIndex(where: { $0.id == id }) {
                     state.notes[index].content = text
                     state.notes[index].updatedAt = Date()
-                    let note = state.notes[index]
+                    let noteId = state.notes[index].id
                     return .run { _ in
-                        try await notesClient.saveNote(note)
+                        try await notesClient.updateNote(noteId, text)
                     }
                 }
                 return .none
 
             case .navigateToNote:
-                // Handled by parent to scroll document
                 return .none
             }
         }
