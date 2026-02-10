@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Text Selection
-lane: "doing"
+lane: "planned"
 dependencies: []
 base_branch: main
 base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca
@@ -9,6 +9,8 @@ created_at: '2026-02-10T10:36:17.722744+00:00'
 subtasks: [T020, T021, T022, T023, T024]
 shell_pid: "35027"
 agent: "GitHub Copilot"
+review_status: "has_feedback"
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -467,3 +469,4 @@ struct DocumentView: View {
 - 2026-02-10T10:42:52Z – GitHub Copilot – shell_pid=24044 – lane=doing – Blocked: WP04 targets macos-native Swift files, but the WP04/WP02 branches only contain electron/ (no macos-native sources). Need a branch or path with macos-native to proceed.
 - 2026-02-10T10:54:30Z – GitHub Copilot – shell_pid=24044 – lane=for_review – Moved to for_review
 - 2026-02-10T10:55:08Z – GitHub Copilot – shell_pid=35027 – lane=doing – Started review via workflow command
+- 2026-02-10T11:02:13Z – GitHub Copilot – shell_pid=35027 – lane=planned – Moved to planned
