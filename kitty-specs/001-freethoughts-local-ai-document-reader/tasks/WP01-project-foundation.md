@@ -1,13 +1,13 @@
 ---
 work_package_id: WP01
 title: Project Foundation
-lane: "for_review"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: c922e2af2ae7a6f0a6a6747de6368a5f483ef78a
 created_at: '2026-02-10T06:21:29.983925+00:00'
 subtasks: [T001, T002, T003, T004, T005, T006, T007]
-shell_pid: "92754"
+shell_pid: "10981"
 agent: "claude-opus"
 history:
 - date: '2026-02-09'
@@ -640,3 +640,4 @@ struct ContentView: View {
 
 - 2026-02-10T06:21:30Z – claude-opus – shell_pid=92754 – lane=doing – Assigned agent via workflow command
 - 2026-02-10T09:25:29Z – claude-opus – shell_pid=92754 – lane=for_review – Ready for review: <summary>
+- 2026-02-10T09:26:59Z – claude-opus – shell_pid=10981 – lane=doing – Started review via workflow command
