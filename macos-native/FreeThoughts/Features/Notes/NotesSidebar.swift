@@ -44,6 +44,10 @@ struct NotesSidebar: View {
                             NoteCard(
                                 note: note,
                                 isEditing: store.editingNoteId == note.id,
+                                draftText: Binding(
+                                    get: { store.editingDraftText },
+                                    set: { store.send(.updateDraftText($0)) }
+                                ),
                                 onTap: {
                                     store.send(.navigateToNote(note.id))
                                 },
@@ -76,13 +80,10 @@ struct NotesSidebar: View {
                     .padding()
                 }
                 .onTapGesture {
-                    if store.editingNoteId != nil {
-                        // Save current editing note on tap outside
-                        if let editingId = store.editingNoteId,
-                           let note = store.notes.first(where: { $0.id == editingId }) {
-                            store.send(.updateNoteText(note.id, note.content))
-                            store.send(.stopEditing)
-                        }
+                    if let editingId = store.editingNoteId {
+                        // Save the current draft text before exiting edit mode
+                        store.send(.updateNoteText(editingId, store.editingDraftText))
+                        store.send(.stopEditing)
                     }
                 }
             }

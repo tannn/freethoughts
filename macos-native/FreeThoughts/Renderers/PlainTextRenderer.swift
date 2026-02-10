@@ -5,6 +5,7 @@ struct PlainTextRenderer: View {
     @Binding var selection: String?
     @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
+    var scrollToRange: NSRange?
 
     var body: some View {
         SelectableTextView(
@@ -22,7 +23,8 @@ struct PlainTextRenderer: View {
             ),
             selection: $selection,
             selectionRange: $selectionRange,
-            selectionRect: $selectionRect
+            selectionRect: $selectionRect,
+            scrollToRange: scrollToRange
         )
     }
 }

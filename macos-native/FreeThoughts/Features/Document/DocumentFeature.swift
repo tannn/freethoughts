@@ -21,7 +21,6 @@ struct DocumentFeature {
         var currentSelection: TextSelection?
         var showSelectionPopover: Bool = false
         var scrollToAnchorRequest: AnchorRequest?
-        var highlightedRange: AnchorRequest?
     }
 
     enum Action {
@@ -117,7 +116,6 @@ struct DocumentFeature {
             case .scrollToAnchor(let page, let start, let end):
                 let request = AnchorRequest(page: page, start: start, end: end)
                 state.scrollToAnchorRequest = request
-                state.highlightedRange = request
                 if let page {
                     state.currentPage = page + 1
                 }
@@ -127,7 +125,6 @@ struct DocumentFeature {
                 }
 
             case .clearHighlight:
-                state.highlightedRange = nil
                 state.scrollToAnchorRequest = nil
                 return .none
             }

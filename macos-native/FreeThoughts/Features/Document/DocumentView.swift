@@ -10,8 +10,6 @@ struct DocumentView: View {
     @State private var selectionRect: CGRect?
     @State private var selectionRange: NSRange?
 
-    @State private var highlightVisible = false
-
     var body: some View {
         ZStack {
             Group {
@@ -22,12 +20,6 @@ struct DocumentView: View {
                 } else {
                     emptyView
                 }
-            }
-
-            if highlightVisible {
-                Color.accentColor.opacity(0.15)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
             }
 
             if store.showSelectionPopover {
@@ -50,18 +42,6 @@ struct DocumentView: View {
                 .frame(width: 0, height: 0)
             }
         }
-        .onChange(of: store.highlightedRange?.id) { _, newValue in
-            if newValue != nil {
-                withAnimation(.easeIn(duration: 0.2)) {
-                    highlightVisible = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    withAnimation(.easeOut(duration: 0.4)) {
-                        highlightVisible = false
-                    }
-                }
-            }
-        }
         .onChange(of: pdfSelection) { _, newValue in
             textSelection = newValue?.string
             updateSelection()
@@ -75,6 +55,16 @@ struct DocumentView: View {
         .onChange(of: selectionRange) { _, _ in
             updateSelection()
         }
+    }
+
+    /// Convert the current anchor request to an NSRange for text renderers
+    private var textScrollToRange: NSRange? {
+        guard let request = store.scrollToAnchorRequest,
+              request.page == nil else {
+            return nil
+        }
+        let length = max(0, request.end - request.start)
+        return NSRange(location: request.start, length: length)
     }
 
     private func updateSelection() {
@@ -127,14 +117,16 @@ struct DocumentView: View {
                     content: content,
                     selection: $textSelection,
                     selectionRange: $selectionRange,
-                    selectionRect: $selectionRect
+                    selectionRect: $selectionRect,
+                    scrollToRange: textScrollToRange
                 )
             } else {
                 PlainTextRenderer(
                     content: content,
                     selection: $textSelection,
                     selectionRange: $selectionRange,
-                    selectionRect: $selectionRect
+                    selectionRect: $selectionRect,
+                    scrollToRange: textScrollToRange
                 )
             }
         }

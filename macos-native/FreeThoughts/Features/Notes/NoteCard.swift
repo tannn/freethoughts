@@ -3,6 +3,7 @@ import SwiftUI
 struct NoteCard: View {
     let note: NoteItem
     let isEditing: Bool
+    @Binding var draftText: String
     let onTap: () -> Void
     let onEdit: () -> Void
     let onSave: (String) -> Void
@@ -10,7 +11,6 @@ struct NoteCard: View {
     let onDelete: () -> Void
     let onProvocation: () -> Void
 
-    @State private var editText: String = ""
     @State private var showDeleteConfirmation = false
 
     var body: some View {
@@ -74,7 +74,6 @@ struct NoteCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    editText = note.content
                     onEdit()
                 }
 
@@ -95,7 +94,7 @@ struct NoteCard: View {
 
     private var editingView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextEditor(text: $editText)
+            TextEditor(text: $draftText)
                 .font(.body)
                 .frame(minHeight: 60, maxHeight: 200)
                 .scrollContentBackground(.hidden)
@@ -120,14 +119,21 @@ struct NoteCard: View {
                 .font(.caption)
 
                 Button("Done") {
-                    onSave(editText)
+                    onSave(draftText)
                 }
                 .font(.caption)
                 .buttonStyle(.borderedProminent)
             }
         }
-        .onAppear {
-            editText = note.content
+        .onExitCommand {
+            onCancel()
+        }
+        .onKeyPress(.delete, phases: .down) { keyPress in
+            if keyPress.modifiers.contains(.command) {
+                showDeleteConfirmation = true
+                return .handled
+            }
+            return .ignored
         }
     }
 }

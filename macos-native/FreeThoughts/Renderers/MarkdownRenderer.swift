@@ -5,6 +5,7 @@ struct MarkdownRenderer: View {
     @Binding var selection: String?
     @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
+    var scrollToRange: NSRange?
 
     @State private var attributedContent: NSAttributedString?
 
@@ -14,7 +15,8 @@ struct MarkdownRenderer: View {
                 attributedString: attributed,
                 selection: $selection,
                 selectionRange: $selectionRange,
-                selectionRect: $selectionRect
+                selectionRect: $selectionRect,
+                scrollToRange: scrollToRange
             )
         } else {
             ProgressView()
@@ -22,11 +24,12 @@ struct MarkdownRenderer: View {
         }
     }
 
-    init(content: String, selection: Binding<String?>, selectionRange: Binding<NSRange?>, selectionRect: Binding<CGRect?>) {
+    init(content: String, selection: Binding<String?>, selectionRange: Binding<NSRange?>, selectionRect: Binding<CGRect?>, scrollToRange: NSRange? = nil) {
         self.content = content
         self._selection = selection
         self._selectionRange = selectionRange
         self._selectionRect = selectionRect
+        self.scrollToRange = scrollToRange
         self._attributedContent = State(initialValue: Self.parseMarkdownSync(content))
     }
 

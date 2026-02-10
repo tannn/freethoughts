@@ -11,6 +11,7 @@ struct NotesFeature {
         var noteCreationSelection: TextSelection?
         var noteCreationContent: String = ""
         var editingNoteId: UUID?
+        var editingDraftText: String = ""
     }
 
     enum Action {
@@ -26,6 +27,7 @@ struct NotesFeature {
         case startEditing(UUID)
         case stopEditing
         case updateNoteText(UUID, String)
+        case updateDraftText(String)
         case navigateToNote(UUID)
     }
 
@@ -111,10 +113,18 @@ struct NotesFeature {
 
             case .startEditing(let id):
                 state.editingNoteId = id
+                if let note = state.notes.first(where: { $0.id == id }) {
+                    state.editingDraftText = note.content
+                }
                 return .none
 
             case .stopEditing:
                 state.editingNoteId = nil
+                state.editingDraftText = ""
+                return .none
+
+            case .updateDraftText(let text):
+                state.editingDraftText = text
                 return .none
 
             case .updateNoteText(let id, let text):
