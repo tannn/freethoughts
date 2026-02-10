@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Notes Core
-lane: "doing"
+lane: "planned"
 dependencies: []
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3
@@ -685,3 +685,4 @@ case .document(.closeDocument):
 ## Activity Log
 
 - 2026-02-10T18:41:07Z – GitHub Copilot – shell_pid=49309 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T18:54:08Z – GitHub Copilot – shell_pid=49309 – lane=planned – Moved back to planned at user request.
