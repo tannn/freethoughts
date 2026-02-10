@@ -1,9 +1,13 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: planned
+lane: "doing"
 dependencies: []
+base_branch: 001-freethoughts-local-ai-document-reader-WP01
+base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
+created_at: '2026-02-10T18:52:41.213719+00:00'
 subtasks: [T036, T037, T038, T039, T040, T041]
+shell_pid: "52236"
 history:
 - date: '2026-02-09'
   action: created
