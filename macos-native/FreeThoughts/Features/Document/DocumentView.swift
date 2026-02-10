@@ -70,7 +70,7 @@ struct DocumentView: View {
                 .font(.title2)
                 .foregroundStyle(.secondary)
 
-            Text("Drop a file here or use File \u{2192} Open")
+            Text("Drop a file here or use File -> Open")
                 .foregroundStyle(.tertiary)
 
             Text("Supports: PDF, Markdown, Plain Text")
