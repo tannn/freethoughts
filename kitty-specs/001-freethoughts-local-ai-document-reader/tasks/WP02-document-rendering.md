@@ -1,9 +1,13 @@
 ---
 work_package_id: WP02
 title: Document Rendering
-lane: planned
+lane: "doing"
 dependencies: []
+base_branch: main
+base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
+created_at: '2026-02-10T09:44:10.822932+00:00'
 subtasks: [T008, T009, T010, T011, T012, T013, T014]
+shell_pid: "13326"
 history:
 - date: '2026-02-09'
   action: created
