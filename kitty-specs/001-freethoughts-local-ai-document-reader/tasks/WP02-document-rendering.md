@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: Document Rendering
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: main
 base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
@@ -700,3 +700,4 @@ struct DocumentView: View {
 ## Activity Log
 
 - 2026-02-10T09:44:10Z – claude-opus – shell_pid=13326 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T09:48:55Z – claude-opus – shell_pid=13326 – lane=for_review – Ready for review: Document model, DocumentClient dependency, full DocumentFeature reducer, PDF/Markdown/PlainText renderers, unified DocumentView, ContentView integration. Build succeeds.
