@@ -1,7 +1,7 @@
 ---
 work_package_id: WP01
 title: Project Foundation
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: main
 base_commit: c922e2af2ae7a6f0a6a6747de6368a5f483ef78a
@@ -639,3 +639,4 @@ struct ContentView: View {
 ## Activity Log
 
 - 2026-02-10T06:21:30Z – claude-opus – shell_pid=92754 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T09:25:29Z – claude-opus – shell_pid=92754 – lane=for_review – Ready for review: <summary>
