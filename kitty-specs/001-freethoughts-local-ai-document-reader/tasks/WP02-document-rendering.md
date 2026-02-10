@@ -8,6 +8,7 @@ base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
 created_at: '2026-02-10T09:44:10.822932+00:00'
 subtasks: [T008, T009, T010, T011, T012, T013, T014]
 shell_pid: "13326"
+agent: "claude-opus"
 history:
 - date: '2026-02-09'
   action: created
@@ -695,3 +696,7 @@ struct DocumentView: View {
 3. Check scrolling performance on large documents
 4. Ensure text selection works in all formats
 5. Verify empty state matches mockup exactly
+
+## Activity Log
+
+- 2026-02-10T09:44:10Z – claude-opus – shell_pid=13326 – lane=doing – Assigned agent via workflow command
