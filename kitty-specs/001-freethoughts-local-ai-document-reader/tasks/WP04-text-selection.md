@@ -1,14 +1,14 @@
 ---
 work_package_id: WP04
 title: Text Selection
-lane: "for_review"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca
 created_at: '2026-02-10T10:36:17.722744+00:00'
 subtasks: [T020, T021, T022, T023, T024]
-shell_pid: "42592"
-agent: "GitHub-Copilot"
+shell_pid: "49195"
+agent: "claude-opus"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -472,3 +472,4 @@ struct DocumentView: View {
 - 2026-02-10T11:02:13Z – GitHub Copilot – shell_pid=35027 – lane=planned – Moved to planned
 - 2026-02-10T11:03:44Z – GitHub-Copilot – shell_pid=42592 – lane=doing – Started implementation via workflow command
 - 2026-02-10T11:10:09Z – GitHub-Copilot – shell_pid=42592 – lane=for_review – Ready for review: fixed selection range tracking, popover positioning, and dismissal; build failed locally due to macros not enabled in dependencies
+- 2026-02-10T18:39:55Z – claude-opus – shell_pid=49195 – lane=doing – Started review via workflow command
