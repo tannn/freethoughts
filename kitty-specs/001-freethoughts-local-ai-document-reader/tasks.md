@@ -151,11 +151,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T031: Order notes by anchor position in document
-- [ ] T032: Implement inline note editing (mockup #9)
-- [ ] T033: Implement note deletion with confirmation
-- [ ] T034: Implement navigation from note to anchor (mockup #10)
-- [ ] T035: Implement sidebar collapse/expand (mockup #8)
+- [x] T031: Order notes by anchor position in document
+- [x] T032: Implement inline note editing (mockup #9)
+- [x] T033: Implement note deletion with confirmation
+- [x] T034: Implement navigation from note to anchor (mockup #10)
+- [x] T035: Implement sidebar collapse/expand (mockup #8)
 
 **Success Criteria**:
 - Notes ordered top-to-bottom by position
