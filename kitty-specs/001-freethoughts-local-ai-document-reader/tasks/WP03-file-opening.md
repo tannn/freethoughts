@@ -1,14 +1,14 @@
 ---
 work_package_id: WP03
 title: File Opening & Navigation
-lane: "for_review"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
 created_at: '2026-02-10T10:35:34.092423+00:00'
 subtasks: [T015, T016, T017, T018, T019]
-shell_pid: "23884"
-agent: "claude-opus"
+shell_pid: "27848"
+agent: "github-copilot"
 history:
 - date: '2026-02-09'
   action: created
@@ -386,3 +386,4 @@ var body: some View {
 
 - 2026-02-10T10:35:34Z – claude-opus – shell_pid=23884 – lane=doing – Assigned agent via workflow command
 - 2026-02-10T10:38:59Z – claude-opus – shell_pid=23884 – lane=for_review – Ready for review: File > Open with Cmd+O, drag-drop with overlay, status bar with page/zoom/type, enhanced empty state. Build succeeds cleanly.
+- 2026-02-10T10:43:27Z – github-copilot – shell_pid=27848 – lane=doing – Started review via workflow command
