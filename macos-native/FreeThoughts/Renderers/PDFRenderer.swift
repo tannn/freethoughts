@@ -76,7 +76,11 @@ struct PDFRenderer: NSViewRepresentable {
                 let windowRect = pdfView.convert(viewRect, to: nil)
 
                 parent.selection = selection
-                parent.selectionRect = windowRect
+                if let window = pdfView.window {
+                    parent.selectionRect = window.convertToScreen(windowRect)
+                } else {
+                    parent.selectionRect = windowRect
+                }
             } else {
                 parent.selection = nil
                 parent.selectionRect = nil

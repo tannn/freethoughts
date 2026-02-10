@@ -1,12 +1,14 @@
 import SwiftUI
 import ComposableArchitecture
 import PDFKit
+import AppKit
 
 struct DocumentView: View {
     @Bindable var store: StoreOf<DocumentFeature>
     @Binding var textSelection: String?
     @State private var pdfSelection: PDFSelection?
     @State private var selectionRect: CGRect?
+    @State private var selectionRange: NSRange?
 
     var body: some View {
         ZStack {
@@ -20,9 +22,24 @@ struct DocumentView: View {
                 }
             }
 
+            if store.showSelectionPopover {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        store.send(.dismissPopover)
+                    }
+            }
+
             if store.showSelectionPopover,
                let selection = store.currentSelection {
                 selectionPopoverOverlay(selection: selection)
+            }
+
+            if store.showSelectionPopover {
+                EscapeKeyHandler {
+                    store.send(.dismissPopover)
+                }
+                .frame(width: 0, height: 0)
             }
         }
         .onChange(of: pdfSelection) { _, newValue in
@@ -33,6 +50,9 @@ struct DocumentView: View {
             updateSelection()
         }
         .onChange(of: selectionRect) { _, _ in
+            updateSelection()
+        }
+        .onChange(of: selectionRange) { _, _ in
             updateSelection()
         }
     }
@@ -47,18 +67,18 @@ struct DocumentView: View {
                 rect: rect
             )
             store.send(.selectionChanged(sel))
-        } else if let text = textSelection, !text.isEmpty, let rect = selectionRect {
-            let fullContent: String
-            if case .text(let content) = document.content {
-                fullContent = content
-            } else {
-                fullContent = ""
-            }
+        } else if let text = textSelection,
+                  !text.isEmpty,
+                  let rect = selectionRect,
+                  let range = selectionRange {
+            let start = range.location
+            let end = range.location + range.length
             let sel = TextSelection.from(
                 text: text,
-                fullContent: fullContent,
                 documentPath: document.canonicalPath,
-                rect: rect
+                rect: rect,
+                start: start,
+                end: end
             )
             store.send(.selectionChanged(sel))
         } else {
@@ -85,12 +105,14 @@ struct DocumentView: View {
                 MarkdownRenderer(
                     content: content,
                     selection: $textSelection,
+                    selectionRange: $selectionRange,
                     selectionRect: $selectionRect
                 )
             } else {
                 PlainTextRenderer(
                     content: content,
                     selection: $textSelection,
+                    selectionRange: $selectionRange,
                     selectionRect: $selectionRect
                 )
             }
@@ -100,8 +122,15 @@ struct DocumentView: View {
     @ViewBuilder
     private func selectionPopoverOverlay(selection: TextSelection) -> some View {
         GeometryReader { geometry in
-            let popoverX = min(max(selection.rect.midX, 80), geometry.size.width - 80)
-            let popoverY = min(selection.rect.maxY + 30, geometry.size.height - 40)
+            let globalFrame = geometry.frame(in: .global)
+            let localRect = CGRect(
+                x: selection.rect.minX - globalFrame.minX,
+                y: selection.rect.minY - globalFrame.minY,
+                width: selection.rect.width,
+                height: selection.rect.height
+            )
+            let popoverX = min(max(localRect.midX, 80), geometry.size.width - 80)
+            let popoverY = min(localRect.maxY + 30, geometry.size.height - 40)
 
             SelectionPopover(
                 selection: selection,
@@ -146,6 +175,48 @@ struct DocumentView: View {
             Text("Supports: PDF, Markdown, Plain Text")
                 .font(.caption)
                 .foregroundStyle(.quaternary)
+        }
+    }
+}
+
+private struct EscapeKeyHandler: NSViewRepresentable {
+    let onEscape: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onEscape: onEscape)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        context.coordinator.startMonitoring()
+        return NSView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    final class Coordinator {
+        private let onEscape: () -> Void
+        private var monitor: Any?
+
+        init(onEscape: @escaping () -> Void) {
+            self.onEscape = onEscape
+        }
+
+        func startMonitoring() {
+            guard monitor == nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                guard let self else { return event }
+                if event.keyCode == 53 {
+                    self.onEscape()
+                    return nil
+                }
+                return event
+            }
+        }
+
+        deinit {
+            if let monitor {
+                NSEvent.removeMonitor(monitor)
+            }
         }
     }
 }

@@ -52,21 +52,14 @@ struct TextSelection: Equatable {
         )
     }
 
-    static func from(text: String, fullContent: String, documentPath: String, rect: CGRect) -> TextSelection? {
-        guard !text.isEmpty else { return nil }
+    static func from(text: String, documentPath: String, rect: CGRect, start: Int, end: Int) -> TextSelection? {
+        guard !text.isEmpty, start >= 0, end >= start else { return nil }
 
-        if let range = fullContent.range(of: text) {
-            let start = fullContent.distance(from: fullContent.startIndex, to: range.lowerBound)
-            let end = fullContent.distance(from: fullContent.startIndex, to: range.upperBound)
-
-            return TextSelection(
-                text: text,
-                documentPath: documentPath,
-                range: .text(start: start, end: end),
-                rect: rect
-            )
-        }
-
-        return nil
+        return TextSelection(
+            text: text,
+            documentPath: documentPath,
+            range: .text(start: start, end: end),
+            rect: rect
+        )
     }
 }

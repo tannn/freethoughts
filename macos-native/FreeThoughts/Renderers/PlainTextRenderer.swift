@@ -3,6 +3,7 @@ import SwiftUI
 struct PlainTextRenderer: View {
     let content: String
     @Binding var selection: String?
+    @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
 
     var body: some View {
@@ -20,6 +21,7 @@ struct PlainTextRenderer: View {
                 ]
             ),
             selection: $selection,
+            selectionRange: $selectionRange,
             selectionRect: $selectionRect
         )
     }
@@ -36,6 +38,7 @@ struct PlainTextRenderer: View {
         Lorem ipsum dolor sit amet, consectetur adipiscing elit.
         """,
         selection: .constant(nil),
+        selectionRange: .constant(nil),
         selectionRect: .constant(nil)
     )
 }
