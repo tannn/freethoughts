@@ -1,13 +1,17 @@
 ---
-work_package_id: "WP01"
-title: "Project Foundation"
-lane: "planned"
+work_package_id: WP01
+title: Project Foundation
+lane: "doing"
 dependencies: []
-subtasks: ["T001", "T002", "T003", "T004", "T005", "T006", "T007"]
+base_branch: main
+base_commit: c922e2af2ae7a6f0a6a6747de6368a5f483ef78a
+created_at: '2026-02-10T06:21:29.983925+00:00'
+subtasks: [T001, T002, T003, T004, T005, T006, T007]
+shell_pid: "92754"
 history:
-  - date: "2026-02-09"
-    action: "created"
-    by: "spec-kitty"
+- date: '2026-02-09'
+  action: created
+  by: spec-kitty
 ---
 
 # WP01: Project Foundation
