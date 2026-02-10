@@ -1,9 +1,13 @@
 ---
 work_package_id: WP04
 title: Text Selection
-lane: planned
+lane: "doing"
 dependencies: []
+base_branch: main
+base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca
+created_at: '2026-02-10T10:36:17.722744+00:00'
 subtasks: [T020, T021, T022, T023, T024]
+shell_pid: "24044"
 history:
 - date: '2026-02-09'
   action: created
