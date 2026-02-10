@@ -5,6 +5,7 @@ struct PDFRenderer: NSViewRepresentable {
     let document: PDFDocument
     @Binding var currentPage: Int
     @Binding var selection: PDFSelection?
+    @Binding var selectionRect: CGRect?
 
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
@@ -65,7 +66,21 @@ struct PDFRenderer: NSViewRepresentable {
 
         @objc func selectionChanged(_ notification: Notification) {
             guard let pdfView = notification.object as? PDFView else { return }
-            parent.selection = pdfView.currentSelection
+
+            if let selection = pdfView.currentSelection,
+               let string = selection.string,
+               !string.isEmpty,
+               let firstPage = selection.pages.first {
+                let bounds = selection.bounds(for: firstPage)
+                let viewRect = pdfView.convert(bounds, from: firstPage)
+                let windowRect = pdfView.convert(viewRect, to: nil)
+
+                parent.selection = selection
+                parent.selectionRect = windowRect
+            } else {
+                parent.selection = nil
+                parent.selectionRect = nil
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct MarkdownRenderer: View {
     let content: String
     @Binding var selection: String?
+    @Binding var selectionRect: CGRect?
 
     @State private var attributedContent: NSAttributedString?
 
@@ -10,7 +11,8 @@ struct MarkdownRenderer: View {
         if let attributed = attributedContent {
             SelectableTextView(
                 attributedString: attributed,
-                selection: $selection
+                selection: $selection,
+                selectionRect: $selectionRect
             )
         } else {
             ProgressView()
@@ -18,9 +20,10 @@ struct MarkdownRenderer: View {
         }
     }
 
-    init(content: String, selection: Binding<String?>) {
+    init(content: String, selection: Binding<String?>, selectionRect: Binding<CGRect?>) {
         self.content = content
         self._selection = selection
+        self._selectionRect = selectionRect
         self._attributedContent = State(initialValue: Self.parseMarkdownSync(content))
     }
 
@@ -56,6 +59,7 @@ struct MarkdownRenderer: View {
 
         `inline code`
         """,
-        selection: .constant(nil)
+        selection: .constant(nil),
+        selectionRect: .constant(nil)
     )
 }

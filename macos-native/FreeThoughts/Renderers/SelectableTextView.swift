@@ -4,6 +4,7 @@ import AppKit
 struct SelectableTextView: NSViewRepresentable {
     let attributedString: NSAttributedString
     @Binding var selection: String?
+    @Binding var selectionRect: CGRect?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -50,8 +51,17 @@ struct SelectableTextView: NSViewRepresentable {
                let text = textView.textStorage?.attributedSubstring(from: selectedRange).string,
                !text.isEmpty {
                 parent.selection = text
+
+                if let layoutManager = textView.layoutManager,
+                   let textContainer = textView.textContainer {
+                    let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+                    let rect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+                    let windowRect = textView.convert(rect, to: nil)
+                    parent.selectionRect = windowRect
+                }
             } else {
                 parent.selection = nil
+                parent.selectionRect = nil
             }
         }
     }
