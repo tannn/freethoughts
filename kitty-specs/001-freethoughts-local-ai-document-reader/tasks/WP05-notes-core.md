@@ -1,14 +1,14 @@
 ---
 work_package_id: WP05
 title: Notes Core
-lane: "planned"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3
 created_at: '2026-02-10T18:41:07.276374+00:00'
 subtasks: [T025, T026, T027, T028, T029, T030]
-shell_pid: "49309"
-agent: "GitHub Copilot"
+shell_pid: "54778"
+agent: "claude-opus"
 history:
 - date: '2026-02-09'
   action: created
@@ -686,3 +686,4 @@ case .document(.closeDocument):
 
 - 2026-02-10T18:41:07Z – GitHub Copilot – shell_pid=49309 – lane=doing – Assigned agent via workflow command
 - 2026-02-10T18:54:08Z – GitHub Copilot – shell_pid=49309 – lane=planned – Moved back to planned at user request.
+- 2026-02-10T19:01:00Z – claude-opus – shell_pid=54778 – lane=doing – Started implementation via workflow command
