@@ -32,7 +32,8 @@ struct DocumentView: View {
                     get: { store.currentPage },
                     set: { store.send(.setPage($0)) }
                 ),
-                selection: $pdfSelection
+                selection: $pdfSelection,
+                zoomLevel: store.zoomLevel
             )
 
         case .text(let content):

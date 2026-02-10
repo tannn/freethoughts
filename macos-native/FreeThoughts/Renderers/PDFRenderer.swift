@@ -5,11 +5,13 @@ struct PDFRenderer: NSViewRepresentable {
     let document: PDFDocument
     @Binding var currentPage: Int
     @Binding var selection: PDFSelection?
+    var zoomLevel: Double
 
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
         pdfView.document = document
-        pdfView.autoScales = true
+        pdfView.autoScales = false
+        pdfView.scaleFactor = zoomLevel
         pdfView.displayMode = .singlePageContinuous
         pdfView.displayDirection = .vertical
         pdfView.delegate = context.coordinator
@@ -20,6 +22,10 @@ struct PDFRenderer: NSViewRepresentable {
     func updateNSView(_ pdfView: PDFView, context: Context) {
         if pdfView.document !== document {
             pdfView.document = document
+        }
+
+        if pdfView.scaleFactor != zoomLevel {
+            pdfView.scaleFactor = zoomLevel
         }
 
         if let page = document.page(at: currentPage - 1),
