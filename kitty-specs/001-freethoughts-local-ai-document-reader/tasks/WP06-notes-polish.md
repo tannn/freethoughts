@@ -1,14 +1,14 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "planned"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
 created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
-shell_pid: "75128"
-agent: "GitHub Copilot"
+shell_pid: "80732"
+agent: "claude-opus"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -434,3 +434,4 @@ if store.isSidebarCollapsed {
 - 2026-02-10T23:29:28Z – GitHub Copilot – shell_pid=75128 – lane=doing – Started review via workflow command
 - 2026-02-10T23:32:58Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
 - 2026-02-10T23:33:24Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
+- 2026-02-10T23:35:11Z – claude-opus – shell_pid=80732 – lane=doing – Started implementation via workflow command
