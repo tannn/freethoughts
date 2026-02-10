@@ -1,15 +1,128 @@
 import ComposableArchitecture
+import SwiftData
+import Foundation
 
 @Reducer
 struct NotesFeature {
     @ObservableState
-    struct State: Equatable {}
+    struct State: Equatable {
+        var notes: [Note] = []
+        var currentDocumentPath: String?
+        var isCreatingNote: Bool = false
+        var noteCreationSelection: TextSelection?
+        var noteCreationContent: String = ""
+        var editingNoteId: UUID?
+    }
 
-    enum Action {}
+    enum Action {
+        case loadNotes(documentPath: String)
+        case notesLoaded([Note])
+        case startNoteCreation(TextSelection)
+        case cancelNoteCreation
+        case updateNoteContent(String)
+        case saveNote
+        case noteSaved(Note)
+        case deleteNote(UUID)
+        case noteDeleted(UUID)
+        case startEditing(UUID)
+        case stopEditing
+        case updateNoteText(UUID, String)
+        case navigateToNote(UUID)
+    }
+
+    @Dependency(\.notesClient) var notesClient
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
-            return .none
+            switch action {
+            case .loadNotes(let path):
+                state.currentDocumentPath = path
+                return .run { send in
+                    let notes = try await notesClient.loadNotes(path)
+                    await send(.notesLoaded(notes))
+                }
+
+            case .notesLoaded(let notes):
+                state.notes = notes.sorted { $0.anchorStart < $1.anchorStart }
+                return .none
+
+            case .startNoteCreation(let selection):
+                state.isCreatingNote = true
+                state.noteCreationSelection = selection
+                state.noteCreationContent = ""
+                return .none
+
+            case .cancelNoteCreation:
+                state.isCreatingNote = false
+                state.noteCreationSelection = nil
+                state.noteCreationContent = ""
+                return .none
+
+            case .updateNoteContent(let content):
+                state.noteCreationContent = content
+                return .none
+
+            case .saveNote:
+                guard let selection = state.noteCreationSelection else {
+                    return .none
+                }
+
+                let note = Note(
+                    documentPath: selection.documentPath,
+                    anchorStart: selection.range.startOffset,
+                    anchorEnd: selection.range.endOffset,
+                    anchorPage: selection.range.page,
+                    selectedText: selection.text,
+                    content: state.noteCreationContent
+                )
+
+                state.isCreatingNote = false
+                state.noteCreationSelection = nil
+                state.noteCreationContent = ""
+
+                return .run { send in
+                    let saved = try await notesClient.saveNote(note)
+                    await send(.noteSaved(saved))
+                }
+
+            case .noteSaved(let note):
+                state.notes.append(note)
+                state.notes.sort { $0.anchorStart < $1.anchorStart }
+                return .none
+
+            case .deleteNote(let id):
+                return .run { send in
+                    try await notesClient.deleteNote(id)
+                    await send(.noteDeleted(id))
+                }
+
+            case .noteDeleted(let id):
+                state.notes.removeAll { $0.id == id }
+                return .none
+
+            case .startEditing(let id):
+                state.editingNoteId = id
+                return .none
+
+            case .stopEditing:
+                state.editingNoteId = nil
+                return .none
+
+            case .updateNoteText(let id, let text):
+                if let index = state.notes.firstIndex(where: { $0.id == id }) {
+                    state.notes[index].content = text
+                    state.notes[index].updatedAt = Date()
+                    let note = state.notes[index]
+                    return .run { _ in
+                        try await notesClient.saveNote(note)
+                    }
+                }
+                return .none
+
+            case .navigateToNote:
+                // Handled by parent to scroll document
+                return .none
+            }
         }
     }
 }

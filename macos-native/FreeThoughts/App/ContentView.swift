@@ -7,23 +7,9 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            VStack {
-                HStack {
-                    Text("NOTES")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding()
-
-                Spacer()
-
-                Text("No notes yet")
-                    .foregroundStyle(.tertiary)
-
-                Spacer()
-            }
-            .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
+            NotesSidebar(
+                store: store.scope(state: \.notes, action: \.notes)
+            )
         } detail: {
             DocumentView(
                 store: store.scope(state: \.document, action: \.document),
@@ -34,6 +20,14 @@ struct ContentView: View {
         .frame(minWidth: 800, minHeight: 600)
         .onAppear {
             store.send(.onAppear)
+        }
+        .sheet(isPresented: Binding(
+            get: { store.notes.isCreatingNote },
+            set: { if !$0 { store.send(.notes(.cancelNoteCreation)) } }
+        )) {
+            NoteCreationSheet(
+                store: store.scope(state: \.notes, action: \.notes)
+            )
         }
     }
 }
