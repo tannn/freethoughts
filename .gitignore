@@ -23,3 +23,4 @@ release/
 .kittify/.dashboard
 # Excluded via sparse-checkout
 kitty-specs/
+macos-native/FreeThoughts.xcodeproj/project.xcworkspace/
