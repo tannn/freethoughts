@@ -1,14 +1,14 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "for_review"
-dependencies: []
+lane: "doing"
+dependencies: [WP05]
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
 created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
-shell_pid: "80732"
-agent: "claude-opus"
+shell_pid: "84045"
+agent: "GitHub Copilot"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -436,3 +436,4 @@ if store.isSidebarCollapsed {
 - 2026-02-10T23:33:24Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
 - 2026-02-10T23:35:11Z – claude-opus – shell_pid=80732 – lane=doing – Started implementation via workflow command
 - 2026-02-10T23:41:33Z – claude-opus – shell_pid=80732 – lane=for_review – Review fixes: (1) draft text lifted to NotesFeature state so click-outside saves current edits, (2) Escape-to-cancel and Cmd+Delete keyboard shortcuts added, (3) text document scroll-to-range + targeted highlight instead of full-screen flash. Build succeeds.
+- 2026-02-10T23:45:03Z – GitHub Copilot – shell_pid=84045 – lane=doing – Started review via workflow command
