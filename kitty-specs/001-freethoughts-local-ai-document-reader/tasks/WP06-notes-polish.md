@@ -1,14 +1,14 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "for_review"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
 created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
-shell_pid: "51736"
-agent: "claude-opus"
+shell_pid: "75128"
+agent: "GitHub Copilot"
 history:
 - date: '2026-02-09'
   action: created
@@ -429,3 +429,4 @@ if store.isSidebarCollapsed {
 - 2026-02-10T18:51:02Z – claude-opus – shell_pid=51736 – lane=planned – Blocked: WP05 (Notes Core) not yet implemented. WP06 depends on WP05 for NotesSidebar, NoteCard, NotesFeature, NotesClient.
 - 2026-02-10T23:00:49Z – claude-opus – shell_pid=51736 – lane=doing – Automated: start implementation
 - 2026-02-10T23:28:33Z – claude-opus – shell_pid=51736 – lane=for_review – Ready for review: page-aware sorting, improved inline editing with cancel/save-on-blur, swipe-to-delete, note-to-anchor navigation with highlight flash, sidebar collapse with Cmd+Shift+N. Build succeeds.
+- 2026-02-10T23:29:28Z – GitHub Copilot – shell_pid=75128 – lane=doing – Started review via workflow command
