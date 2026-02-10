@@ -1,14 +1,14 @@
 ---
 work_package_id: WP02
 title: Document Rendering
-lane: "planned"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
 created_at: '2026-02-10T09:44:10.822932+00:00'
 subtasks: [T008, T009, T010, T011, T012, T013, T014]
-shell_pid: "15557"
-agent: "GitHub Copilot"
+shell_pid: "21355"
+agent: "claude-opus"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -705,3 +705,4 @@ struct DocumentView: View {
 - 2026-02-10T09:48:55Z – claude-opus – shell_pid=13326 – lane=for_review – Ready for review: Document model, DocumentClient dependency, full DocumentFeature reducer, PDF/Markdown/PlainText renderers, unified DocumentView, ContentView integration. Build succeeds.
 - 2026-02-10T09:59:10Z – GitHub Copilot – shell_pid=15557 – lane=doing – Started review via workflow command
 - 2026-02-10T10:02:38Z – GitHub Copilot – shell_pid=15557 – lane=planned – Moved to planned
+- 2026-02-10T10:24:32Z – claude-opus – shell_pid=21355 – lane=doing – Started implementation via workflow command
