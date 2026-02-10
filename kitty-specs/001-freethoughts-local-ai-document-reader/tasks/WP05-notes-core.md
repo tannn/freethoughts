@@ -1,14 +1,14 @@
 ---
 work_package_id: WP05
 title: Notes Core
-lane: "for_review"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3
 created_at: '2026-02-10T18:41:07.276374+00:00'
 subtasks: [T025, T026, T027, T028, T029, T030]
-shell_pid: "54778"
-agent: "claude-opus"
+shell_pid: "54864"
+agent: "github-copilot"
 history:
 - date: '2026-02-09'
   action: created
@@ -688,3 +688,4 @@ case .document(.closeDocument):
 - 2026-02-10T18:54:08Z – GitHub Copilot – shell_pid=49309 – lane=planned – Moved back to planned at user request.
 - 2026-02-10T19:01:00Z – claude-opus – shell_pid=54778 – lane=doing – Started implementation via workflow command
 - 2026-02-10T19:07:15Z – claude-opus – shell_pid=54778 – lane=for_review – Ready for review: Full notes core implementation with TCA reducer, sidebar, note cards, creation sheet, SwiftData persistence, and AppFeature wiring. Build succeeds.
+- 2026-02-10T19:11:09Z – github-copilot – shell_pid=54864 – lane=doing – Started review via workflow command
