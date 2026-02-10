@@ -1,8 +1,8 @@
 ---
 work_package_id: WP03
 title: File Opening & Navigation
-lane: "doing"
-dependencies: []
+lane: "for_review"
+dependencies: [WP02]
 base_branch: main
 base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
 created_at: '2026-02-10T10:35:34.092423+00:00'
@@ -391,3 +391,4 @@ var body: some View {
 - 2026-02-10T10:43:27Z – github-copilot – shell_pid=27848 – lane=doing – Started review via workflow command
 - 2026-02-10T10:46:04Z – github-copilot – shell_pid=27848 – lane=planned – Moved to planned
 - 2026-02-10T10:47:57Z – claude-opus – shell_pid=31263 – lane=doing – Started implementation via workflow command
+- 2026-02-10T10:52:17Z – claude-opus – shell_pid=31263 – lane=for_review – Fixed review feedback: (1) wired zoom controls to PDFRenderer via zoomLevel/scaleFactor, (2) updated dependencies to [WP02]. Build succeeds.
