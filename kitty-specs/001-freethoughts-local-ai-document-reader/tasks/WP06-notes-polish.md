@@ -8,6 +8,7 @@ base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
 created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
 shell_pid: "51736"
+agent: "claude-opus"
 history:
 - date: '2026-02-09'
   action: created
@@ -421,3 +422,7 @@ if store.isSidebarCollapsed {
 3. Test deletion flow with confirmation
 4. Test navigation in PDF and text documents
 5. Verify sidebar collapse animation is smooth
+
+## Activity Log
+
+- 2026-02-10T18:49:01Z – claude-opus – shell_pid=51736 – lane=doing – Assigned agent via workflow command
