@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
@@ -647,3 +647,4 @@ struct ProvocationFeature {
 ## Activity Log
 
 - 2026-02-10T18:52:41Z – claude-opus – shell_pid=52236 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T19:00:06Z – claude-opus – shell_pid=52236 – lane=for_review – Ready for review: FoundationModelsClient, PromptsClient, PromptSeeder, DefaultPrompts.json, full ProvocationFeature reducer, availability checking in AppFeature. Build verified.
