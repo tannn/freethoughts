@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: Document Rendering
-lane: "done"
+lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
@@ -709,3 +709,4 @@ struct DocumentView: View {
 - 2026-02-10T10:27:13Z – claude-opus – shell_pid=21355 – lane=for_review – Ready for review: Fixed all 3 review issues - full markdown parsing with block elements, NSTextView-based SelectableTextView for text selection in Markdown/PlainText renderers, ASCII arrow in empty state. Build succeeds.
 - 2026-02-10T10:28:59Z – github-copilot – shell_pid=21867 – lane=doing – Started review via workflow command
 - 2026-02-10T10:31:10Z – github-copilot – shell_pid=21867 – lane=done – Review passed: addressed markdown parsing, text selection, ASCII arrow; no new issues
+- 2026-02-10T23:00:49Z – github-copilot – shell_pid=21867 – lane=doing – Automated: start implementation

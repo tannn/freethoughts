@@ -1,7 +1,7 @@
 ---
 work_package_id: WP09
 title: Error Handling & Polish
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T048, T049, T050, T051, T052, T053]
 history:
@@ -574,3 +574,7 @@ enum DocumentError: Error, LocalizedError {
 3. Check animations on older hardware
 4. Test with 50+ MB files
 5. Ensure no crashes on any edge case
+
+## Activity Log
+
+- 2026-02-10T23:00:49Z – unknown – lane=doing – Automated: start implementation

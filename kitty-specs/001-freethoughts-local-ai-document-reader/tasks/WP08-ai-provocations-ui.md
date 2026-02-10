@@ -1,7 +1,7 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T042, T043, T044, T045, T046, T047]
 history:
@@ -668,3 +668,7 @@ case .saveProvocation:
 3. Verify streaming response display
 4. Check persistence after app restart
 5. Test all four prompt styles
+
+## Activity Log
+
+- 2026-02-10T23:00:49Z – unknown – lane=doing – Automated: start implementation
