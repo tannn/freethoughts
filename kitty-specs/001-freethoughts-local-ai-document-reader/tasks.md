@@ -53,13 +53,13 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~400
 
 **Included Subtasks**:
-- [ ] T008: Create Document model (transient struct with URL, type, content)
-- [ ] T009: Create DocumentClient dependency for file loading operations
-- [ ] T010: Create DocumentFeature reducer with state and actions
-- [ ] T011: Create PDFRenderer with PDFView via NSViewRepresentable
-- [ ] T012: Create MarkdownRenderer using AttributedString
-- [ ] T013: Create PlainTextRenderer with ScrollView + Text
-- [ ] T014: Create unified DocumentView that switches between renderers
+- [x] T008: Create Document model (transient struct with URL, type, content)
+- [x] T009: Create DocumentClient dependency for file loading operations
+- [x] T010: Create DocumentFeature reducer with state and actions
+- [x] T011: Create PDFRenderer with PDFView via NSViewRepresentable
+- [x] T012: Create MarkdownRenderer using AttributedString
+- [x] T013: Create PlainTextRenderer with ScrollView + Text
+- [x] T014: Create unified DocumentView that switches between renderers
 
 **Success Criteria**:
 - PDF files render with correct layout
