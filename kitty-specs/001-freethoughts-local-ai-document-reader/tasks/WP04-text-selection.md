@@ -8,6 +8,7 @@ base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca
 created_at: '2026-02-10T10:36:17.722744+00:00'
 subtasks: [T020, T021, T022, T023, T024]
 shell_pid: "24044"
+agent: "GitHub Copilot"
 history:
 - date: '2026-02-09'
   action: created
@@ -459,3 +460,7 @@ struct DocumentView: View {
 2. Verify popover position near edges of window
 3. Test dismissal via click and Escape
 4. Ensure selection state clears properly
+
+## Activity Log
+
+- 2026-02-10T10:36:17Z – GitHub Copilot – shell_pid=24044 – lane=doing – Assigned agent via workflow command
