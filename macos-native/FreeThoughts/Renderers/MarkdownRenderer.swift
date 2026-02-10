@@ -4,45 +4,40 @@ struct MarkdownRenderer: View {
     let content: String
     @Binding var selection: String?
 
-    @State private var attributedContent: AttributedString?
+    @State private var attributedContent: NSAttributedString?
 
     var body: some View {
-        ScrollView {
-            if let attributed = attributedContent {
-                Text(attributed)
-                    .textSelection(.enabled)
-                    .font(.body)
-                    .lineSpacing(4)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ProgressView()
-                    .padding()
-            }
-        }
-        .task(id: content) {
-            await parseMarkdown()
+        if let attributed = attributedContent {
+            SelectableTextView(
+                attributedString: attributed,
+                selection: $selection
+            )
+        } else {
+            ProgressView()
+                .padding()
         }
     }
 
-    private func parseMarkdown() async {
+    init(content: String, selection: Binding<String?>) {
+        self.content = content
+        self._selection = selection
+        self._attributedContent = State(initialValue: Self.parseMarkdownSync(content))
+    }
+
+    private static func parseMarkdownSync(_ content: String) -> NSAttributedString {
         do {
-            var attributed = try AttributedString(
+            let attributed = try AttributedString(
                 markdown: content,
                 options: AttributedString.MarkdownParsingOptions(
-                    interpretedSyntax: .inlineOnlyPreservingWhitespace
+                    interpretedSyntax: .full
                 )
             )
-            attributed.font = .body
-            attributed.foregroundColor = .primary
-
-            await MainActor.run {
-                self.attributedContent = attributed
-            }
+            let mutable = NSMutableAttributedString(attributed)
+            let fullRange = NSRange(location: 0, length: mutable.length)
+            mutable.addAttribute(.foregroundColor, value: NSColor.textColor, range: fullRange)
+            return mutable
         } catch {
-            await MainActor.run {
-                self.attributedContent = AttributedString(content)
-            }
+            return NSAttributedString(string: content)
         }
     }
 }

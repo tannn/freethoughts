@@ -5,14 +5,21 @@ struct PlainTextRenderer: View {
     @Binding var selection: String?
 
     var body: some View {
-        ScrollView {
-            Text(content)
-                .textSelection(.enabled)
-                .font(.system(.body, design: .monospaced))
-                .lineSpacing(4)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        SelectableTextView(
+            attributedString: NSAttributedString(
+                string: content,
+                attributes: [
+                    .font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular),
+                    .foregroundColor: NSColor.textColor,
+                    .paragraphStyle: {
+                        let style = NSMutableParagraphStyle()
+                        style.lineSpacing = 4
+                        return style
+                    }()
+                ]
+            ),
+            selection: $selection
+        )
     }
 }
 
