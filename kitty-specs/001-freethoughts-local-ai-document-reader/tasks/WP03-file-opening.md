@@ -1,9 +1,13 @@
 ---
 work_package_id: WP03
 title: File Opening & Navigation
-lane: planned
+lane: "doing"
 dependencies: []
+base_branch: main
+base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
+created_at: '2026-02-10T10:35:34.092423+00:00'
 subtasks: [T015, T016, T017, T018, T019]
+shell_pid: "23884"
 history:
 - date: '2026-02-09'
   action: created
