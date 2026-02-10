@@ -4,7 +4,9 @@
 
 NOTICE: This app is in alpha — under active development and macOS-only for now.
 
-Free Thoughts is a macOS-first Electron desktop app for reading, annotating, and augmenting documents with AI. Data is stored locally (SQLite + files), and supported filetypes include PDF, Markdown, and TXT.
+Free Thoughts is a macOS-first Electron (for now) desktop app for reading, annotating, and augmenting documents with AI. Data is stored locally (SQLite + files), and supported filetypes include PDF, Markdown, and TXT.
+
+Note: Electron development is paused, native macOS development underway instead.
 
 Main features:
 

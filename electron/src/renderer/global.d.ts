@@ -1,5 +1,5 @@
-import type { DesktopApi } from '../preload/api.js';
-import { PRELOAD_API_KEY } from '../preload/index.js';
+import type { DesktopApi } from '../preload/api.ts';
+import { PRELOAD_API_KEY } from '../preload/index.ts';
 
 declare global {
   interface Window {
