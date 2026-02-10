@@ -24,6 +24,7 @@
 		B1B2C3D4E5F60718293A4B14 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */; };
 		B1B2C3D4E5F60718293A4B15 /* PlainTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */; };
 		B1B2C3D4E5F60718293A4B16 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */; };
+		B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
 		B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextRenderer.swift; sourceTree = "<group>"; };
 		B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -143,6 +145,7 @@
 				B1B2C3D4E5F60718293A4B04 /* MarkdownRenderer.swift */,
 				B1B2C3D4E5F60718293A4B03 /* PDFRenderer.swift */,
 				B1B2C3D4E5F60718293A4B05 /* PlainTextRenderer.swift */,
+				B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */,
 			);
 			path = Renderers;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				B1B2C3D4E5F60718293A4B13 /* PDFRenderer.swift in Sources */,
 				B1B2C3D4E5F60718293A4B14 /* MarkdownRenderer.swift in Sources */,
 				B1B2C3D4E5F60718293A4B15 /* PlainTextRenderer.swift in Sources */,
+				B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
