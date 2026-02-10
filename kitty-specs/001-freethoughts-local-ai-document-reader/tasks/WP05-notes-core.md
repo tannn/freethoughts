@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Notes Core
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3
@@ -693,3 +693,4 @@ case .document(.closeDocument):
 - 2026-02-10T19:11:09Z – github-copilot – shell_pid=54864 – lane=doing – Started review via workflow command
 - 2026-02-10T19:15:22Z – github-copilot – shell_pid=54864 – lane=planned – Moved to planned
 - 2026-02-10T19:16:33Z – claude-opus – shell_pid=60443 – lane=doing – Started implementation via workflow command
+- 2026-02-10T19:25:15Z – claude-opus – shell_pid=60443 – lane=for_review – Review fixes applied: (1) NoteItem value type replaces SwiftData Note class in TCA state for proper Equatable diffing, (2) NotesClient now converts between NoteItem/Note at persistence boundary with dedicated updateNote method fixing duplicate inserts, (3) Single-click edit per mockup #9. Build succeeds.
