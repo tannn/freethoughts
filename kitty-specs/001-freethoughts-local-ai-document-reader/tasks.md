@@ -26,13 +26,13 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T001: Create Xcode project with folder structure per plan.md
-- [ ] T002: Add TCA dependency via Swift Package Manager
-- [ ] T003: Create FreeThoughtsApp.swift entry point with SwiftData container
-- [ ] T004: Create root AppFeature reducer composing child features
-- [ ] T005: Set up SwiftData ModelContainer with schema
-- [ ] T006: Create SwiftData models (Note, Provocation, ProvocationPrompt)
-- [ ] T007: Create basic main window with NavigationSplitView layout
+- [x] T001: Create Xcode project with folder structure per plan.md
+- [x] T002: Add TCA dependency via Swift Package Manager
+- [x] T003: Create FreeThoughtsApp.swift entry point with SwiftData container
+- [x] T004: Create root AppFeature reducer composing child features
+- [x] T005: Set up SwiftData ModelContainer with schema
+- [x] T006: Create SwiftData models (Note, Provocation, ProvocationPrompt)
+- [x] T007: Create basic main window with NavigationSplitView layout
 
 **Success Criteria**:
 - App launches with empty window
