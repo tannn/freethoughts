@@ -10,6 +10,8 @@ struct DocumentView: View {
     @State private var selectionRect: CGRect?
     @State private var selectionRange: NSRange?
 
+    @State private var highlightVisible = false
+
     var body: some View {
         ZStack {
             Group {
@@ -20,6 +22,12 @@ struct DocumentView: View {
                 } else {
                     emptyView
                 }
+            }
+
+            if highlightVisible {
+                Color.accentColor.opacity(0.15)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
 
             if store.showSelectionPopover {
@@ -40,6 +48,18 @@ struct DocumentView: View {
                     store.send(.dismissPopover)
                 }
                 .frame(width: 0, height: 0)
+            }
+        }
+        .onChange(of: store.highlightedRange?.id) { _, newValue in
+            if newValue != nil {
+                withAnimation(.easeIn(duration: 0.2)) {
+                    highlightVisible = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        highlightVisible = false
+                    }
+                }
             }
         }
         .onChange(of: pdfSelection) { _, newValue in
@@ -97,7 +117,8 @@ struct DocumentView: View {
                     set: { store.send(.setPage($0)) }
                 ),
                 selection: $pdfSelection,
-                selectionRect: $selectionRect
+                selectionRect: $selectionRect,
+                scrollToPage: store.scrollToAnchorRequest?.page
             )
 
         case .text(let content):

@@ -3,6 +3,7 @@ import ComposableArchitecture
 
 struct NotesSidebar: View {
     @Bindable var store: StoreOf<NotesFeature>
+    var onToggleCollapse: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +21,14 @@ struct NotesSidebar: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
+
+                if let onToggleCollapse {
+                    Button(action: onToggleCollapse) {
+                        Image(systemName: "sidebar.left")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
             }
             .padding()
 
@@ -45,6 +54,9 @@ struct NotesSidebar: View {
                                     store.send(.updateNoteText(note.id, text))
                                     store.send(.stopEditing)
                                 },
+                                onCancel: {
+                                    store.send(.stopEditing)
+                                },
                                 onDelete: {
                                     store.send(.deleteNote(note.id))
                                 },
@@ -52,9 +64,26 @@ struct NotesSidebar: View {
                                     // Handled in WP08
                                 }
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    store.send(.deleteNote(note.id))
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .padding()
+                }
+                .onTapGesture {
+                    if store.editingNoteId != nil {
+                        // Save current editing note on tap outside
+                        if let editingId = store.editingNoteId,
+                           let note = store.notes.first(where: { $0.id == editingId }) {
+                            store.send(.updateNoteText(note.id, note.content))
+                            store.send(.stopEditing)
+                        }
+                    }
                 }
             }
         }

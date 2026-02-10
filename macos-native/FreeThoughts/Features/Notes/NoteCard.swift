@@ -6,6 +6,7 @@ struct NoteCard: View {
     let onTap: () -> Void
     let onEdit: () -> Void
     let onSave: (String) -> Void
+    let onCancel: () -> Void
     let onDelete: () -> Void
     let onProvocation: () -> Void
 
@@ -14,16 +15,28 @@ struct NoteCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(action: onTap) {
-                Text(truncatedExcerpt)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+            // Header: excerpt + page indicator
+            HStack(spacing: 6) {
+                Button(action: onTap) {
+                    Text(truncatedExcerpt)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+
+                if let page = note.anchorPage {
+                    Text("p.\(page + 1)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(.quaternary, in: Capsule())
+                }
             }
-            .buttonStyle(.plain)
+            .padding(8)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
 
             if isEditing {
                 editingView
@@ -84,10 +97,14 @@ struct NoteCard: View {
         VStack(alignment: .leading, spacing: 8) {
             TextEditor(text: $editText)
                 .font(.body)
-                .frame(minHeight: 60)
+                .frame(minHeight: 60, maxHeight: 200)
                 .scrollContentBackground(.hidden)
-                .padding(4)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                .padding(8)
+                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.accentColor, lineWidth: 1)
+                )
 
             HStack {
                 Button("Delete", role: .destructive) {
@@ -96,6 +113,11 @@ struct NoteCard: View {
                 .font(.caption)
 
                 Spacer()
+
+                Button("Cancel") {
+                    onCancel()
+                }
+                .font(.caption)
 
                 Button("Done") {
                     onSave(editText)

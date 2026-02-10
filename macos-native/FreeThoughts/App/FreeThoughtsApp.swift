@@ -25,7 +25,12 @@ struct FreeThoughtsApp: App {
         }
         .modelContainer(modelContainer)
         .commands {
-            // File menu commands will be added in WP03
+            CommandGroup(after: .sidebar) {
+                Button("Toggle Notes Sidebar") {
+                    store.send(.toggleSidebar)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+            }
         }
     }
 }

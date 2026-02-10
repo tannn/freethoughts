@@ -42,7 +42,12 @@ struct NotesFeature {
                 }
 
             case .notesLoaded(let notes):
-                state.notes = notes.sorted { $0.anchorStart < $1.anchorStart }
+                state.notes = notes.sorted { note1, note2 in
+                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
+                        if page1 != page2 { return page1 < page2 }
+                    }
+                    return note1.anchorStart < note2.anchorStart
+                }
                 return .none
 
             case .startNoteCreation(let selection):
@@ -86,7 +91,12 @@ struct NotesFeature {
 
             case .noteSaved(let note):
                 state.notes.append(note)
-                state.notes.sort { $0.anchorStart < $1.anchorStart }
+                state.notes.sort { note1, note2 in
+                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
+                        if page1 != page2 { return page1 < page2 }
+                    }
+                    return note1.anchorStart < note2.anchorStart
+                }
                 return .none
 
             case .deleteNote(let id):

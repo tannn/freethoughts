@@ -6,6 +6,7 @@ struct PDFRenderer: NSViewRepresentable {
     @Binding var currentPage: Int
     @Binding var selection: PDFSelection?
     @Binding var selectionRect: CGRect?
+    var scrollToPage: Int?
 
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
@@ -23,7 +24,10 @@ struct PDFRenderer: NSViewRepresentable {
             pdfView.document = document
         }
 
-        if let page = document.page(at: currentPage - 1),
+        if let targetPage = scrollToPage,
+           let page = document.page(at: targetPage) {
+            pdfView.go(to: page)
+        } else if let page = document.page(at: currentPage - 1),
            pdfView.currentPage !== page {
             pdfView.go(to: page)
         }
