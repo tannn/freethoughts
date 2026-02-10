@@ -1,7 +1,7 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "doing"
+lane: "planned"
 dependencies: []
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
@@ -426,3 +426,4 @@ if store.isSidebarCollapsed {
 ## Activity Log
 
 - 2026-02-10T18:49:01Z – claude-opus – shell_pid=51736 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T18:51:02Z – claude-opus – shell_pid=51736 – lane=planned – Blocked: WP05 (Notes Core) not yet implemented. WP06 depends on WP05 for NotesSidebar, NoteCard, NotesFeature, NotesClient.
