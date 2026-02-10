@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: File Opening & Navigation
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: main
 base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
@@ -385,3 +385,4 @@ var body: some View {
 ## Activity Log
 
 - 2026-02-10T10:35:34Z – claude-opus – shell_pid=23884 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T10:38:59Z – claude-opus – shell_pid=23884 – lane=for_review – Ready for review: File > Open with Cmd+O, drag-drop with overlay, status bar with page/zoom/type, enhanced empty state. Build succeeds cleanly.
