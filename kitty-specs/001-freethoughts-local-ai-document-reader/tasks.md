@@ -127,12 +127,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~400
 
 **Included Subtasks**:
-- [ ] T025: Create NotesFeature reducer with state/actions
-- [ ] T026: Create NotesSidebar view component
-- [ ] T027: Create NoteCard component per mockup
-- [ ] T028: Create note creation sheet (mockup #4)
-- [ ] T029: Implement note persistence (save to SwiftData)
-- [ ] T030: Implement note loading for current document
+- [x] T025: Create NotesFeature reducer with state/actions
+- [x] T026: Create NotesSidebar view component
+- [x] T027: Create NoteCard component per mockup
+- [x] T028: Create note creation sheet (mockup #4)
+- [x] T029: Implement note persistence (save to SwiftData)
+- [x] T030: Implement note loading for current document
 
 **Success Criteria**:
 - Notes appear in sidebar after creation
