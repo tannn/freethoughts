@@ -6,7 +6,7 @@ struct ProvocationFeature {
     @ObservableState
     struct State: Equatable {
         var isAIAvailable: Bool = false
-        var availablePrompts: [ProvocationPrompt] = []
+        var availablePrompts: [ProvocationPromptItem] = []
         var selectedPromptId: UUID?
         var isGenerating: Bool = false
         var currentResponse: String = ""
@@ -26,7 +26,7 @@ struct ProvocationFeature {
         case seedDefaultPrompts
         case promptsSeeded
         case loadPrompts
-        case promptsLoaded([ProvocationPrompt])
+        case promptsLoaded([ProvocationPromptItem])
         case selectPrompt(UUID)
         case requestProvocation(ProvocationRequest)
         case startGeneration
@@ -34,7 +34,7 @@ struct ProvocationFeature {
         case generationComplete
         case generationFailed(String)
         case saveProvocation
-        case provocationSaved(Provocation)
+        case provocationSaved
         case clearResponse
         case dismissError
     }
@@ -55,13 +55,13 @@ struct ProvocationFeature {
                     do {
                         let defaults = try PromptSeeder.loadDefaultPrompts()
                         for prompt in defaults {
-                            let entity = ProvocationPrompt(
+                            let item = ProvocationPromptItem(
                                 name: prompt.name,
                                 promptTemplate: prompt.promptTemplate,
                                 isBuiltIn: true,
                                 sortOrder: prompt.sortOrder
                             )
-                            try await prompts.savePrompt(entity)
+                            try await prompts.savePrompt(item)
                         }
                         try await prompts.markSeeded()
                         await send(.promptsSeeded)
@@ -143,15 +143,15 @@ struct ProvocationFeature {
 
                 let response = state.currentResponse
                 return .run { send in
-                    let provocation = Provocation(
+                    let item = ProvocationItem(
                         documentPath: request.documentPath,
                         sourceType: request.sourceType,
                         sourceText: request.sourceText,
                         promptName: prompt.name,
                         response: response
                     )
-                    try await prompts.saveProvocation(provocation)
-                    await send(.provocationSaved(provocation))
+                    try await prompts.saveProvocation(item)
+                    await send(.provocationSaved)
                 }
 
             case .provocationSaved:

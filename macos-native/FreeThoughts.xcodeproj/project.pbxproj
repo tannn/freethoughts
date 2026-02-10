@@ -23,6 +23,8 @@
 		E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */; };
 		E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */; };
 		E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */; };
+		E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */; };
+		E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +44,8 @@
 		E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSeeder.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainerDependency.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultPrompts.json; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationPromptItem.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationItem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +135,8 @@
 				A1B2C3D4E5F60718293A4B79 /* Note.swift */,
 				A1B2C3D4E5F60718293A4B7A /* Provocation.swift */,
 				A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */,
+				E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */,
+				E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -247,6 +253,8 @@
 				E1B2C3D4E5F60718293A4B12 /* PromptsClient.swift in Sources */,
 				E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */,
 				E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */,
+				E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */,
+				E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

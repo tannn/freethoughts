@@ -4,9 +4,9 @@ import Foundation
 
 @DependencyClient
 struct PromptsClient {
-    var loadPrompts: @Sendable () async throws -> [ProvocationPrompt]
-    var savePrompt: @Sendable (_ prompt: ProvocationPrompt) async throws -> Void
-    var saveProvocation: @Sendable (_ provocation: Provocation) async throws -> Void
+    var loadPrompts: @Sendable () async throws -> [ProvocationPromptItem]
+    var savePrompt: @Sendable (_ prompt: ProvocationPromptItem) async throws -> Void
+    var saveProvocation: @Sendable (_ provocation: ProvocationItem) async throws -> Void
     var hasSeededDefaults: @Sendable () async -> Bool = { false }
     var markSeeded: @Sendable () async throws -> Void
 }
@@ -21,15 +21,32 @@ extension PromptsClient: DependencyKey {
                 let descriptor = FetchDescriptor<ProvocationPrompt>(
                     sortBy: [SortDescriptor(\.sortOrder)]
                 )
-                return try context.fetch(descriptor)
+                return try context.fetch(descriptor).map { ProvocationPromptItem(from: $0) }
             },
-            savePrompt: { prompt in
+            savePrompt: { item in
                 let context = ModelContext(container)
+                let prompt = ProvocationPrompt(
+                    id: item.id,
+                    name: item.name,
+                    promptTemplate: item.promptTemplate,
+                    isBuiltIn: item.isBuiltIn,
+                    sortOrder: item.sortOrder,
+                    createdAt: item.createdAt
+                )
                 context.insert(prompt)
                 try context.save()
             },
-            saveProvocation: { provocation in
+            saveProvocation: { item in
                 let context = ModelContext(container)
+                let provocation = Provocation(
+                    id: item.id,
+                    documentPath: item.documentPath,
+                    sourceType: item.sourceType,
+                    sourceText: item.sourceText,
+                    promptName: item.promptName,
+                    response: item.response,
+                    createdAt: item.createdAt
+                )
                 context.insert(provocation)
                 try context.save()
             },

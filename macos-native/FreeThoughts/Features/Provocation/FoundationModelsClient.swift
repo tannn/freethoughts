@@ -1,5 +1,8 @@
 import ComposableArchitecture
 import Foundation
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 @DependencyClient
 struct FoundationModelsClient {
@@ -8,15 +11,44 @@ struct FoundationModelsClient {
 }
 
 extension FoundationModelsClient: DependencyKey {
-    // TODO: When building with macOS 26 SDK, replace with real FoundationModels integration.
-    // The live value currently returns unavailable since the FoundationModels API
-    // requires macOS 26+ and Apple Silicon.
-    static let liveValue = FoundationModelsClient(
-        isAvailable: { false },
-        generate: { _, _ in
-            throw FoundationModelsError.notAvailable
-        }
-    )
+    static let liveValue: FoundationModelsClient = {
+        #if canImport(FoundationModels)
+        return FoundationModelsClient(
+            isAvailable: {
+                if #available(macOS 26.0, *) {
+                    return SystemLanguageModel.default.isAvailable
+                }
+                return false
+            },
+            generate: { prompt, context in
+                guard #available(macOS 26.0, *) else {
+                    throw FoundationModelsError.notAvailable
+                }
+                let model = SystemLanguageModel.default
+                let session = LanguageModelSession(model: model)
+                let fullPrompt = "\(prompt)\n\nContext:\n\(context)"
+                return AsyncThrowingStream { continuation in
+                    Task {
+                        do {
+                            let response = try await session.respond(to: fullPrompt)
+                            continuation.yield(response.content)
+                            continuation.finish()
+                        } catch {
+                            continuation.finish(throwing: error)
+                        }
+                    }
+                }
+            }
+        )
+        #else
+        return FoundationModelsClient(
+            isAvailable: { false },
+            generate: { _, _ in
+                throw FoundationModelsError.notAvailable
+            }
+        )
+        #endif
+    }()
 
     static let testValue = FoundationModelsClient(
         isAvailable: { true },
