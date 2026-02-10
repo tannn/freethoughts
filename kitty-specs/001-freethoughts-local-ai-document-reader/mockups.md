@@ -475,9 +475,9 @@ These mockups define the UI structure for the native macOS app built with SwiftU
 ## Design Tokens
 
 ### Colors (System)
-- Use semantic colors: `.primary`, `.secondary`, `.background`
-- Selection highlight: `.accentColor` with 30% opacity
-- Note card background: `.secondarySystemBackground`
+- Use semantic colors: primary, secondary, background
+- Selection highlight: accent color with 30% opacity
+- Note card background: secondary background color
 - Provocation section: slightly darker than note
 
 ### Typography
