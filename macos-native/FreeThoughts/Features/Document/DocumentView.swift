@@ -61,21 +61,29 @@ struct DocumentView: View {
     }
 
     private var emptyView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
+        VStack(spacing: 20) {
+            HStack(spacing: 16) {
+                Image(systemName: "doc.fill")
+                Image(systemName: "text.alignleft")
+                Image(systemName: "doc.plaintext")
+            }
+            .font(.system(size: 32))
+            .foregroundStyle(.tertiary)
 
-            Text("Open a Document")
-                .font(.title2)
-                .foregroundStyle(.secondary)
+            VStack(spacing: 8) {
+                Text("Open a Document")
+                    .font(.title2)
+                    .fontWeight(.medium)
 
-            Text("Drop a file here or use File -> Open")
-                .foregroundStyle(.tertiary)
+                Text("Drop a file here or use File -> Open")
+                    .foregroundStyle(.secondary)
+            }
 
             Text("Supports: PDF, Markdown, Plain Text")
                 .font(.caption)
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(.tertiary)
+                .padding(.top, 8)
         }
+        .padding(40)
     }
 }

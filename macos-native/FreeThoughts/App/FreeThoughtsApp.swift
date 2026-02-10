@@ -25,7 +25,12 @@ struct FreeThoughtsApp: App {
         }
         .modelContainer(modelContainer)
         .commands {
-            // File menu commands will be added in WP03
+            CommandGroup(replacing: .newItem) {
+                Button("Open...") {
+                    store.send(.openFilePicker)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+            }
         }
     }
 }

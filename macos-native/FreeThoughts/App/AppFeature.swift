@@ -1,5 +1,7 @@
 import ComposableArchitecture
 import Foundation
+import AppKit
+import UniformTypeIdentifiers
 
 @Reducer
 struct AppFeature {
@@ -15,6 +17,8 @@ struct AppFeature {
         case notes(NotesFeature.Action)
         case provocation(ProvocationFeature.Action)
         case onAppear
+        case openFilePicker
+        case fileSelected(URL)
     }
 
     var body: some ReducerOf<Self> {
@@ -32,6 +36,33 @@ struct AppFeature {
             switch action {
             case .onAppear:
                 return .none
+
+            case .openFilePicker:
+                return .run { send in
+                    let url = await MainActor.run { () -> URL? in
+                        let panel = NSOpenPanel()
+                        panel.allowsMultipleSelection = false
+                        panel.canChooseDirectories = false
+                        var types: [UTType] = [.pdf, .plainText]
+                        if let mdType = UTType(filenameExtension: "md") {
+                            types.append(mdType)
+                        }
+                        panel.allowedContentTypes = types
+
+                        let response = panel.runModal()
+                        if response == .OK {
+                            return panel.url
+                        }
+                        return nil
+                    }
+                    if let url {
+                        await send(.fileSelected(url))
+                    }
+                }
+
+            case .fileSelected(let url):
+                return .send(.document(.openDocument(url)))
+
             case .document, .notes, .provocation:
                 return .none
             }
