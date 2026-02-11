@@ -1,4 +1,4 @@
-# Free Your Thoughts
+# FreeThoughts
 
 A native macOS document reader for reading, annotating, and thinking with AI — entirely offline and private.
 
