@@ -69,6 +69,16 @@ struct SelectableTextView: NSViewRepresentable {
 
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
+
+            // Dismiss popover on right-click; don't show popover for right-click word selection
+            if let event = NSApp.currentEvent,
+               event.type == .rightMouseDown || event.type == .rightMouseUp {
+                parent.selection = nil
+                parent.selectionRange = nil
+                parent.selectionRect = nil
+                return
+            }
+
             let selectedRange = textView.selectedRange()
             if selectedRange.length > 0,
                let text = textView.textStorage?.attributedSubstring(from: selectedRange).string,

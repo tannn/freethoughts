@@ -3,24 +3,16 @@ Important: Update the tasks progress while progressing. When starting a new task
 
 ## Status Legend
 
-- [ ] Not started
+- [ ] New
 - [x] Fixed
 - [-] Blocked (with rationale)
 
 # Bugs
 
-### 01
+### 05
 - **Status:** [x] Fixed
-- generating a provocation from selected text doesn't appear on side bar, probably because noteId is nil?
+- when right clicking in the document, the overlay should disappear. Currently overlay also appears when right clicking anywhere in the document without text selected, which may be related.
 
-### 02
-- **Status:** [x] Fixed
-- when text is highlighted and overlay appears, I must click to exit the overlay before I can highlight new text. If I try to select new text while the overlay is present, nothing happens. Let's modify this behavior so the user can immediately highlight new text
-
-### 03
-- **Status:** [x] Fixed
-- Tab name displays app name instead of document title
-
-### 04
-- **Status:** [x] Fixed
-- click on quoted text in note. Text highlights. Overlay appears by the highlighted text (should not appear). Highlight the text without the overlay when selected from the note.
+### 06
+- **Status:** [ ] New
+- when saving a note, sometimes the popup flashes (closes then re-appears without the text) as the note is loaded into the sidebar. This also occurs when generating a provocation, the popup may reappear as the provocation generates.
