@@ -5,6 +5,7 @@ coverage/
 .code/agents/
 release/
 .DS_Store
+MEMORY.md
 
 # Added by Spec Kitty CLI (auto-managed)
 .claude/
