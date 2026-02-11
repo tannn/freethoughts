@@ -129,6 +129,10 @@ struct NotesFeature {
 
             case .noteDeleted(let id):
                 state.notes.removeAll { $0.id == id }
+                if state.editingNoteId == id {
+                    state.editingNoteId = nil
+                    state.editingDraftText = ""
+                }
                 return .none
 
             case .startEditing(let id):
