@@ -136,7 +136,7 @@ struct ProvocationFeature {
                 guard state.pendingRequest != nil else {
                     return .none
                 }
-                state.currentResponse += chunk
+                state.currentResponse = chunk
                 return .none
 
             case .generationComplete:

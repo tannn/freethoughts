@@ -79,13 +79,20 @@ struct SelectableTextView: NSViewRepresentable {
                 if let layoutManager = textView.layoutManager,
                    let textContainer = textView.textContainer {
                     let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
-                    let rect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
-                    let windowRect = textView.convert(rect, to: nil)
-                    if let window = textView.window {
-                        parent.selectionRect = window.convertToScreen(windowRect)
-                    } else {
-                        parent.selectionRect = windowRect
-                    }
+                    // Get the bounding rect in text container coordinates
+                    let containerRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+
+                    // Convert to text view coordinates (accounting for text container insets)
+                    let textViewRect = CGRect(
+                        x: containerRect.origin.x + textView.textContainerInset.width,
+                        y: containerRect.origin.y + textView.textContainerInset.height,
+                        width: containerRect.width,
+                        height: containerRect.height
+                    )
+
+                    // Store in text view's coordinate space
+                    // We'll convert to SwiftUI coordinates in DocumentView using the view itself
+                    parent.selectionRect = textViewRect
                 }
             } else {
                 parent.selection = nil

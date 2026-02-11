@@ -114,7 +114,10 @@ struct DocumentView: View {
                 selection: $pdfSelection,
                 selectionRect: $selectionRect,
                 zoomLevel: store.zoomLevel,
-                scrollToAnchor: store.scrollToAnchorRequest
+                scrollToAnchor: store.scrollToAnchorRequest,
+                onZoomChange: { newZoom in
+                    store.send(.setZoom(newZoom))
+                }
             )
 
         case .text(let content):
@@ -140,17 +143,7 @@ struct DocumentView: View {
 
     @ViewBuilder
     private func selectionPopoverOverlay(selection: TextSelection) -> some View {
-        GeometryReader { geometry in
-            let globalFrame = geometry.frame(in: .global)
-            let localRect = CGRect(
-                x: selection.rect.minX - globalFrame.minX,
-                y: selection.rect.minY - globalFrame.minY,
-                width: selection.rect.width,
-                height: selection.rect.height
-            )
-            let popoverX = min(max(localRect.midX, 80), geometry.size.width - 80)
-            let popoverY = min(localRect.maxY + 30, geometry.size.height - 40)
-
+        OverlayPositioningView(selection: selection) {
             SelectionPopover(
                 selection: selection,
                 onAddNote: {
@@ -164,7 +157,6 @@ struct DocumentView: View {
                 },
                 isAIAvailable: isAIAvailable
             )
-            .position(x: popoverX, y: popoverY)
         }
         .allowsHitTesting(true)
     }
@@ -210,6 +202,41 @@ struct DocumentView: View {
                 .padding(.top, 8)
         }
         .padding(40)
+    }
+}
+
+/// A view that properly positions an overlay relative to a selection rect
+/// stored in NSView coordinates (bottom-left origin)
+private struct OverlayPositioningView<Content: View>: View {
+    let selection: TextSelection
+    let content: Content
+
+    init(selection: TextSelection, @ViewBuilder content: () -> Content) {
+        self.selection = selection
+        self.content = content()
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let viewHeight = geometry.size.height
+
+            // Convert from NSView coordinates (bottom-left origin) to SwiftUI coordinates (top-left origin)
+            // The selection rect comes from PDFView or NSTextView in their local coordinate space
+            let localRect = CGRect(
+                x: selection.rect.minX,
+                y: viewHeight - selection.rect.maxY,  // Flip Y coordinate
+                width: selection.rect.width,
+                height: selection.rect.height
+            )
+
+            // Position the popover below and centered on the selection
+            // Clamp to visible bounds with padding
+            let popoverX = min(max(localRect.midX, 80), geometry.size.width - 80)
+            let popoverY = min(localRect.maxY + 30, geometry.size.height - 40)
+
+            content
+                .position(x: popoverX, y: popoverY)
+        }
     }
 }
 

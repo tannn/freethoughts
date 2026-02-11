@@ -8,6 +8,7 @@ struct PDFRenderer: NSViewRepresentable {
     @Binding var selectionRect: CGRect?
     var zoomLevel: Double
     var scrollToAnchor: AnchorRequest?
+    var onZoomChange: ((Double) -> Void)?
 
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
@@ -22,11 +23,15 @@ struct PDFRenderer: NSViewRepresentable {
     }
 
     func updateNSView(_ pdfView: PDFView, context: Context) {
+        context.coordinator.parent = self
+
         if pdfView.document !== document {
             pdfView.document = document
         }
 
-        if pdfView.scaleFactor != zoomLevel {
+        // Only update scale factor if it's significantly different to avoid fighting with user gestures
+        let scaleDifference = abs(pdfView.scaleFactor - zoomLevel)
+        if scaleDifference > 0.01 {
             pdfView.scaleFactor = zoomLevel
         }
 
@@ -94,7 +99,15 @@ struct PDFRenderer: NSViewRepresentable {
                 self?.selectionChanged(notification)
             }
 
-            observers = [pageObserver, selectionObserver]
+            let scaleObserver = NotificationCenter.default.addObserver(
+                forName: .PDFViewScaleChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.scaleChanged(notification)
+            }
+
+            observers = [pageObserver, selectionObserver, scaleObserver]
         }
 
         func pageChanged(_ notification: Notification) {
@@ -112,19 +125,29 @@ struct PDFRenderer: NSViewRepresentable {
                let string = selection.string,
                !string.isEmpty,
                let firstPage = selection.pages.first {
+                // Get the selection bounds in PDF page coordinates
                 let bounds = selection.bounds(for: firstPage)
-                let viewRect = pdfView.convert(bounds, from: firstPage)
-                let windowRect = pdfView.convert(viewRect, to: nil)
 
+                // Convert from PDF page coordinates to PDFView coordinates
+                // This accounts for zoom/scale and scroll position
+                let viewRect = pdfView.convert(bounds, from: firstPage)
+
+                // Store the rect in PDFView's coordinate space
+                // We'll convert to SwiftUI coordinates in DocumentView using the view itself
                 parent.selection = selection
-                if let window = pdfView.window {
-                    parent.selectionRect = window.convertToScreen(windowRect)
-                } else {
-                    parent.selectionRect = windowRect
-                }
+                parent.selectionRect = viewRect
             } else {
                 parent.selection = nil
                 parent.selectionRect = nil
+            }
+        }
+
+        func scaleChanged(_ notification: Notification) {
+            guard let pdfView = notification.object as? PDFView else { return }
+            let newScale = pdfView.scaleFactor
+            // Only notify if the change is significant to avoid update loops
+            if abs(newScale - parent.zoomLevel) > 0.01 {
+                parent.onZoomChange?(newScale)
             }
         }
 
