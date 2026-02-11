@@ -201,12 +201,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~420
 
 **Included Subtasks**:
-- [ ] T042: Create provocation style picker sheet (mockup #5)
-- [ ] T043: Implement provocation on text selection
-- [ ] T044: Implement provocation on notes via AI button (mockup #11)
-- [ ] T045: Create loading state UI (mockup #6)
-- [ ] T046: Implement streaming response display (mockup #7)
-- [ ] T047: Persist provocations to SwiftData
+- [x] T042: Create provocation style picker sheet (mockup #5)
+- [x] T043: Implement provocation on text selection
+- [x] T044: Implement provocation on notes via AI button (mockup #11)
+- [x] T045: Create loading state UI (mockup #6)
+- [x] T046: Implement streaming response display (mockup #7)
+- [x] T047: Persist provocations to SwiftData
 
 **Success Criteria**:
 - Style picker shows all prompt options
