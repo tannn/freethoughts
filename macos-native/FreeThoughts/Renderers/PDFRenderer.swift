@@ -49,17 +49,20 @@ struct PDFRenderer: NSViewRepresentable {
         if !anchor.selectedText.isEmpty {
             let matches = document.findString(anchor.selectedText, withOptions: [.caseInsensitive])
             if let match = matches.first(where: { $0.pages.contains(page) }) {
-                pdfView.setCurrentSelection(match, animate: true)
-                pdfView.scrollSelectionToVisible(nil)
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    pdfView.setCurrentSelection(match, animate: true)
+                    pdfView.scrollSelectionToVisible(nil)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                     pdfView.clearSelection()
                 }
                 return
             }
         }
 
-        pdfView.go(to: page)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            pdfView.go(to: page)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -69,27 +72,32 @@ struct PDFRenderer: NSViewRepresentable {
     class Coordinator: NSObject, PDFViewDelegate {
         var parent: PDFRenderer
         var lastScrolledAnchorId: UUID?
+        private var observers: [NSObjectProtocol] = []
 
         init(_ parent: PDFRenderer) {
             self.parent = parent
             super.init()
 
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(pageChanged),
-                name: .PDFViewPageChanged,
-                object: nil
-            )
+            let pageObserver = NotificationCenter.default.addObserver(
+                forName: .PDFViewPageChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.pageChanged(notification)
+            }
 
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(selectionChanged),
-                name: .PDFViewSelectionChanged,
-                object: nil
-            )
+            let selectionObserver = NotificationCenter.default.addObserver(
+                forName: .PDFViewSelectionChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.selectionChanged(notification)
+            }
+
+            observers = [pageObserver, selectionObserver]
         }
 
-        @objc func pageChanged(_ notification: Notification) {
+        func pageChanged(_ notification: Notification) {
             guard let pdfView = notification.object as? PDFView,
                   let currentPage = pdfView.currentPage,
                   let pageIndex = pdfView.document?.index(for: currentPage) else {
@@ -98,7 +106,7 @@ struct PDFRenderer: NSViewRepresentable {
             parent.currentPage = pageIndex + 1
         }
 
-        @objc func selectionChanged(_ notification: Notification) {
+        func selectionChanged(_ notification: Notification) {
             guard let pdfView = notification.object as? PDFView else { return }
             if let selection = pdfView.currentSelection,
                let string = selection.string,
@@ -118,6 +126,10 @@ struct PDFRenderer: NSViewRepresentable {
                 parent.selection = nil
                 parent.selectionRect = nil
             }
+        }
+
+        deinit {
+            observers.forEach { NotificationCenter.default.removeObserver($0) }
         }
     }
 }

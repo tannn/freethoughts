@@ -14,6 +14,8 @@ struct AppFeature {
         var isSidebarCollapsed: Bool = false
         var isAIAvailable: Bool = false
         var aiAvailabilityChecked: Bool = false
+        var showSettings: Bool = false
+        var showFilePicker: Bool = false
 
         // Provocation UI state
         var showProvocationPicker: Bool = false
@@ -34,6 +36,10 @@ struct AppFeature {
         case requestNoteProvocation(noteId: UUID, promptId: UUID)
         case dismissProvocationPicker
         case generateFromPicker
+        case openSettings
+        case closeSettings
+        case openFilePicker
+        case closeFilePicker
     }
 
     @Dependency(\.foundationModelsClient) var foundationModelsClient
@@ -157,6 +163,22 @@ struct AppFeature {
 
             case .toggleSidebar:
                 state.isSidebarCollapsed.toggle()
+                return .none
+
+            case .openSettings:
+                state.showSettings = true
+                return .none
+
+            case .closeSettings:
+                state.showSettings = false
+                return .none
+
+            case .openFilePicker:
+                state.showFilePicker = true
+                return .none
+
+            case .closeFilePicker:
+                state.showFilePicker = false
                 return .none
 
             case .checkAIAvailability:

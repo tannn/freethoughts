@@ -8,6 +8,7 @@ struct NoteCard: View {
     let isGenerating: Bool
     let currentResponse: String
     let selectedPromptName: String
+    let isAIAvailable: Bool
     let onTap: () -> Void
     let onEdit: () -> Void
     let onSave: (String) -> Void
@@ -72,20 +73,22 @@ struct NoteCard: View {
             HStack {
                 Spacer()
 
-                Menu {
-                    ForEach(availablePrompts, id: \.id) { prompt in
-                        Button {
-                            onSelectPrompt(prompt.id)
-                        } label: {
-                            Label(prompt.name, systemImage: iconForPrompt(prompt))
+                if isAIAvailable {
+                    Menu {
+                        ForEach(availablePrompts, id: \.id) { prompt in
+                            Button {
+                                onSelectPrompt(prompt.id)
+                            } label: {
+                                Label(prompt.name, systemImage: iconForPrompt(prompt))
+                            }
                         }
+                    } label: {
+                        Label("AI", systemImage: "sparkles")
+                            .font(.caption)
                     }
-                } label: {
-                    Label("AI", systemImage: "sparkles")
-                        .font(.caption)
+                    .menuStyle(.borderlessButton)
+                    .foregroundStyle(.secondary)
                 }
-                .menuStyle(.borderlessButton)
-                .foregroundStyle(.secondary)
             }
 
             if isGenerating || latestProvocation != nil {
@@ -162,16 +165,6 @@ struct NoteCard: View {
                 .font(.caption)
                 .buttonStyle(.borderedProminent)
             }
-        }
-        .onExitCommand {
-            onCancel()
-        }
-        .onKeyPress(.delete, phases: .down) { keyPress in
-            if keyPress.modifiers.contains(.command) {
-                onDelete()
-                return .handled
-            }
-            return .ignored
         }
     }
 }

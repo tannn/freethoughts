@@ -31,6 +31,7 @@ struct ProvocationResponseView: View {
                 .font(.body)
                 .italic()
                 .foregroundStyle(.primary)
+                .animation(.easeIn(duration: 0.05), value: response)
 
             // Streaming indicator
             if !isComplete {
