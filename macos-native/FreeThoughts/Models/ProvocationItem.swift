@@ -1,6 +1,6 @@
 import Foundation
 
-struct ProvocationItem: Equatable, Identifiable {
+struct ProvocationItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var documentPath: String
     var sourceType: Provocation.SourceType

@@ -26,7 +26,7 @@ extension FoundationModelsClient: DependencyKey {
                 }
                 let session = LanguageModelSession()
                 return AsyncThrowingStream { continuation in
-                    Task {
+                    let task = Task {
                         do {
                             let stream = session.streamResponse(to: prompt)
                             for try await partial in stream {
@@ -37,6 +37,7 @@ extension FoundationModelsClient: DependencyKey {
                             continuation.finish(throwing: error)
                         }
                     }
+                    continuation.onTermination = { _ in task.cancel() }
                 }
             }
         )
@@ -54,7 +55,7 @@ extension FoundationModelsClient: DependencyKey {
         isAvailable: { true },
         generate: { _ in
             AsyncThrowingStream { continuation in
-                Task {
+                let task = Task {
                     let words = "This is a test provocation response that challenges your thinking.".split(separator: " ")
                     for word in words {
                         try? await Task.sleep(for: .milliseconds(100))
@@ -62,6 +63,7 @@ extension FoundationModelsClient: DependencyKey {
                     }
                     continuation.finish()
                 }
+                continuation.onTermination = { _ in task.cancel() }
             }
         }
     )

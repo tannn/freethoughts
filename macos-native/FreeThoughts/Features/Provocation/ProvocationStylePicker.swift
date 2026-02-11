@@ -96,13 +96,7 @@ struct PromptStyleButton: View {
     let action: () -> Void
 
     private var icon: String {
-        switch prompt.name.lowercased() {
-        case "challenge": return "magnifyingglass"
-        case "expand": return "globe"
-        case "simplify": return "lightbulb"
-        case "question": return "questionmark"
-        default: return "sparkles"
-        }
+        prompt.icon
     }
 
     var body: some View {

@@ -1,7 +1,7 @@
 import Foundation
 import PDFKit
 
-struct Document: Identifiable, Equatable {
+struct Document: Identifiable, Equatable, @unchecked Sendable {
     let id: UUID
     let url: URL
     let type: DocumentType

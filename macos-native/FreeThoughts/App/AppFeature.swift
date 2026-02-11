@@ -146,8 +146,8 @@ struct AppFeature {
                     noteId: noteId
                 )
 
-                state.provocation.selectedPromptId = promptId
                 return .merge(
+                    .send(.provocation(.selectPrompt(promptId))),
                     .send(.provocation(.requestProvocation(request))),
                     .send(.provocation(.startGeneration))
                 )
@@ -185,8 +185,7 @@ struct AppFeature {
             case .aiAvailabilityResult(let available):
                 state.isAIAvailable = available
                 state.aiAvailabilityChecked = true
-                state.provocation.isAIAvailable = available
-                return .none
+                return .send(.provocation(.setAIAvailability(available)))
 
             case .provocation(.provocationSaved):
                 if let path = state.notes.currentDocumentPath, !path.isEmpty {

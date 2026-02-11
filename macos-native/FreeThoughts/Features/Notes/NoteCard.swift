@@ -79,7 +79,7 @@ struct NoteCard: View {
                             Button {
                                 onSelectPrompt(prompt.id)
                             } label: {
-                                Label(prompt.name, systemImage: iconForPrompt(prompt))
+                                Label(prompt.name, systemImage: prompt.icon)
                             }
                         }
                     } label: {
@@ -121,16 +121,6 @@ struct NoteCard: View {
 
     private var latestProvocation: ProvocationItem? {
         note.provocations.max(by: { $0.createdAt < $1.createdAt })
-    }
-
-    private func iconForPrompt(_ prompt: ProvocationPromptItem) -> String {
-        switch prompt.name.lowercased() {
-        case "challenge": return "magnifyingglass"
-        case "expand": return "globe"
-        case "simplify": return "lightbulb"
-        case "question": return "questionmark"
-        default: return "sparkles"
-        }
     }
 
     private var editingView: some View {

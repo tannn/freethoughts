@@ -13,29 +13,35 @@ struct NotesFeature {
         var editingNoteId: UUID?
         var editingDraftText: String = ""
         var confirmingDeleteNoteId: UUID?
+        var error: String?
     }
 
     enum Action {
         case loadNotes(documentPath: String)
         case notesLoaded([NoteItem])
+        case notesLoadFailed(String)
         case startNoteCreation(TextSelection)
         case cancelNoteCreation
         case updateNoteContent(String)
         case saveNote
         case noteSaved(NoteItem)
+        case noteSaveFailed(String)
         case requestDeleteNote(UUID)
         case confirmDeleteNote
         case cancelDeleteNote
         case deleteNote(UUID)
         case noteDeleted(UUID)
+        case noteDeleteFailed(UUID, String)
         case startEditing(UUID)
         case stopEditing
         case updateNoteText(UUID, String)
+        case noteUpdateFailed(UUID, String, String)
         case updateDraftText(String)
         case navigateToNote(UUID)
+        case dismissError
     }
 
-    @Dependency(NotesClient.self) var notesClient
+    @Dependency(\.notesClient) var notesClient
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -43,17 +49,20 @@ struct NotesFeature {
             case .loadNotes(let path):
                 state.currentDocumentPath = path
                 return .run { send in
-                    let notes = try await notesClient.loadNotes(path)
-                    await send(.notesLoaded(notes))
+                    do {
+                        let notes = try await notesClient.loadNotes(path)
+                        await send(.notesLoaded(notes))
+                    } catch {
+                        await send(.notesLoadFailed(error.localizedDescription))
+                    }
                 }
 
             case .notesLoaded(let notes):
-                state.notes = notes.sorted { note1, note2 in
-                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
-                        if page1 != page2 { return page1 < page2 }
-                    }
-                    return note1.anchorStart < note2.anchorStart
-                }
+                state.notes = notes.sortedByAnchor()
+                return .none
+
+            case .notesLoadFailed(let error):
+                state.error = error
                 return .none
 
             case .startNoteCreation(let selection):
@@ -91,18 +100,21 @@ struct NotesFeature {
                 state.noteCreationContent = ""
 
                 return .run { send in
-                    let saved = try await notesClient.saveNote(noteItem)
-                    await send(.noteSaved(saved))
+                    do {
+                        let saved = try await notesClient.saveNote(noteItem)
+                        await send(.noteSaved(saved))
+                    } catch {
+                        await send(.noteSaveFailed(error.localizedDescription))
+                    }
                 }
 
             case .noteSaved(let note):
                 state.notes.append(note)
-                state.notes.sort { note1, note2 in
-                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
-                        if page1 != page2 { return page1 < page2 }
-                    }
-                    return note1.anchorStart < note2.anchorStart
-                }
+                state.notes = state.notes.sortedByAnchor()
+                return .none
+
+            case .noteSaveFailed(let error):
+                state.error = error
                 return .none
 
             case .requestDeleteNote(let id):
@@ -113,8 +125,12 @@ struct NotesFeature {
                 guard let id = state.confirmingDeleteNoteId else { return .none }
                 state.confirmingDeleteNoteId = nil
                 return .run { send in
-                    try await notesClient.deleteNote(id)
-                    await send(.noteDeleted(id))
+                    do {
+                        try await notesClient.deleteNote(id)
+                        await send(.noteDeleted(id))
+                    } catch {
+                        await send(.noteDeleteFailed(id, error.localizedDescription))
+                    }
                 }
 
             case .cancelDeleteNote:
@@ -123,8 +139,12 @@ struct NotesFeature {
 
             case .deleteNote(let id):
                 return .run { send in
-                    try await notesClient.deleteNote(id)
-                    await send(.noteDeleted(id))
+                    do {
+                        try await notesClient.deleteNote(id)
+                        await send(.noteDeleted(id))
+                    } catch {
+                        await send(.noteDeleteFailed(id, error.localizedDescription))
+                    }
                 }
 
             case .noteDeleted(let id):
@@ -133,6 +153,10 @@ struct NotesFeature {
                     state.editingNoteId = nil
                     state.editingDraftText = ""
                 }
+                return .none
+
+            case .noteDeleteFailed(_, let error):
+                state.error = error
                 return .none
 
             case .startEditing(let id):
@@ -153,18 +177,46 @@ struct NotesFeature {
 
             case .updateNoteText(let id, let text):
                 if let index = state.notes.firstIndex(where: { $0.id == id }) {
+                    let previousContent = state.notes[index].content
+                    let previousUpdatedAt = state.notes[index].updatedAt
                     state.notes[index].content = text
                     state.notes[index].updatedAt = Date()
                     let noteId = state.notes[index].id
-                    return .run { _ in
-                        try await notesClient.updateNote(noteId, text)
+                    return .run { send in
+                        do {
+                            try await notesClient.updateNote(noteId, text)
+                        } catch {
+                            await send(.noteUpdateFailed(noteId, previousContent, error.localizedDescription))
+                        }
                     }
                 }
                 return .none
 
+            case .noteUpdateFailed(let id, let previousContent, let error):
+                if let index = state.notes.firstIndex(where: { $0.id == id }) {
+                    state.notes[index].content = previousContent
+                }
+                state.error = error
+                return .none
+
             case .navigateToNote:
                 return .none
+
+            case .dismissError:
+                state.error = nil
+                return .none
             }
+        }
+    }
+}
+
+extension Array where Element == NoteItem {
+    func sortedByAnchor() -> [NoteItem] {
+        sorted { note1, note2 in
+            if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
+                if page1 != page2 { return page1 < page2 }
+            }
+            return note1.anchorStart < note2.anchorStart
         }
     }
 }

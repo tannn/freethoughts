@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Foundation
+import os
 
 @Reducer
 struct ProvocationFeature {
@@ -30,6 +31,7 @@ struct ProvocationFeature {
         case loadPrompts
         case promptsLoaded([ProvocationPromptItem])
         case selectPrompt(UUID)
+        case setAIAvailability(Bool)
         case requestProvocation(ProvocationRequest)
         case startGeneration
         case responseChunk(String)
@@ -68,7 +70,8 @@ struct ProvocationFeature {
                         try await prompts.markSeeded()
                         await send(.promptsSeeded)
                     } catch {
-                        print("Failed to seed prompts: \(error)")
+                        Logger(subsystem: "com.freethoughts", category: "ProvocationFeature")
+                            .error("Failed to seed prompts: \(error)")
                         await send(.loadPrompts)
                     }
                 }
@@ -91,6 +94,10 @@ struct ProvocationFeature {
 
             case .selectPrompt(let id):
                 state.selectedPromptId = id
+                return .none
+
+            case .setAIAvailability(let available):
+                state.isAIAvailable = available
                 return .none
 
             case .requestProvocation(let request):
