@@ -697,5 +697,3 @@ case .document(.closeDocument):
 - 2026-02-10T19:25:15Z – claude-opus – shell_pid=60443 – lane=for_review – Review fixes applied: (1) NoteItem value type replaces SwiftData Note class in TCA state for proper Equatable diffing, (2) NotesClient now converts between NoteItem/Note at persistence boundary with dedicated updateNote method fixing duplicate inserts, (3) Single-click edit per mockup #9. Build succeeds.
 - 2026-02-10T19:28:40Z – copilot – shell_pid=61932 – lane=doing – Started review via workflow command
 - 2026-02-10T19:30:57Z – copilot – shell_pid=61932 – lane=done – Review passed: notes core matches spec, no issues found
-- 2026-02-10T23:00:49Z – copilot – shell_pid=61932 – lane=doing – Automated: start implementation
-- 2026-02-11T07:54:08Z – OpenCode – shell_pid=53428 – lane=done

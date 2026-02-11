@@ -645,5 +645,3 @@ struct ContentView: View {
 - 2026-02-10T09:25:29Z – claude-opus – shell_pid=92754 – lane=for_review – Ready for review: <summary>
 - 2026-02-10T09:26:59Z – claude-opus – shell_pid=10981 – lane=doing – Started review via workflow command
 - 2026-02-10T09:30:30Z – claude-opus – shell_pid=10981 – lane=done – Review passed: All 7 subtasks implemented correctly. Folder structure matches plan.md, SwiftData models match data-model.md, TCA architecture properly composed with stub features. Code is clean and well-structured.
-- 2026-02-10T23:00:49Z – claude-opus – shell_pid=10981 – lane=doing – Automated: start implementation
-- 2026-02-11T07:54:08Z – OpenCode – shell_pid=53428 – lane=done
