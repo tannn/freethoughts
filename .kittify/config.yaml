@@ -4,6 +4,7 @@ agents:
   available:
   - copilot
   - claude
+  - opencode
   - codex
   selection:
     strategy: preferred

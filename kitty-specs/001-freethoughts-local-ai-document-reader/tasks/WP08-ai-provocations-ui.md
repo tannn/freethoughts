@@ -1,9 +1,17 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: planned
-dependencies: []
+lane: "done"
+dependencies: "[WP07, WP05]"
+base_branch: 001-freethoughts-local-ai-document-reader-WP07
+base_commit: c83248952611adef995aa8c42ed91209ca24c231
+created_at: '2026-02-11T05:37:38.265706+00:00'
 subtasks: [T042, T043, T044, T045, T046, T047]
+shell_pid: "34502"
+agent: "OpenCode"
+review_status: "has_feedback"
+assignee: opencode
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -668,3 +676,25 @@ case .saveProvocation:
 3. Verify streaming response display
 4. Check persistence after app restart
 5. Test all four prompt styles
+
+## Activity Log
+
+- 2026-02-10T23:00:49Z – unknown – lane=doing – Automated: start implementation
+- 2026-02-11T05:37:38Z – claude-opus – shell_pid=23445 – lane=doing – Assigned agent via workflow command
+- 2026-02-11T05:51:10Z – claude-opus – shell_pid=23445 – lane=for_review – Ready for review: provocation picker, loading/streaming UI, note AI menu, and persistence
+- 2026-02-11T05:52:20Z – opencode – shell_pid=27525 – lane=doing – Started review via workflow command
+- 2026-02-11T05:57:19Z – opencode – shell_pid=27525 – lane=planned – Moved to planned
+- 2026-02-11T05:58:25Z – opencode – shell_pid=27525 – lane=doing – Started implementation via workflow command
+- 2026-02-11T06:00:26Z – opencode – shell_pid=27525 – lane=for_review – Ready for review: cancel now stops generation; dependencies synced
+- 2026-02-11T06:01:30Z – OpenCode – shell_pid=29786 – lane=doing – Started review via workflow command
+- 2026-02-11T06:08:21Z – OpenCode – shell_pid=29786 – lane=planned – Moved to planned
+- 2026-02-11T06:09:25Z – OpenCode – shell_pid=31964 – lane=doing – Started implementation via workflow command
+- 2026-02-11T06:20:54Z – OpenCode – shell_pid=31964 – lane=for_review – Ready for review: guard streamed provocation updates after cancel; UI and persistence already in place
+- 2026-02-11T06:22:36Z – gpt-5.2-codex – shell_pid=33618 – lane=doing – Started review via workflow command
+- 2026-02-11T06:26:43Z – gpt-5.2-codex – shell_pid=33618 – lane=planned – Moved to planned
+- 2026-02-11T06:29:09Z – OpenCode – shell_pid=34502 – lane=doing – Started implementation via workflow command
+- 2026-02-11T06:33:07Z – OpenCode – shell_pid=34502 – lane=for_review – Ready for review: reload notes after provocation save so note cards update immediately
+- 2026-02-11T06:34:32Z – gpt-5.2-codex – shell_pid=33618 – lane=doing – Started review via workflow command
+- 2026-02-11T06:36:51Z – gpt-5.2-codex – shell_pid=33618 – lane=planned – Moved to planned
+- 2026-02-11T06:37:55Z – OpenCode – shell_pid=34502 – lane=doing – Started implementation via workflow command
+- 2026-02-11T06:47:44Z – OpenCode – shell_pid=34502 – lane=done – Done

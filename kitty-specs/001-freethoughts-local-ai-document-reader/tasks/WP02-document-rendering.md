@@ -1,9 +1,17 @@
 ---
 work_package_id: WP02
 title: Document Rendering
-lane: planned
-dependencies: []
+lane: "done"
+dependencies: [WP01]
+base_branch: main
+base_commit: 9e11bf9e2f9ca3581f8aa19207552c33ea4c6798
+created_at: '2026-02-10T09:44:10.822932+00:00'
 subtasks: [T008, T009, T010, T011, T012, T013, T014]
+shell_pid: "21867"
+agent: "github-copilot"
+review_status: "has_feedback"
+assignee: opencode
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -691,3 +699,14 @@ struct DocumentView: View {
 3. Check scrolling performance on large documents
 4. Ensure text selection works in all formats
 5. Verify empty state matches mockup exactly
+
+## Activity Log
+
+- 2026-02-10T09:44:10Z – claude-opus – shell_pid=13326 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T09:48:55Z – claude-opus – shell_pid=13326 – lane=for_review – Ready for review: Document model, DocumentClient dependency, full DocumentFeature reducer, PDF/Markdown/PlainText renderers, unified DocumentView, ContentView integration. Build succeeds.
+- 2026-02-10T09:59:10Z – GitHub Copilot – shell_pid=15557 – lane=doing – Started review via workflow command
+- 2026-02-10T10:02:38Z – GitHub Copilot – shell_pid=15557 – lane=planned – Moved to planned
+- 2026-02-10T10:24:32Z – claude-opus – shell_pid=21355 – lane=doing – Started implementation via workflow command
+- 2026-02-10T10:27:13Z – claude-opus – shell_pid=21355 – lane=for_review – Ready for review: Fixed all 3 review issues - full markdown parsing with block elements, NSTextView-based SelectableTextView for text selection in Markdown/PlainText renderers, ASCII arrow in empty state. Build succeeds.
+- 2026-02-10T10:28:59Z – github-copilot – shell_pid=21867 – lane=doing – Started review via workflow command
+- 2026-02-10T10:31:10Z – github-copilot – shell_pid=21867 – lane=done – Review passed: addressed markdown parsing, text selection, ASCII arrow; no new issues

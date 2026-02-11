@@ -5,6 +5,7 @@ coverage/
 .code/agents/
 release/
 .DS_Store
+MEMORY.md
 
 # Added by Spec Kitty CLI (auto-managed)
 .claude/
@@ -14,9 +15,14 @@ release/
 .gemini/
 .cursor/
 .qwen/
+.code/
 .kilocode/
 .augment/
 .roo/
 .amazonq/
 .github/copilot/
 .kittify/.dashboard
+# Excluded via sparse-checkout
+kitty-specs/
+!kitty-specs/
+macos-native/FreeThoughts.xcodeproj/project.xcworkspace/

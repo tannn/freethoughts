@@ -1,9 +1,17 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: planned
-dependencies: []
+lane: "done"
+dependencies: [WP05]
+base_branch: 001-freethoughts-local-ai-document-reader-WP01
+base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
+created_at: '2026-02-10T18:52:41.213719+00:00'
 subtasks: [T036, T037, T038, T039, T040, T041]
+shell_pid: "21439"
+agent: "gpt-5.2-codex"
+review_status: "has_feedback"
+assignee: opencode
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -638,3 +646,30 @@ struct ProvocationFeature {
 3. Test first-launch seeding
 4. Check streaming response accumulation
 5. Verify unavailable state handling
+
+## Activity Log
+
+- 2026-02-10T18:52:41Z – claude-opus – shell_pid=52236 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T19:00:06Z – claude-opus – shell_pid=52236 – lane=for_review – Ready for review: FoundationModelsClient, PromptsClient, PromptSeeder, DefaultPrompts.json, full ProvocationFeature reducer, availability checking in AppFeature. Build verified.
+- 2026-02-10T19:01:22Z – github-copilot – shell_pid=54864 – lane=doing – Started review via workflow command
+- 2026-02-10T19:04:24Z – github-copilot – shell_pid=54864 – lane=planned – Moved to planned
+- 2026-02-10T23:00:49Z – github-copilot – shell_pid=54864 – lane=doing – Automated: start implementation
+- 2026-02-10T23:01:54Z – github-copilot – shell_pid=54864 – lane=for_review – Automated: complete implementation
+- 2026-02-10T23:26:45Z – GitHub Copilot – shell_pid=71744 – lane=doing – Started review via workflow command
+- 2026-02-10T23:30:06Z – GitHub Copilot – shell_pid=71744 – lane=planned – Moved to planned
+- 2026-02-10T23:30:54Z – claude-opus – shell_pid=77100 – lane=doing – Started implementation via workflow command
+- 2026-02-10T23:36:30Z – claude-opus – shell_pid=77100 – lane=for_review – Fixed review feedback: (1) Added ProvocationPromptItem and ProvocationItem value types for TCA state (follows NoteItem pattern from WP05), (2) Real FoundationModels integration with #if canImport, SystemLanguageModel, LanguageModelSession, @available(macOS 26.0) guard. Build succeeds.
+- 2026-02-10T23:38:00Z – GitHub Copilot – shell_pid=81359 – lane=doing – Started review via workflow command
+- 2026-02-10T23:42:25Z – GitHub Copilot – shell_pid=81359 – lane=planned – Moved to planned
+- 2026-02-11T04:28:37Z – claude-opus – shell_pid=90910 – lane=doing – Started implementation via workflow command
+- 2026-02-11T04:37:26Z – claude-opus – shell_pid=90910 – lane=for_review – Fixed: (1) Restored full DocumentFeature and ContentView from main, (2) Fixed double context in generate() - now accepts single prompt, (3) Updated Xcode project with both main and WP07 files, (4) Updated WP07 dependencies to [WP05]. Build succeeds.
+- 2026-02-11T04:41:17Z – GitHub-Copilot – shell_pid=96587 – lane=doing – Started review via workflow command
+- 2026-02-11T04:44:00Z – GitHub-Copilot – shell_pid=96587 – lane=planned – Moved to planned
+- 2026-02-11T04:49:47Z – GitHub Copilot – shell_pid=99675 – lane=doing – Started implementation via workflow command
+- 2026-02-11T05:03:21Z – GitHub Copilot – shell_pid=99675 – lane=for_review – Ready for review: restored notes UI/reducer and fixed WP07/WP08 dependency metadata
+- 2026-02-11T05:15:43Z – GitHub-Copilot – shell_pid=16823 – lane=doing – Started review via workflow command
+- 2026-02-11T05:17:50Z – GitHub-Copilot – shell_pid=16823 – lane=planned – Moved to planned
+- 2026-02-11T05:19:28Z – OpenCode – shell_pid=18913 – lane=doing – Started implementation via workflow command
+- 2026-02-11T05:28:05Z – OpenCode – shell_pid=18913 – lane=for_review – Ready for review: Verified DataContainer is present and wired; no code changes needed for reported build error.
+- 2026-02-11T05:29:39Z – gpt-5.2-codex – shell_pid=21439 – lane=doing – Started review via workflow command
+- 2026-02-11T05:33:13Z – gpt-5.2-codex – shell_pid=21439 – lane=done – Review passed: AI foundation client, prompt persistence/seeding, and availability checks implemented; resources wired

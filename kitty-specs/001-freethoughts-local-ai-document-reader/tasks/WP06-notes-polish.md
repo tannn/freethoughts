@@ -1,9 +1,17 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: planned
-dependencies: []
+lane: "done"
+dependencies: [WP05]
+base_branch: main
+base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
+created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
+shell_pid: "7419"
+agent: "GitHub-Copilot"
+review_status: "has_feedback"
+assignee: opencode
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -417,3 +425,28 @@ if store.isSidebarCollapsed {
 3. Test deletion flow with confirmation
 4. Test navigation in PDF and text documents
 5. Verify sidebar collapse animation is smooth
+
+## Activity Log
+
+- 2026-02-10T18:49:01Z – claude-opus – shell_pid=51736 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T18:51:02Z – claude-opus – shell_pid=51736 – lane=planned – Blocked: WP05 (Notes Core) not yet implemented. WP06 depends on WP05 for NotesSidebar, NoteCard, NotesFeature, NotesClient.
+- 2026-02-10T23:00:49Z – claude-opus – shell_pid=51736 – lane=doing – Automated: start implementation
+- 2026-02-10T23:28:33Z – claude-opus – shell_pid=51736 – lane=for_review – Ready for review: page-aware sorting, improved inline editing with cancel/save-on-blur, swipe-to-delete, note-to-anchor navigation with highlight flash, sidebar collapse with Cmd+Shift+N. Build succeeds.
+- 2026-02-10T23:29:28Z – GitHub Copilot – shell_pid=75128 – lane=doing – Started review via workflow command
+- 2026-02-10T23:32:58Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
+- 2026-02-10T23:33:24Z – GitHub Copilot – shell_pid=75128 – lane=planned – Moved to planned
+- 2026-02-10T23:35:11Z – claude-opus – shell_pid=80732 – lane=doing – Started implementation via workflow command
+- 2026-02-10T23:41:33Z – claude-opus – shell_pid=80732 – lane=for_review – Review fixes: (1) draft text lifted to NotesFeature state so click-outside saves current edits, (2) Escape-to-cancel and Cmd+Delete keyboard shortcuts added, (3) text document scroll-to-range + targeted highlight instead of full-screen flash. Build succeeds.
+- 2026-02-10T23:45:03Z – GitHub Copilot – shell_pid=84045 – lane=doing – Started review via workflow command
+- 2026-02-10T23:48:51Z – GitHub Copilot – shell_pid=84045 – lane=planned – Moved to planned
+- 2026-02-10T23:50:43Z – GitHub Copilot – shell_pid=84045 – lane=planned – Moved to planned
+- 2026-02-11T04:16:02Z – claude-opus – shell_pid=89316 – lane=doing – Started implementation via workflow command
+- 2026-02-11T04:27:26Z – claude-opus – shell_pid=89316 – lane=for_review – Review fixes: (1) PDF navigation highlights anchored text via findString+setCurrentSelection, (2) click-outside save works globally via document area overlay, (3) swipe-to-delete routes through confirmation dialog. Build succeeds.
+- 2026-02-11T04:30:58Z – GitHubCopilot – shell_pid=92339 – lane=doing – Started review via workflow command
+- 2026-02-11T04:34:08Z – GitHubCopilot – shell_pid=92339 – lane=planned – Moved to planned
+- 2026-02-11T04:39:59Z – claude-opus – shell_pid=96110 – lane=doing – Started implementation via workflow command
+- 2026-02-11T04:41:00Z – claude-opus – shell_pid=96110 – lane=for_review – Fix: clear editingNoteId and editingDraftText in noteDeleted when the deleted note matches the currently-edited note. Build succeeds.
+- 2026-02-11T04:41:47Z – GitHub-Copilot – shell_pid=96875 – lane=doing – Started review via workflow command
+- 2026-02-11T04:44:16Z – GitHub-Copilot – shell_pid=96875 – lane=planned – Moved to planned
+- 2026-02-11T04:54:25Z – GitHub-Copilot – shell_pid=7419 – lane=doing – Started implementation via workflow command
+- 2026-02-11T05:14:44Z – GitHub-Copilot – shell_pid=7419 – lane=done – Marked done per request; rebase isolation pending

@@ -1,9 +1,17 @@
 ---
 work_package_id: WP03
 title: File Opening & Navigation
-lane: planned
-dependencies: []
+lane: "done"
+dependencies: [WP02]
+base_branch: main
+base_commit: aa6d1ea390d911eb2563581cf63ff8f547f70c34
+created_at: '2026-02-10T10:35:34.092423+00:00'
 subtasks: [T015, T016, T017, T018, T019]
+shell_pid: "32221"
+agent: "github-copilot"
+review_status: "has_feedback"
+assignee: opencode
+reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
   action: created
@@ -376,3 +384,14 @@ var body: some View {
 2. Verify keyboard shortcut works from all focus states
 3. Test drag-drop with files from Finder, Desktop, etc.
 4. Check status bar updates correctly when switching documents
+
+## Activity Log
+
+- 2026-02-10T10:35:34Z – claude-opus – shell_pid=23884 – lane=doing – Assigned agent via workflow command
+- 2026-02-10T10:38:59Z – claude-opus – shell_pid=23884 – lane=for_review – Ready for review: File > Open with Cmd+O, drag-drop with overlay, status bar with page/zoom/type, enhanced empty state. Build succeeds cleanly.
+- 2026-02-10T10:43:27Z – github-copilot – shell_pid=27848 – lane=doing – Started review via workflow command
+- 2026-02-10T10:46:04Z – github-copilot – shell_pid=27848 – lane=planned – Moved to planned
+- 2026-02-10T10:47:57Z – claude-opus – shell_pid=31263 – lane=doing – Started implementation via workflow command
+- 2026-02-10T10:52:17Z – claude-opus – shell_pid=31263 – lane=for_review – Fixed review feedback: (1) wired zoom controls to PDFRenderer via zoomLevel/scaleFactor, (2) updated dependencies to [WP02]. Build succeeds.
+- 2026-02-10T10:52:47Z – github-copilot – shell_pid=32221 – lane=doing – Started review via workflow command
+- 2026-02-10T10:53:33Z – github-copilot – shell_pid=32221 – lane=done – Review passed: zoom wiring + dependency metadata fixed

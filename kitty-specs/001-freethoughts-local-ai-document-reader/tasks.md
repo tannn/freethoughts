@@ -26,13 +26,13 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T001: Create Xcode project with folder structure per plan.md
-- [ ] T002: Add TCA dependency via Swift Package Manager
-- [ ] T003: Create FreeThoughtsApp.swift entry point with SwiftData container
-- [ ] T004: Create root AppFeature reducer composing child features
-- [ ] T005: Set up SwiftData ModelContainer with schema
-- [ ] T006: Create SwiftData models (Note, Provocation, ProvocationPrompt)
-- [ ] T007: Create basic main window with NavigationSplitView layout
+- [x] T001: Create Xcode project with folder structure per plan.md
+- [x] T002: Add TCA dependency via Swift Package Manager
+- [x] T003: Create FreeThoughtsApp.swift entry point with SwiftData container
+- [x] T004: Create root AppFeature reducer composing child features
+- [x] T005: Set up SwiftData ModelContainer with schema
+- [x] T006: Create SwiftData models (Note, Provocation, ProvocationPrompt)
+- [x] T007: Create basic main window with NavigationSplitView layout
 
 **Success Criteria**:
 - App launches with empty window
@@ -53,13 +53,13 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~400
 
 **Included Subtasks**:
-- [ ] T008: Create Document model (transient struct with URL, type, content)
-- [ ] T009: Create DocumentClient dependency for file loading operations
-- [ ] T010: Create DocumentFeature reducer with state and actions
-- [ ] T011: Create PDFRenderer with PDFView via NSViewRepresentable
-- [ ] T012: Create MarkdownRenderer using AttributedString
-- [ ] T013: Create PlainTextRenderer with ScrollView + Text
-- [ ] T014: Create unified DocumentView that switches between renderers
+- [x] T008: Create Document model (transient struct with URL, type, content)
+- [x] T009: Create DocumentClient dependency for file loading operations
+- [x] T010: Create DocumentFeature reducer with state and actions
+- [x] T011: Create PDFRenderer with PDFView via NSViewRepresentable
+- [x] T012: Create MarkdownRenderer using AttributedString
+- [x] T013: Create PlainTextRenderer with ScrollView + Text
+- [x] T014: Create unified DocumentView that switches between renderers
 
 **Success Criteria**:
 - PDF files render with correct layout
@@ -79,11 +79,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~300
 
 **Included Subtasks**:
-- [ ] T015: Implement File > Open menu command
-- [ ] T016: Implement ⌘O keyboard shortcut
-- [ ] T017: Implement drag-and-drop file opening on window
-- [ ] T018: Create empty state view (mockup #2)
-- [ ] T019: Create status bar with page info, zoom, and document type
+- [x] T015: Implement File > Open menu command
+- [x] T016: Implement ⌘O keyboard shortcut
+- [x] T017: Implement drag-and-drop file opening on window
+- [x] T018: Create empty state view (mockup #2)
+- [x] T019: Create status bar with page info, zoom, and document type
 
 **Success Criteria**:
 - Files open via menu, keyboard, and drag-drop
@@ -104,11 +104,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~320
 
 **Included Subtasks**:
-- [ ] T020: Track PDF text selection via PDFSelection delegate
-- [ ] T021: Track text selection for markdown/plain text views
-- [ ] T022: Create unified TextSelection model with position data
-- [ ] T023: Create selection action popover (mockup #3)
-- [ ] T024: Handle popover positioning and dismissal
+- [x] T020: Track PDF text selection via PDFSelection delegate
+- [x] T021: Track text selection for markdown/plain text views
+- [x] T022: Create unified TextSelection model with position data
+- [x] T023: Create selection action popover (mockup #3)
+- [x] T024: Handle popover positioning and dismissal
 
 **Success Criteria**:
 - Text selection works in all three formats
@@ -127,12 +127,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~400
 
 **Included Subtasks**:
-- [ ] T025: Create NotesFeature reducer with state/actions
-- [ ] T026: Create NotesSidebar view component
-- [ ] T027: Create NoteCard component per mockup
-- [ ] T028: Create note creation sheet (mockup #4)
-- [ ] T029: Implement note persistence (save to SwiftData)
-- [ ] T030: Implement note loading for current document
+- [x] T025: Create NotesFeature reducer with state/actions
+- [x] T026: Create NotesSidebar view component
+- [x] T027: Create NoteCard component per mockup
+- [x] T028: Create note creation sheet (mockup #4)
+- [x] T029: Implement note persistence (save to SwiftData)
+- [x] T030: Implement note loading for current document
 
 **Success Criteria**:
 - Notes appear in sidebar after creation
@@ -151,11 +151,11 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T031: Order notes by anchor position in document
-- [ ] T032: Implement inline note editing (mockup #9)
-- [ ] T033: Implement note deletion with confirmation
-- [ ] T034: Implement navigation from note to anchor (mockup #10)
-- [ ] T035: Implement sidebar collapse/expand (mockup #8)
+- [x] T031: Order notes by anchor position in document
+- [x] T032: Implement inline note editing (mockup #9)
+- [x] T033: Implement note deletion with confirmation
+- [x] T034: Implement navigation from note to anchor (mockup #10)
+- [x] T035: Implement sidebar collapse/expand (mockup #8)
 
 **Success Criteria**:
 - Notes ordered top-to-bottom by position
@@ -177,12 +177,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~380
 
 **Included Subtasks**:
-- [ ] T036: Create FoundationModelsClient TCA dependency
-- [ ] T037: Implement availability checking (isSupported)
-- [ ] T038: Create ProvocationPrompt persistence operations
-- [ ] T039: Create DefaultPrompts.json with 4 default styles
-- [ ] T040: Seed default prompts on first launch
-- [ ] T041: Create ProvocationFeature reducer with state/actions
+- [x] T036: Create FoundationModelsClient TCA dependency
+- [x] T037: Implement availability checking (isSupported)
+- [x] T038: Create ProvocationPrompt persistence operations
+- [x] T039: Create DefaultPrompts.json with 4 default styles
+- [x] T040: Seed default prompts on first launch
+- [x] T041: Create ProvocationFeature reducer with state/actions
 
 **Success Criteria**:
 - AI availability correctly detected
@@ -201,12 +201,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~420
 
 **Included Subtasks**:
-- [ ] T042: Create provocation style picker sheet (mockup #5)
-- [ ] T043: Implement provocation on text selection
-- [ ] T044: Implement provocation on notes via AI button (mockup #11)
-- [ ] T045: Create loading state UI (mockup #6)
-- [ ] T046: Implement streaming response display (mockup #7)
-- [ ] T047: Persist provocations to SwiftData
+- [x] T042: Create provocation style picker sheet (mockup #5)
+- [x] T043: Implement provocation on text selection
+- [x] T044: Implement provocation on notes via AI button (mockup #11)
+- [x] T045: Create loading state UI (mockup #6)
+- [x] T046: Implement streaming response display (mockup #7)
+- [x] T047: Persist provocations to SwiftData
 
 **Success Criteria**:
 - Style picker shows all prompt options
@@ -228,12 +228,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T048: Handle corrupted/unreadable files with error alert
-- [ ] T049: Detect and handle PDFs with no selectable text (mockup #13)
-- [ ] T050: Show AI unavailable message when Foundation Models not supported (mockup #12)
-- [ ] T051: Implement all keyboard shortcuts per mockup table
-- [ ] T052: Add smooth animations (sidebar collapse, scroll-to-anchor)
-- [ ] T053: Handle large documents gracefully (progressive loading message)
+- [x] T048: Handle corrupted/unreadable files with error alert
+- [x] T049: Detect and handle PDFs with no selectable text (mockup #13)
+- [x] T050: Show AI unavailable message when Foundation Models not supported (mockup #12)
+- [x] T051: Implement all keyboard shortcuts per mockup table
+- [x] T052: Add smooth animations (sidebar collapse, scroll-to-anchor)
+- [x] T053: Handle large documents gracefully (progressive loading message)
 
 **Success Criteria**:
 - Errors display user-friendly messages
