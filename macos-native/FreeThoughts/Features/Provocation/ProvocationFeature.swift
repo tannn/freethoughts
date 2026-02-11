@@ -1,8 +1,11 @@
 import ComposableArchitecture
 import Foundation
+import os
 
 @Reducer
 struct ProvocationFeature {
+    private enum CancelID { case generation }
+
     @ObservableState
     struct State: Equatable {
         var isAIAvailable: Bool = false
@@ -28,6 +31,7 @@ struct ProvocationFeature {
         case loadPrompts
         case promptsLoaded([ProvocationPromptItem])
         case selectPrompt(UUID)
+        case setAIAvailability(Bool)
         case requestProvocation(ProvocationRequest)
         case startGeneration
         case responseChunk(String)
@@ -66,7 +70,8 @@ struct ProvocationFeature {
                         try await prompts.markSeeded()
                         await send(.promptsSeeded)
                     } catch {
-                        print("Failed to seed prompts: \(error)")
+                        Logger(subsystem: "com.freethoughts", category: "ProvocationFeature")
+                            .error("Failed to seed prompts: \(error)")
                         await send(.loadPrompts)
                     }
                 }
@@ -91,6 +96,10 @@ struct ProvocationFeature {
                 state.selectedPromptId = id
                 return .none
 
+            case .setAIAvailability(let available):
+                state.isAIAvailable = available
+                return .none
+
             case .requestProvocation(let request):
                 state.pendingRequest = request
                 state.currentResponse = ""
@@ -106,7 +115,8 @@ struct ProvocationFeature {
 
                 state.isGenerating = true
 
-                let fullPrompt = prompt.promptTemplate
+                let promptStart = "You are generating a short provocation to help a reader think critically. Do not be authoritative. Respond with a question or statement. Maximum length: two sentences."
+                let fullPrompt = promptStart + prompt.promptTemplate
                     .replacingOccurrences(of: "{selection}", with: request.sourceText)
                     .replacingOccurrences(of: "{context}", with: request.context)
 
@@ -120,12 +130,13 @@ struct ProvocationFeature {
                         await send(.generationFailed(error.localizedDescription))
                     }
                 }
+                .cancellable(id: CancelID.generation, cancelInFlight: true)
 
             case .responseChunk(let chunk):
                 guard state.pendingRequest != nil else {
                     return .none
                 }
-                state.currentResponse += chunk
+                state.currentResponse = chunk
                 return .none
 
             case .generationComplete:
@@ -171,7 +182,7 @@ struct ProvocationFeature {
                 state.isGenerating = false
                 state.currentResponse = ""
                 state.pendingRequest = nil
-                return .none
+                return .cancel(id: CancelID.generation)
 
             case .dismissError:
                 state.error = nil

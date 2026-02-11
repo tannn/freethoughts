@@ -20,6 +20,7 @@ struct DocumentFeature {
 
     enum Action {
         case openDocument(URL)
+        case loadingFileSizeResult(Int?)
         case documentLoaded(Document)
         case documentLoadFailed(String)
         case closeDocument
@@ -34,6 +35,8 @@ struct DocumentFeature {
         case clearHighlight
     }
 
+    private enum CancelID { case highlightTimer }
+
     @Dependency(\.documentClient) var documentClient
 
     var body: some ReducerOf<Self> {
@@ -42,10 +45,12 @@ struct DocumentFeature {
             case .openDocument(let url):
                 state.isLoading = true
                 state.error = nil
-                state.loadingFileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue
                 state.currentSelection = nil
                 state.showSelectionPopover = false
+                let path = url.path
                 return .run { send in
+                    let fileSize = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.intValue
+                    await send(.loadingFileSizeResult(fileSize))
                     do {
                         let document = try await documentClient.loadDocument(url)
                         await send(.documentLoaded(document))
@@ -53,6 +58,10 @@ struct DocumentFeature {
                         await send(.documentLoadFailed(error.localizedDescription))
                     }
                 }
+
+            case .loadingFileSizeResult(let size):
+                state.loadingFileSize = size
+                return .none
 
             case .documentLoaded(let document):
                 state.document = document
@@ -85,7 +94,7 @@ struct DocumentFeature {
                 state.currentSelection = nil
                 state.showSelectionPopover = false
                 state.hasSelectableText = true
-                return .none
+                return .cancel(id: CancelID.highlightTimer)
 
             case .setPage(let page):
                 state.currentPage = max(1, min(page, state.totalPages))
@@ -110,12 +119,10 @@ struct DocumentFeature {
 
             case .addNoteFromSelection:
                 state.showSelectionPopover = false
-                // Note creation will be handled by WP05
                 return .none
 
             case .requestProvocationFromSelection:
                 state.showSelectionPopover = false
-                // Provocation request will be handled by WP07/WP08
                 return .none
 
             case .scrollToAnchor(let page, let start, let end, let selectedText):
@@ -128,6 +135,7 @@ struct DocumentFeature {
                     try await Task.sleep(for: .seconds(2))
                     await send(.clearHighlight)
                 }
+                .cancellable(id: CancelID.highlightTimer, cancelInFlight: true)
 
             case .clearHighlight:
                 state.scrollToAnchorRequest = nil

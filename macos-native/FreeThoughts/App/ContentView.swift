@@ -17,35 +17,44 @@ struct ContentView: View {
         keyboardShortcutsView
     }
 
+    // macOS virtual key codes
+    private enum KeyCode {
+        static let o: UInt16 = 31
+        static let n: UInt16 = 45
+        static let p: UInt16 = 35
+        static let comma: UInt16 = 43
+        static let escape: UInt16 = 53
+    }
+
     private var keyboardShortcutsView: some View {
         filePickerWatcherView
-            .onKeyPress(keyCode: 31, modifiers: .command) {
+            .onKeyPress(keyCode: KeyCode.o, modifiers: .command) { // Cmd+O: Open file
                 store.send(.openFilePicker)
                 return true
             }
-            .onKeyPress(keyCode: 45, modifiers: [.command, .shift]) {
+            .onKeyPress(keyCode: KeyCode.n, modifiers: [.command, .shift]) { // Cmd+Shift+N: Toggle sidebar
                 store.send(.toggleSidebar)
                 return true
             }
-            .onKeyPress(keyCode: 45, modifiers: .command) {
+            .onKeyPress(keyCode: KeyCode.n, modifiers: .command) { // Cmd+N: Add note from selection
                 if store.document.currentSelection != nil {
                     store.send(.document(.addNoteFromSelection))
                     return true
                 }
                 return false
             }
-            .onKeyPress(keyCode: 35, modifiers: [.command, .shift]) {
+            .onKeyPress(keyCode: KeyCode.p, modifiers: [.command, .shift]) { // Cmd+Shift+P: Provocation from selection
                 if store.document.currentSelection != nil {
                     store.send(.document(.requestProvocationFromSelection))
                     return true
                 }
                 return false
             }
-            .onKeyPress(keyCode: 43, modifiers: .command) {
+            .onKeyPress(keyCode: KeyCode.comma, modifiers: .command) { // Cmd+,: Settings
                 store.send(.openSettings)
                 return true
             }
-            .onKeyPress(keyCode: 53) {
+            .onKeyPress(keyCode: KeyCode.escape) { // Escape: Dismiss modals
                 if store.showProvocationPicker {
                     store.send(.dismissProvocationPicker)
                     return true
@@ -98,6 +107,20 @@ struct ContentView: View {
                 }
             } message: {
                 Text(store.provocation.error ?? "")
+            }
+            .alert(
+                "Notes Error",
+                isPresented: Binding(
+                    get: { store.notes.error != nil },
+                    set: { if !$0 { store.send(.notes(.dismissError)) } }
+                ),
+                presenting: store.notes.error
+            ) { _ in
+                Button("OK") {
+                    store.send(.notes(.dismissError))
+                }
+            } message: { error in
+                Text(error)
             }
     }
 
@@ -162,6 +185,14 @@ struct ContentView: View {
             }
             .onAppear {
                 store.send(.onAppear)
+            }
+            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                handleDrop(providers)
+            }
+            .overlay {
+                if isDropTargeted {
+                    dropOverlay
+                }
             }
     }
 

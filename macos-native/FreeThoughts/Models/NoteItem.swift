@@ -1,6 +1,6 @@
 import Foundation
 
-struct NoteItem: Equatable, Identifiable {
+struct NoteItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var documentPath: String
     var anchorStart: Int

@@ -1,12 +1,32 @@
 import Foundation
 
-struct ProvocationPromptItem: Equatable, Identifiable {
+struct ProvocationPromptItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var name: String
     var promptTemplate: String
     var isBuiltIn: Bool
     var sortOrder: Int
     var createdAt: Date
+
+    var icon: String {
+        switch name.lowercased() {
+        case "challenge": return "magnifyingglass"
+        case "expand": return "globe"
+        case "simplify": return "lightbulb"
+        case "question": return "questionmark"
+        default: return "sparkles"
+        }
+    }
+
+    static func icon(for name: String) -> String {
+        switch name.lowercased() {
+        case "challenge": return "magnifyingglass"
+        case "expand": return "globe"
+        case "simplify": return "lightbulb"
+        case "question": return "questionmark"
+        default: return "sparkles"
+        }
+    }
 
     init(
         id: UUID = UUID(),

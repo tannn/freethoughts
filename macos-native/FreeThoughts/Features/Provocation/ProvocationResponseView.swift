@@ -6,13 +6,7 @@ struct ProvocationResponseView: View {
     let isComplete: Bool
 
     private var icon: String {
-        switch promptName.lowercased() {
-        case "challenge": return "magnifyingglass"
-        case "expand": return "globe"
-        case "simplify": return "lightbulb"
-        case "question": return "questionmark"
-        default: return "sparkles"
-        }
+        ProvocationPromptItem.icon(for: promptName)
     }
 
     var body: some View {
@@ -31,6 +25,7 @@ struct ProvocationResponseView: View {
                 .font(.body)
                 .italic()
                 .foregroundStyle(.primary)
+                .textSelection(.enabled)
                 .animation(.easeIn(duration: 0.05), value: response)
 
             // Streaming indicator
