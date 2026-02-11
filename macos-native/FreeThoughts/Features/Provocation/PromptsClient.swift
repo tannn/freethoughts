@@ -6,7 +6,7 @@ import Foundation
 struct PromptsClient {
     var loadPrompts: @Sendable () async throws -> [ProvocationPromptItem]
     var savePrompt: @Sendable (_ prompt: ProvocationPromptItem) async throws -> Void
-    var saveProvocation: @Sendable (_ provocation: ProvocationItem) async throws -> Void
+    var saveProvocation: @Sendable (_ provocation: ProvocationItem, _ noteId: UUID?) async throws -> ProvocationItem
     var hasSeededDefaults: @Sendable () async -> Bool = { false }
     var markSeeded: @Sendable () async throws -> Void
 }
@@ -36,7 +36,7 @@ extension PromptsClient: DependencyKey {
                 context.insert(prompt)
                 try context.save()
             },
-            saveProvocation: { item in
+            saveProvocation: { item, noteId in
                 let context = ModelContext(container)
                 let provocation = Provocation(
                     id: item.id,
@@ -47,8 +47,20 @@ extension PromptsClient: DependencyKey {
                     response: item.response,
                     createdAt: item.createdAt
                 )
+
+                if let noteId {
+                    let predicate = #Predicate<Note> { note in
+                        note.id == noteId
+                    }
+                    let descriptor = FetchDescriptor(predicate: predicate)
+                    if let note = try context.fetch(descriptor).first {
+                        provocation.note = note
+                    }
+                }
+
                 context.insert(provocation)
                 try context.save()
+                return ProvocationItem(from: provocation)
             },
             hasSeededDefaults: {
                 UserDefaults.standard.bool(forKey: "defaultPromptsSeeded")
@@ -62,7 +74,7 @@ extension PromptsClient: DependencyKey {
     static let testValue = PromptsClient(
         loadPrompts: { [] },
         savePrompt: { _ in },
-        saveProvocation: { _ in },
+        saveProvocation: { item, _ in item },
         hasSeededDefaults: { true },
         markSeeded: {}
     )

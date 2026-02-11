@@ -34,7 +34,7 @@ struct ProvocationFeature {
         case generationComplete
         case generationFailed(String)
         case saveProvocation
-        case provocationSaved
+        case provocationSaved(ProvocationItem)
         case clearResponse
         case dismissError
     }
@@ -122,14 +122,23 @@ struct ProvocationFeature {
                 }
 
             case .responseChunk(let chunk):
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.currentResponse += chunk
                 return .none
 
             case .generationComplete:
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.isGenerating = false
                 return .send(.saveProvocation)
 
             case .generationFailed(let error):
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.isGenerating = false
                 state.error = error
                 return .none
@@ -150,8 +159,8 @@ struct ProvocationFeature {
                         promptName: prompt.name,
                         response: response
                     )
-                    try await prompts.saveProvocation(item)
-                    await send(.provocationSaved)
+                    let saved = try await prompts.saveProvocation(item, request.noteId)
+                    await send(.provocationSaved(saved))
                 }
 
             case .provocationSaved:
@@ -159,6 +168,7 @@ struct ProvocationFeature {
                 return .none
 
             case .clearResponse:
+                state.isGenerating = false
                 state.currentResponse = ""
                 state.pendingRequest = nil
                 return .none

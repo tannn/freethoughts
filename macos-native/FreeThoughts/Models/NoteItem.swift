@@ -8,6 +8,7 @@ struct NoteItem: Equatable, Identifiable {
     var anchorPage: Int?
     var selectedText: String
     var content: String
+    var provocations: [ProvocationItem]
     var createdAt: Date
     var updatedAt: Date
 
@@ -19,6 +20,7 @@ struct NoteItem: Equatable, Identifiable {
         anchorPage: Int? = nil,
         selectedText: String,
         content: String = "",
+        provocations: [ProvocationItem] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -29,6 +31,7 @@ struct NoteItem: Equatable, Identifiable {
         self.anchorPage = anchorPage
         self.selectedText = selectedText
         self.content = content
+        self.provocations = provocations
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -41,6 +44,7 @@ struct NoteItem: Equatable, Identifiable {
         self.anchorPage = note.anchorPage
         self.selectedText = note.selectedText
         self.content = note.content
+        self.provocations = note.provocations.map { ProvocationItem(from: $0) }
         self.createdAt = note.createdAt
         self.updatedAt = note.updatedAt
     }

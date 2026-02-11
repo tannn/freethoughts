@@ -3,7 +3,14 @@ import ComposableArchitecture
 
 struct NotesSidebar: View {
     @Bindable var store: StoreOf<NotesFeature>
+    let provocationStore: StoreOf<ProvocationFeature>
+    let isGenerating: Bool
+    let generatingNoteId: UUID?
+    let currentResponse: String
+    let selectedPromptName: String
     var onToggleCollapse: (() -> Void)?
+    let onNoteProvocation: (UUID, UUID) -> Void
+    let onCancelGeneration: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,6 +55,10 @@ struct NotesSidebar: View {
                                     get: { store.editingDraftText },
                                     set: { store.send(.updateDraftText($0)) }
                                 ),
+                                availablePrompts: provocationStore.availablePrompts,
+                                isGenerating: isGenerating && generatingNoteId == note.id,
+                                currentResponse: currentResponse,
+                                selectedPromptName: selectedPromptName,
                                 onTap: {
                                     store.send(.navigateToNote(note.id))
                                 },
@@ -64,9 +75,10 @@ struct NotesSidebar: View {
                                 onDelete: {
                                     store.send(.requestDeleteNote(note.id))
                                 },
-                                onProvocation: {
-                                    // Handled in WP08
-                                }
+                                onSelectPrompt: { promptId in
+                                    onNoteProvocation(note.id, promptId)
+                                },
+                                onCancelGeneration: onCancelGeneration
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
