@@ -159,6 +159,7 @@ struct ProvocationFeature {
                 return .none
 
             case .clearResponse:
+                state.isGenerating = false
                 state.currentResponse = ""
                 state.pendingRequest = nil
                 return .none
