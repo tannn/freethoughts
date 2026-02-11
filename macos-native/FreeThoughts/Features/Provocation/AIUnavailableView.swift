@@ -12,7 +12,7 @@ struct AIUnavailableView: View {
 
             VStack(spacing: 4) {
                 Text("Apple Foundation Models requires")
-                Text("macOS 15 or later on Apple Silicon.")
+                Text("macOS 26 or later on Apple Silicon.")
             }
             .font(.caption)
             .foregroundStyle(.secondary)

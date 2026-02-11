@@ -3,6 +3,8 @@ import Foundation
 
 @Reducer
 struct ProvocationFeature {
+    private enum CancelID { case generation }
+
     @ObservableState
     struct State: Equatable {
         var isAIAvailable: Bool = false
@@ -121,6 +123,7 @@ struct ProvocationFeature {
                         await send(.generationFailed(error.localizedDescription))
                     }
                 }
+                .cancellable(id: CancelID.generation, cancelInFlight: true)
 
             case .responseChunk(let chunk):
                 guard state.pendingRequest != nil else {
@@ -172,7 +175,7 @@ struct ProvocationFeature {
                 state.isGenerating = false
                 state.currentResponse = ""
                 state.pendingRequest = nil
-                return .none
+                return .cancel(id: CancelID.generation)
 
             case .dismissError:
                 state.error = nil

@@ -74,7 +74,7 @@ enum FoundationModelsError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAvailable:
-            return "Apple Foundation Models is not available on this device. macOS 26+ on Apple Silicon is required."
+            return "Apple Foundation Models is not available on this device. macOS 26 or later on Apple Silicon is required."
         case .generationFailed(let reason):
             return "AI generation failed: \(reason)"
         }

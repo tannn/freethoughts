@@ -163,6 +163,14 @@ struct ContentView: View {
             .onAppear {
                 store.send(.onAppear)
             }
+            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                handleDrop(providers)
+            }
+            .overlay {
+                if isDropTargeted {
+                    dropOverlay
+                }
+            }
     }
 
     private var mainLayout: some View {
