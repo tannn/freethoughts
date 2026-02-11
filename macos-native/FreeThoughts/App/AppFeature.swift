@@ -63,6 +63,18 @@ struct AppFeature {
             case .fileSelected(let url):
                 return .send(.document(.openDocument(url)))
 
+            case .document(.documentLoaded(let document)):
+                return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+
+            case .document(.closeDocument):
+                return .send(.notes(.loadNotes(documentPath: "")))
+
+            case .document(.addNoteFromSelection):
+                if let selection = state.document.currentSelection {
+                    return .send(.notes(.startNoteCreation(selection)))
+                }
+                return .none
+
             case .document, .notes, .provocation:
                 return .none
             }

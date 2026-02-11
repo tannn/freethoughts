@@ -28,6 +28,11 @@
 		D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */; };
 		D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */; };
 		C1B2C3D4E5F60718293A4B01 /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */; };
+		E1B2C3D4E5F60718293A4B11 /* NotesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B01 /* NotesSidebar.swift */; };
+		E1B2C3D4E5F60718293A4B12 /* NoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B02 /* NoteCard.swift */; };
+		E1B2C3D4E5F60718293A4B13 /* NoteCreationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B03 /* NoteCreationSheet.swift */; };
+		E1B2C3D4E5F60718293A4B14 /* NotesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B04 /* NotesClient.swift */; };
+		F1B2C3D4E5F60718293A4B11 /* NoteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +57,11 @@
 		D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSelection.swift; sourceTree = "<group>"; };
 		D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionPopover.swift; sourceTree = "<group>"; };
 		C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B01 /* NotesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSidebar.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B02 /* NoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCard.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B03 /* NoteCreationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCreationSheet.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B04 /* NotesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesClient.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteItem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,7 +125,6 @@
 				B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */,
 				B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */,
 				D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */,
-				D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */,
 				C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */,
 			);
 			path = Document;
@@ -125,6 +134,10 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B77 /* NotesFeature.swift */,
+				E1B2C3D4E5F60718293A4B04 /* NotesClient.swift */,
+				E1B2C3D4E5F60718293A4B01 /* NotesSidebar.swift */,
+				E1B2C3D4E5F60718293A4B02 /* NoteCard.swift */,
+				E1B2C3D4E5F60718293A4B03 /* NoteCreationSheet.swift */,
 			);
 			path = Notes;
 			sourceTree = "<group>";
@@ -142,9 +155,9 @@
 			children = (
 				B1B2C3D4E5F60718293A4B01 /* Document.swift */,
 				A1B2C3D4E5F60718293A4B79 /* Note.swift */,
+				F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */,
 				A1B2C3D4E5F60718293A4B7A /* Provocation.swift */,
 				A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */,
-				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
 				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
 			);
 			path = Models;
@@ -269,6 +282,11 @@
 				D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */,
 				D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */,
 				C1B2C3D4E5F60718293A4B01 /* StatusBar.swift in Sources */,
+				E1B2C3D4E5F60718293A4B11 /* NotesSidebar.swift in Sources */,
+				E1B2C3D4E5F60718293A4B12 /* NoteCard.swift in Sources */,
+				E1B2C3D4E5F60718293A4B13 /* NoteCreationSheet.swift in Sources */,
+				E1B2C3D4E5F60718293A4B14 /* NotesClient.swift in Sources */,
+				F1B2C3D4E5F60718293A4B11 /* NoteItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
