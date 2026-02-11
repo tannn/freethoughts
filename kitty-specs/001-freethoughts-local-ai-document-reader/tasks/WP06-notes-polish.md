@@ -1,14 +1,14 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "planned"
+lane: "doing"
 dependencies: [WP05]
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
 created_at: '2026-02-10T18:49:01.029971+00:00'
 subtasks: [T031, T032, T033, T034, T035]
-shell_pid: "92339"
-agent: "GitHubCopilot"
+shell_pid: "96110"
+agent: "claude-opus"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -443,3 +443,4 @@ if store.isSidebarCollapsed {
 - 2026-02-11T04:27:26Z – claude-opus – shell_pid=89316 – lane=for_review – Review fixes: (1) PDF navigation highlights anchored text via findString+setCurrentSelection, (2) click-outside save works globally via document area overlay, (3) swipe-to-delete routes through confirmation dialog. Build succeeds.
 - 2026-02-11T04:30:58Z – GitHubCopilot – shell_pid=92339 – lane=doing – Started review via workflow command
 - 2026-02-11T04:34:08Z – GitHubCopilot – shell_pid=92339 – lane=planned – Moved to planned
+- 2026-02-11T04:39:59Z – claude-opus – shell_pid=96110 – lane=doing – Started implementation via workflow command
