@@ -172,10 +172,6 @@ struct AppFeature {
                 state.showSettings = false
                 return .none
 
-            case .openFilePicker:
-                state.showFilePicker = true
-                return .none
-
             case .closeFilePicker:
                 state.showFilePicker = false
                 return .none

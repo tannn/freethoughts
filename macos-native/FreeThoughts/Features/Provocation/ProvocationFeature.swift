@@ -106,7 +106,8 @@ struct ProvocationFeature {
 
                 state.isGenerating = true
 
-                let fullPrompt = prompt.promptTemplate
+                let promptStart = "You are generating a short provocation to help a reader think critically. Do not be authoritative. Respond with a question or statement. Maximum length: two sentences."
+                let fullPrompt = promptStart + prompt.promptTemplate
                     .replacingOccurrences(of: "{selection}", with: request.sourceText)
                     .replacingOccurrences(of: "{context}", with: request.context)
 

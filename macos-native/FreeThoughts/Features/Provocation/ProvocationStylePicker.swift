@@ -16,7 +16,7 @@ struct ProvocationStylePicker: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             HStack {
-                Text("AI Provocation")
+                Text("Generate AI provocation")
                     .font(.headline)
 
                 Spacer()
@@ -115,11 +115,6 @@ struct PromptStyleButton: View {
                     .font(.caption)
                     .fontWeight(.medium)
 
-                if isSelected {
-                    Text("selected")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 80)
