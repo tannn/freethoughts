@@ -1,14 +1,14 @@
 ---
 work_package_id: WP09
 title: Error Handling & Polish
-lane: "for_review"
+lane: "doing"
 dependencies: [WP06, WP08]
 base_branch: 001-freethoughts-local-ai-document-reader-WP08
 base_commit: bfa031453e5b2886edb6eaf0414cf7ddf6d524aa
 created_at: '2026-02-11T06:51:14.049218+00:00'
 subtasks: [T048, T049, T050, T051, T052, T053]
-shell_pid: "38746"
-agent: "opencode"
+shell_pid: "53428"
+agent: "OpenCode"
 history:
 - date: '2026-02-09'
   action: created
@@ -585,3 +585,4 @@ enum DocumentError: Error, LocalizedError {
 - 2026-02-10T23:00:49Z – unknown – lane=doing – Automated: start implementation
 - 2026-02-11T06:51:14Z – opencode – shell_pid=38746 – lane=doing – Assigned agent via workflow command
 - 2026-02-11T07:31:17Z – opencode – shell_pid=38746 – lane=for_review – Ready for review: error handling, AI unavailable state, scanned PDF warnings, keyboard shortcuts, animations, and large document loading polish.
+- 2026-02-11T07:34:14Z – OpenCode – shell_pid=53428 – lane=doing – Started review via workflow command
