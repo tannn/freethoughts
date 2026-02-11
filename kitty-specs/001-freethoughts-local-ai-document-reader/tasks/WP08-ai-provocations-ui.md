@@ -1,14 +1,14 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: "planned"
+lane: "doing"
 dependencies: "[]"
 base_branch: 001-freethoughts-local-ai-document-reader-WP07
 base_commit: c83248952611adef995aa8c42ed91209ca24c231
 created_at: '2026-02-11T05:37:38.265706+00:00'
 subtasks: [T042, T043, T044, T045, T046, T047]
-shell_pid: "33618"
-agent: "gpt-5.2-codex"
+shell_pid: "34502"
+agent: "OpenCode"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -691,3 +691,4 @@ case .saveProvocation:
 - 2026-02-11T06:20:54Z – OpenCode – shell_pid=31964 – lane=for_review – Ready for review: guard streamed provocation updates after cancel; UI and persistence already in place
 - 2026-02-11T06:22:36Z – gpt-5.2-codex – shell_pid=33618 – lane=doing – Started review via workflow command
 - 2026-02-11T06:26:43Z – gpt-5.2-codex – shell_pid=33618 – lane=planned – Moved to planned
+- 2026-02-11T06:29:09Z – OpenCode – shell_pid=34502 – lane=doing – Started implementation via workflow command
