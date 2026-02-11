@@ -112,7 +112,7 @@ struct ProvocationFeature {
 
                 return .run { send in
                     do {
-                        for try await chunk in try await ai.generate(fullPrompt, request.context) {
+                        for try await chunk in try await ai.generate(fullPrompt) {
                             await send(.responseChunk(chunk))
                         }
                         await send(.generationComplete)

@@ -7,7 +7,7 @@ import FoundationModels
 @DependencyClient
 struct FoundationModelsClient {
     var isAvailable: @Sendable () async -> Bool = { false }
-    var generate: @Sendable (_ prompt: String, _ context: String) async throws -> AsyncThrowingStream<String, Error>
+    var generate: @Sendable (_ prompt: String) async throws -> AsyncThrowingStream<String, Error>
 }
 
 extension FoundationModelsClient: DependencyKey {
@@ -20,18 +20,18 @@ extension FoundationModelsClient: DependencyKey {
                 }
                 return false
             },
-            generate: { prompt, context in
+            generate: { prompt in
                 guard #available(macOS 26.0, *) else {
                     throw FoundationModelsError.notAvailable
                 }
-                let model = SystemLanguageModel.default
-                let session = LanguageModelSession(model: model)
-                let fullPrompt = "\(prompt)\n\nContext:\n\(context)"
+                let session = LanguageModelSession()
                 return AsyncThrowingStream { continuation in
                     Task {
                         do {
-                            let response = try await session.respond(to: fullPrompt)
-                            continuation.yield(response.content)
+                            let stream = session.streamResponse(to: prompt)
+                            for try await partial in stream {
+                                continuation.yield(partial.content)
+                            }
                             continuation.finish()
                         } catch {
                             continuation.finish(throwing: error)
@@ -43,7 +43,7 @@ extension FoundationModelsClient: DependencyKey {
         #else
         return FoundationModelsClient(
             isAvailable: { false },
-            generate: { _, _ in
+            generate: { _ in
                 throw FoundationModelsError.notAvailable
             }
         )
@@ -52,7 +52,7 @@ extension FoundationModelsClient: DependencyKey {
 
     static let testValue = FoundationModelsClient(
         isAvailable: { true },
-        generate: { _, _ in
+        generate: { _ in
             AsyncThrowingStream { continuation in
                 Task {
                     let words = "This is a test provocation response that challenges your thinking.".split(separator: " ")
