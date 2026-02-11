@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Text Selection
-lane: "doing"
+lane: "done"
 dependencies: []
 base_branch: main
 base_commit: cf1dbe82243be91689b27a0f9e67d3ee7ead13ca

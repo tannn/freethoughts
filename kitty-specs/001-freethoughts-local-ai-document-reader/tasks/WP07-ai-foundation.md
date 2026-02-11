@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "doing"
+lane: "for_review"
 dependencies: [WP05]
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
@@ -665,3 +665,4 @@ struct ProvocationFeature {
 - 2026-02-11T04:41:17Z – GitHub-Copilot – shell_pid=96587 – lane=doing – Started review via workflow command
 - 2026-02-11T04:44:00Z – GitHub-Copilot – shell_pid=96587 – lane=planned – Moved to planned
 - 2026-02-11T04:49:47Z – GitHub Copilot – shell_pid=99675 – lane=doing – Started implementation via workflow command
+- 2026-02-11T05:03:21Z – GitHub Copilot – shell_pid=99675 – lane=for_review – Ready for review: restored notes UI/reducer and fixed WP07/WP08 dependency metadata
