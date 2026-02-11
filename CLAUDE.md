@@ -16,7 +16,7 @@ When working in git worktrees, always verify the current directory with `pwd` be
 
 
 ## Code Review
-When given review feedback to fix, read the review feedback carefully and enumerate ALL issues before starting any code changes. Do not begin fixing until you have a complete list confirmed with the user.
+When given review feedback to fix, read the review feedback carefully and enumerate ALL issues before starting any code changes. Use code-reviewer agent when applicable.
 
 ## General Behavior 
 Minimize exploratory codebase reading when the user provides specific instructions or feedback. Start from the specific files and issues mentioned, and expand only if needed.
