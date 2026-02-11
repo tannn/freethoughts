@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Foundation
+import PDFKit
 
 @Reducer
 struct AppFeature {
@@ -11,6 +12,11 @@ struct AppFeature {
         var isSidebarCollapsed: Bool = false
         var isAIAvailable: Bool = false
         var aiAvailabilityChecked: Bool = false
+
+        // Provocation UI state
+        var showProvocationPicker: Bool = false
+        var provocationSourceText: String = ""
+        var provocationContext: String = ""
     }
 
     enum Action {
@@ -21,6 +27,9 @@ struct AppFeature {
         case toggleSidebar
         case checkAIAvailability
         case aiAvailabilityResult(Bool)
+        case requestNoteProvocation(noteId: UUID, promptId: UUID)
+        case dismissProvocationPicker
+        case generateFromPicker
     }
 
     @Dependency(\.foundationModelsClient) var foundationModelsClient
@@ -56,6 +65,27 @@ struct AppFeature {
                 }
                 return .none
 
+            case .document(.requestProvocationFromSelection):
+                guard let selection = state.document.currentSelection else {
+                    return .none
+                }
+
+                state.provocationSourceText = selection.text
+                state.provocationContext = getContext(
+                    from: state.document.document,
+                    around: selection
+                )
+                state.showProvocationPicker = true
+
+                let request = ProvocationFeature.ProvocationRequest(
+                    sourceType: .textSelection,
+                    sourceText: selection.text,
+                    context: state.provocationContext,
+                    documentPath: selection.documentPath,
+                    noteId: nil
+                )
+                return .send(.provocation(.requestProvocation(request)))
+
             case .notes(.navigateToNote(let noteId)):
                 guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
                     return .none
@@ -66,6 +96,34 @@ struct AppFeature {
                     end: note.anchorEnd,
                     selectedText: note.selectedText
                 )))
+
+            case .requestNoteProvocation(let noteId, let promptId):
+                guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
+                    return .none
+                }
+
+                let context = note.selectedText + "\n\n" + note.content
+                let request = ProvocationFeature.ProvocationRequest(
+                    sourceType: .note,
+                    sourceText: note.content.isEmpty ? note.selectedText : note.content,
+                    context: context,
+                    documentPath: note.documentPath,
+                    noteId: noteId
+                )
+
+                state.provocation.selectedPromptId = promptId
+                return .merge(
+                    .send(.provocation(.requestProvocation(request))),
+                    .send(.provocation(.startGeneration))
+                )
+
+            case .dismissProvocationPicker:
+                state.showProvocationPicker = false
+                return .send(.provocation(.clearResponse))
+
+            case .generateFromPicker:
+                state.showProvocationPicker = false
+                return .send(.provocation(.startGeneration))
 
             case .toggleSidebar:
                 state.isSidebarCollapsed.toggle()
@@ -86,6 +144,29 @@ struct AppFeature {
             case .document, .notes, .provocation:
                 return .none
             }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func getContext(from document: Document?, around selection: TextSelection) -> String {
+        guard let document else { return selection.text }
+
+        switch document.content {
+        case .text(let fullText):
+            let start = max(0, selection.range.startOffset - 250)
+            let end = min(fullText.count, selection.range.endOffset + 250)
+            guard start < end, start < fullText.count else { return selection.text }
+            let startIndex = fullText.index(fullText.startIndex, offsetBy: start)
+            let endIndex = fullText.index(fullText.startIndex, offsetBy: min(end, fullText.count))
+            return String(fullText[startIndex..<endIndex])
+
+        case .pdf(let pdfDoc):
+            if let page = selection.range.page,
+               let pdfPage = pdfDoc.page(at: page) {
+                return pdfPage.string ?? selection.text
+            }
+            return selection.text
         }
     }
 }

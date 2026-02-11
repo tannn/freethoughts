@@ -34,6 +34,9 @@
 		E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */; };
 		E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */; };
 		E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */; };
+		E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */; };
+		E1B2C3D4E5F60718293A4B1B /* ProvocationLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */; };
+		E1B2C3D4E5F60718293A4B1D /* ProvocationResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */; };
 		F1B2C3D4E5F60718293A4B11 /* NoteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */; };
 		F1B2C3D4E5F60718293A4B12 /* NotesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4B02 /* NotesClient.swift */; };
 		F1B2C3D4E5F60718293A4B13 /* NotesSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4B03 /* NotesSidebar.swift */; };
@@ -69,6 +72,9 @@
 		E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultPrompts.json; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationPromptItem.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationItem.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationStylePicker.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationLoadingView.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationResponseView.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteItem.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B02 /* NotesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesClient.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B03 /* NotesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSidebar.swift; sourceTree = "<group>"; };
@@ -160,6 +166,9 @@
 				E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */,
 				E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */,
 				E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */,
+				E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */,
+				E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */,
+				E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */,
 			);
 			path = Provocation;
 			sourceTree = "<group>";
@@ -311,6 +320,9 @@
 				E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */,
 				E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */,
 				E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */,
+				E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */,
+				E1B2C3D4E5F60718293A4B1B /* ProvocationLoadingView.swift in Sources */,
+				E1B2C3D4E5F60718293A4B1D /* ProvocationResponseView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

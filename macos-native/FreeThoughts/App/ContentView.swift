@@ -15,8 +15,19 @@ struct ContentView: View {
             NavigationSplitView(columnVisibility: $columnVisibility) {
                 NotesSidebar(
                     store: store.scope(state: \.notes, action: \.notes),
+                    provocationStore: store.scope(state: \.provocation, action: \.provocation),
+                    isGenerating: store.provocation.isGenerating,
+                    generatingNoteId: store.provocation.pendingRequest?.noteId,
+                    currentResponse: store.provocation.currentResponse,
+                    selectedPromptName: selectedPromptName,
                     onToggleCollapse: {
                         store.send(.toggleSidebar)
+                    },
+                    onNoteProvocation: { noteId, promptId in
+                        store.send(.requestNoteProvocation(noteId: noteId, promptId: promptId))
+                    },
+                    onCancelGeneration: {
+                        store.send(.provocation(.clearResponse))
                     }
                 )
             } detail: {
@@ -35,6 +46,20 @@ struct ContentView: View {
                                     store.send(.notes(.stopEditing))
                                 }
                             }
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    // Loading overlay for text selection provocations
+                    if store.provocation.isGenerating,
+                       store.provocation.pendingRequest?.sourceType == .textSelection {
+                        ProvocationLoadingView(
+                            promptName: selectedPromptName,
+                            onCancel: {
+                                store.send(.provocation(.clearResponse))
+                            }
+                        )
+                        .padding(.bottom, 20)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
             }
@@ -56,6 +81,39 @@ struct ContentView: View {
                 store: store.scope(state: \.notes, action: \.notes)
             )
         }
+        .sheet(isPresented: Binding(
+            get: { store.showProvocationPicker },
+            set: { if !$0 { store.send(.dismissProvocationPicker) } }
+        )) {
+            ProvocationStylePicker(
+                store: store.scope(state: \.provocation, action: \.provocation),
+                sourceText: store.provocationSourceText,
+                onCancel: {
+                    store.send(.dismissProvocationPicker)
+                },
+                onGenerate: {
+                    store.send(.generateFromPicker)
+                }
+            )
+        }
+        .alert(
+            "AI Error",
+            isPresented: Binding(
+                get: { store.provocation.error != nil },
+                set: { if !$0 { store.send(.provocation(.dismissError)) } }
+            )
+        ) {
+            Button("OK") {
+                store.send(.provocation(.dismissError))
+            }
+        } message: {
+            Text(store.provocation.error ?? "")
+        }
+    }
+
+    private var selectedPromptName: String {
+        store.provocation.availablePrompts
+            .first(where: { $0.id == store.provocation.selectedPromptId })?.name ?? ""
     }
 
     private var collapsedIndicator: some View {

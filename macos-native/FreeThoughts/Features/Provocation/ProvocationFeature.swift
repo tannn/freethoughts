@@ -34,7 +34,7 @@ struct ProvocationFeature {
         case generationComplete
         case generationFailed(String)
         case saveProvocation
-        case provocationSaved
+        case provocationSaved(ProvocationItem)
         case clearResponse
         case dismissError
     }
@@ -150,8 +150,8 @@ struct ProvocationFeature {
                         promptName: prompt.name,
                         response: response
                     )
-                    try await prompts.saveProvocation(item)
-                    await send(.provocationSaved)
+                    let saved = try await prompts.saveProvocation(item, request.noteId)
+                    await send(.provocationSaved(saved))
                 }
 
             case .provocationSaved:

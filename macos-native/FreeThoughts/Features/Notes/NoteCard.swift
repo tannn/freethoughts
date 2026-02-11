@@ -4,12 +4,17 @@ struct NoteCard: View {
     let note: NoteItem
     let isEditing: Bool
     @Binding var draftText: String
+    let availablePrompts: [ProvocationPromptItem]
+    let isGenerating: Bool
+    let currentResponse: String
+    let selectedPromptName: String
     let onTap: () -> Void
     let onEdit: () -> Void
     let onSave: (String) -> Void
     let onCancel: () -> Void
     let onDelete: () -> Void
-    let onProvocation: () -> Void
+    let onSelectPrompt: (UUID) -> Void
+    let onCancelGeneration: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -66,15 +71,61 @@ struct NoteCard: View {
             HStack {
                 Spacer()
 
-                Button {
-                    onProvocation()
+                Menu {
+                    ForEach(availablePrompts, id: \.id) { prompt in
+                        Button {
+                            onSelectPrompt(prompt.id)
+                        } label: {
+                            Label(prompt.name, systemImage: iconForPrompt(prompt))
+                        }
+                    }
                 } label: {
                     Label("AI", systemImage: "sparkles")
                         .font(.caption)
                 }
-                .buttonStyle(.plain)
+                .menuStyle(.borderlessButton)
                 .foregroundStyle(.secondary)
             }
+
+            if isGenerating || latestProvocation != nil {
+                Divider()
+                    .padding(.vertical, 4)
+
+                if isGenerating {
+                    if currentResponse.isEmpty {
+                        ProvocationLoadingView(
+                            promptName: selectedPromptName,
+                            onCancel: onCancelGeneration
+                        )
+                    } else {
+                        ProvocationResponseView(
+                            promptName: selectedPromptName,
+                            response: currentResponse,
+                            isComplete: false
+                        )
+                    }
+                } else if let latestProvocation {
+                    ProvocationResponseView(
+                        promptName: latestProvocation.promptName,
+                        response: latestProvocation.response,
+                        isComplete: true
+                    )
+                }
+            }
+        }
+    }
+
+    private var latestProvocation: ProvocationItem? {
+        note.provocations.max(by: { $0.createdAt < $1.createdAt })
+    }
+
+    private func iconForPrompt(_ prompt: ProvocationPromptItem) -> String {
+        switch prompt.name.lowercased() {
+        case "challenge": return "magnifyingglass"
+        case "expand": return "globe"
+        case "simplify": return "lightbulb"
+        case "question": return "questionmark"
+        default: return "sparkles"
         }
     }
 
