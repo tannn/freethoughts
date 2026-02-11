@@ -38,7 +38,6 @@ struct AppFeature {
         case generateFromPicker
         case openSettings
         case closeSettings
-        case openFilePicker
         case closeFilePicker
     }
 

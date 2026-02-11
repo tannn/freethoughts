@@ -36,10 +36,9 @@
 		E1B2C3D4E5F60718293A4B13 /* NoteCreationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B03 /* NoteCreationSheet.swift */; };
 		E1B2C3D4E5F60718293A4B14 /* NotesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B04 /* NotesClient.swift */; };
 		F1B2C3D4E5F60718293A4B11 /* NoteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */; };
-		E1B2C3D4E5F60718293A4B11 /* FoundationModelsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */; };
-		E1B2C3D4E5F60718293A4B12 /* PromptsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */; };
-		E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */; };
-		E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */; };
+		F1B2C3D4E5F60718293A4C11 /* FoundationModelsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4C01 /* FoundationModelsClient.swift */; };
+		F1B2C3D4E5F60718293A4C12 /* PromptsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4C02 /* PromptsClient.swift */; };
+		F1B2C3D4E5F60718293A4C13 /* PromptSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5F60718293A4C03 /* PromptSeeder.swift */; };
 		E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */; };
 		E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */; };
 		E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */; };
@@ -75,10 +74,9 @@
 		E1B2C3D4E5F60718293A4B03 /* NoteCreationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCreationSheet.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B04 /* NotesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesClient.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B01 /* NoteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteItem.swift; sourceTree = "<group>"; };
-		E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsClient.swift; sourceTree = "<group>"; };
-		E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptsClient.swift; sourceTree = "<group>"; };
-		E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSeeder.swift; sourceTree = "<group>"; };
-		E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainerDependency.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5F60718293A4C01 /* FoundationModelsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsClient.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5F60718293A4C02 /* PromptsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptsClient.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5F60718293A4C03 /* PromptSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSeeder.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultPrompts.json; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationPromptItem.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationItem.swift; sourceTree = "<group>"; };
@@ -173,9 +171,9 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B78 /* ProvocationFeature.swift */,
-				E1B2C3D4E5F60718293A4B01 /* FoundationModelsClient.swift */,
-				E1B2C3D4E5F60718293A4B02 /* PromptsClient.swift */,
-				E1B2C3D4E5F60718293A4B03 /* PromptSeeder.swift */,
+				F1B2C3D4E5F60718293A4C01 /* FoundationModelsClient.swift */,
+				F1B2C3D4E5F60718293A4C02 /* PromptsClient.swift */,
+				F1B2C3D4E5F60718293A4C03 /* PromptSeeder.swift */,
 				E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */,
 				E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */,
 				E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */,
@@ -215,7 +213,6 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B7C /* DataContainer.swift */,
-				E1B2C3D4E5F60718293A4B04 /* ModelContainerDependency.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -329,10 +326,9 @@
 				E1B2C3D4E5F60718293A4B12 /* NoteCard.swift in Sources */,
 				E1B2C3D4E5F60718293A4B13 /* NoteCreationSheet.swift in Sources */,
 				E1B2C3D4E5F60718293A4B14 /* NotesClient.swift in Sources */,
-				E1B2C3D4E5F60718293A4B11 /* FoundationModelsClient.swift in Sources */,
-				E1B2C3D4E5F60718293A4B12 /* PromptsClient.swift in Sources */,
-				E1B2C3D4E5F60718293A4B13 /* PromptSeeder.swift in Sources */,
-				E1B2C3D4E5F60718293A4B14 /* ModelContainerDependency.swift in Sources */,
+				F1B2C3D4E5F60718293A4C11 /* FoundationModelsClient.swift in Sources */,
+				F1B2C3D4E5F60718293A4C12 /* PromptsClient.swift in Sources */,
+				F1B2C3D4E5F60718293A4C13 /* PromptSeeder.swift in Sources */,
 				E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */,
 				E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */,
 				E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */,

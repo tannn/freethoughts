@@ -35,7 +35,7 @@ struct NotesFeature {
         case navigateToNote(UUID)
     }
 
-    @Dependency(\.notesClient) var notesClient
+    @Dependency(NotesClient.self) var notesClient
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
