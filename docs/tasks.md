@@ -22,5 +22,5 @@ Important: Update the tasks progress while progressing. When starting a new task
 - Tab name displays app name instead of document title
 
 ### 04
-- **Status:** [ ] Not started
+- **Status:** [x] Fixed
 - click on quoted text in note. Text highlights. Overlay appears by the highlighted text (should not appear). Highlight the text without the overlay when selected from the note.

@@ -15,6 +15,7 @@ struct DocumentFeature {
         var currentSelection: TextSelection?
         var showSelectionPopover: Bool = false
         var scrollToAnchorRequest: AnchorRequest?
+        var isNavigatingToAnchor: Bool = false
         var hasSelectableText: Bool = true
     }
 
@@ -110,7 +111,7 @@ struct DocumentFeature {
 
             case .selectionChanged(let selection):
                 state.currentSelection = selection
-                state.showSelectionPopover = selection != nil
+                state.showSelectionPopover = selection != nil && !state.isNavigatingToAnchor
                 return .none
 
             case .dismissPopover:
@@ -128,6 +129,7 @@ struct DocumentFeature {
             case .scrollToAnchor(let page, let start, let end, let selectedText):
                 let request = AnchorRequest(page: page, start: start, end: end, selectedText: selectedText)
                 state.scrollToAnchorRequest = request
+                state.isNavigatingToAnchor = true
                 if let page {
                     state.currentPage = page + 1
                 }
@@ -139,6 +141,7 @@ struct DocumentFeature {
 
             case .clearHighlight:
                 state.scrollToAnchorRequest = nil
+                state.isNavigatingToAnchor = false
                 return .none
             }
         }
