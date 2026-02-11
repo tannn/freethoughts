@@ -1,7 +1,7 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: "planned"
+lane: "doing"
 dependencies: []
 base_branch: 001-freethoughts-local-ai-document-reader-WP07
 base_commit: c83248952611adef995aa8c42ed91209ca24c231
@@ -683,3 +683,4 @@ case .saveProvocation:
 - 2026-02-11T05:51:10Z – claude-opus – shell_pid=23445 – lane=for_review – Ready for review: provocation picker, loading/streaming UI, note AI menu, and persistence
 - 2026-02-11T05:52:20Z – opencode – shell_pid=27525 – lane=doing – Started review via workflow command
 - 2026-02-11T05:57:19Z – opencode – shell_pid=27525 – lane=planned – Moved to planned
+- 2026-02-11T05:58:25Z – opencode – shell_pid=27525 – lane=doing – Started implementation via workflow command
