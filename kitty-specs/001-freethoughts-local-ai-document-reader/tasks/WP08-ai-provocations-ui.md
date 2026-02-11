@@ -1,7 +1,7 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: "doing"
+lane: "planned"
 dependencies: "[]"
 base_branch: 001-freethoughts-local-ai-document-reader-WP07
 base_commit: c83248952611adef995aa8c42ed91209ca24c231
@@ -694,3 +694,4 @@ case .saveProvocation:
 - 2026-02-11T06:29:09Z – OpenCode – shell_pid=34502 – lane=doing – Started implementation via workflow command
 - 2026-02-11T06:33:07Z – OpenCode – shell_pid=34502 – lane=for_review – Ready for review: reload notes after provocation save so note cards update immediately
 - 2026-02-11T06:34:32Z – gpt-5.2-codex – shell_pid=33618 – lane=doing – Started review via workflow command
+- 2026-02-11T06:36:51Z – gpt-5.2-codex – shell_pid=33618 – lane=planned – Moved to planned
