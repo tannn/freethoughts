@@ -122,14 +122,23 @@ struct ProvocationFeature {
                 }
 
             case .responseChunk(let chunk):
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.currentResponse += chunk
                 return .none
 
             case .generationComplete:
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.isGenerating = false
                 return .send(.saveProvocation)
 
             case .generationFailed(let error):
+                guard state.pendingRequest != nil else {
+                    return .none
+                }
                 state.isGenerating = false
                 state.error = error
                 return .none
