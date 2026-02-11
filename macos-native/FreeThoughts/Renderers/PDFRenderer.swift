@@ -6,6 +6,7 @@ struct PDFRenderer: NSViewRepresentable {
     @Binding var currentPage: Int
     @Binding var selection: PDFSelection?
     @Binding var selectionRect: CGRect?
+    var scrollToAnchor: AnchorRequest?
 
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
@@ -23,10 +24,36 @@ struct PDFRenderer: NSViewRepresentable {
             pdfView.document = document
         }
 
-        if let page = document.page(at: currentPage - 1),
-           pdfView.currentPage !== page {
-            pdfView.go(to: page)
+        if let anchor = scrollToAnchor,
+           anchor.id != context.coordinator.lastScrolledAnchorId {
+            context.coordinator.lastScrolledAnchorId = anchor.id
+            scrollToAnchorInPDF(pdfView: pdfView, anchor: anchor)
+        } else if scrollToAnchor == nil {
+            if let page = document.page(at: currentPage - 1),
+               pdfView.currentPage !== page {
+                pdfView.go(to: page)
+            }
         }
+    }
+
+    private func scrollToAnchorInPDF(pdfView: PDFView, anchor: AnchorRequest) {
+        guard let targetPage = anchor.page,
+              let page = document.page(at: targetPage) else { return }
+
+        if !anchor.selectedText.isEmpty {
+            let matches = document.findString(anchor.selectedText, withOptions: [.caseInsensitive])
+            if let match = matches.first(where: { $0.pages.contains(page) }) {
+                pdfView.setCurrentSelection(match, animate: true)
+                pdfView.scrollSelectionToVisible(nil)
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    pdfView.clearSelection()
+                }
+                return
+            }
+        }
+
+        pdfView.go(to: page)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -35,6 +62,7 @@ struct PDFRenderer: NSViewRepresentable {
 
     class Coordinator: NSObject, PDFViewDelegate {
         var parent: PDFRenderer
+        var lastScrolledAnchorId: UUID?
 
         init(_ parent: PDFRenderer) {
             self.parent = parent

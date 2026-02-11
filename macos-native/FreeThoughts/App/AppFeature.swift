@@ -8,6 +8,7 @@ struct AppFeature {
         var document: DocumentFeature.State = .init()
         var notes: NotesFeature.State = .init()
         var provocation: ProvocationFeature.State = .init()
+        var isSidebarCollapsed: Bool = false
         var isAIAvailable: Bool = false
         var aiAvailabilityChecked: Bool = false
     }
@@ -17,6 +18,7 @@ struct AppFeature {
         case notes(NotesFeature.Action)
         case provocation(ProvocationFeature.Action)
         case onAppear
+        case toggleSidebar
         case checkAIAvailability
         case aiAvailabilityResult(Bool)
     }
@@ -41,6 +43,33 @@ struct AppFeature {
                     .send(.checkAIAvailability),
                     .send(.provocation(.seedDefaultPrompts))
                 )
+
+            case .document(.documentLoaded(let document)):
+                return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+
+            case .document(.closeDocument):
+                return .send(.notes(.loadNotes(documentPath: "")))
+
+            case .document(.addNoteFromSelection):
+                if let selection = state.document.currentSelection {
+                    return .send(.notes(.startNoteCreation(selection)))
+                }
+                return .none
+
+            case .notes(.navigateToNote(let noteId)):
+                guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
+                    return .none
+                }
+                return .send(.document(.scrollToAnchor(
+                    page: note.anchorPage,
+                    start: note.anchorStart,
+                    end: note.anchorEnd,
+                    selectedText: note.selectedText
+                )))
+
+            case .toggleSidebar:
+                state.isSidebarCollapsed.toggle()
+                return .none
 
             case .checkAIAvailability:
                 return .run { send in

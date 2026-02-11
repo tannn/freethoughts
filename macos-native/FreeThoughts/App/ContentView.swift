@@ -4,37 +4,79 @@ import ComposableArchitecture
 struct ContentView: View {
     @Bindable var store: StoreOf<AppFeature>
     @State private var textSelection: String?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView {
-            VStack {
-                HStack {
-                    Text("NOTES")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding()
-
-                Spacer()
-
-                Text("No notes yet")
-                    .foregroundStyle(.tertiary)
-
-                Spacer()
+        HStack(spacing: 0) {
+            if store.isSidebarCollapsed {
+                collapsedIndicator
             }
-            .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
-        } detail: {
-            DocumentView(
-                store: store.scope(state: \.document, action: \.document),
-                textSelection: $textSelection
-            )
-            .frame(minWidth: 500)
+
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                NotesSidebar(
+                    store: store.scope(state: \.notes, action: \.notes),
+                    onToggleCollapse: {
+                        store.send(.toggleSidebar)
+                    }
+                )
+            } detail: {
+                DocumentView(
+                    store: store.scope(state: \.document, action: \.document),
+                    textSelection: $textSelection
+                )
+                .frame(minWidth: 500)
+                .overlay {
+                    if store.notes.editingNoteId != nil {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if let editingId = store.notes.editingNoteId {
+                                    store.send(.notes(.updateNoteText(editingId, store.notes.editingDraftText)))
+                                    store.send(.notes(.stopEditing))
+                                }
+                            }
+                    }
+                }
+            }
+            .navigationSplitViewStyle(.balanced)
+            .opacity(store.isSidebarCollapsed ? 1 : 1)
         }
         .frame(minWidth: 800, minHeight: 600)
+        .onChange(of: store.isSidebarCollapsed) { _, collapsed in
+            columnVisibility = collapsed ? .detailOnly : .all
+        }
         .onAppear {
             store.send(.onAppear)
         }
+        .sheet(isPresented: Binding(
+            get: { store.notes.isCreatingNote },
+            set: { if !$0 { store.send(.notes(.cancelNoteCreation)) } }
+        )) {
+            NoteCreationSheet(
+                store: store.scope(state: \.notes, action: \.notes)
+            )
+        }
+    }
+
+    private var collapsedIndicator: some View {
+        VStack {
+            Button {
+                store.send(.toggleSidebar)
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "chevron.right")
+                    Text("\(store.notes.notes.count)")
+                        .font(.caption)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 4)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(width: 30)
+        .background(.bar)
     }
 }
 
