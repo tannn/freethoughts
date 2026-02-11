@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "doing"
+lane: "done"
 dependencies: [WP05]
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
@@ -671,3 +671,4 @@ struct ProvocationFeature {
 - 2026-02-11T05:19:28Z – OpenCode – shell_pid=18913 – lane=doing – Started implementation via workflow command
 - 2026-02-11T05:28:05Z – OpenCode – shell_pid=18913 – lane=for_review – Ready for review: Verified DataContainer is present and wired; no code changes needed for reported build error.
 - 2026-02-11T05:29:39Z – gpt-5.2-codex – shell_pid=21439 – lane=doing – Started review via workflow command
+- 2026-02-11T05:33:13Z – gpt-5.2-codex – shell_pid=21439 – lane=done – Review passed: AI foundation client, prompt persistence/seeding, and availability checks implemented; resources wired
