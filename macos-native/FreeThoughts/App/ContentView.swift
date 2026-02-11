@@ -176,8 +176,13 @@ struct ContentView: View {
             }
     }
 
+    private var documentTitle: String {
+        store.document.document?.fileName ?? "FreeThoughts"
+    }
+
     private var baseView: some View {
         mainLayout
+            .navigationTitle(documentTitle)
             .frame(minWidth: 800, minHeight: 600)
             .animation(.easeOut(duration: 0.2), value: store.isSidebarCollapsed)
             .onChange(of: store.isSidebarCollapsed) { _, collapsed in

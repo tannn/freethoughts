@@ -18,7 +18,7 @@ Important: Update the tasks progress while progressing. When starting a new task
 - when text is highlighted and overlay appears, I must click to exit the overlay before I can highlight new text. If I try to select new text while the overlay is present, nothing happens. Let's modify this behavior so the user can immediately highlight new text
 
 ### 03
-- **Status:** [ ] Not started
+- **Status:** [x] Fixed
 - Tab name displays app name instead of document title
 
 ### 04
