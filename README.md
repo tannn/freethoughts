@@ -4,11 +4,11 @@ A native macOS document reader for reading, annotating, and thinking with AI —
 
 ![FreeThoughts app showing a PDF document with notes sidebar and AI provocations](docs/images/full-app-view.png)
 
-> **Alpha** — under active development, macOS only.
+> **Beta** — under active development
 
 ## What it does
 
-FreeThoughts is a local-first reading companion. Open a PDF, Markdown, or plain text file, select passages, take notes, and get AI-generated "provocations" that challenge your thinking — all without sending a single byte off your machine.
+FreeThoughts is a local-first reading companion. Open a PDF, Markdown, or plain text file, select passages, take notes, and get AI-generated "provocations" that challenge and extend your thinking — all without sending a single byte off your machine.
 
 ### Features
 
@@ -18,7 +18,7 @@ FreeThoughts is a local-first reading companion. Open a PDF, Markdown, or plain 
 - **Document reading** — clean two-pane reader for PDF, Markdown, and plain text files. Open via menu, keyboard shortcut, or drag-and-drop.
 - **Anchored notes** — select text and attach notes to specific passages. Notes appear in a collapsible sidebar ordered by document position. Click a note to jump back to its anchor.
 - **AI provocations** — select text or a note and choose a provocation style (Challenge, Expand, Simplify, Question) to get a short, thought-provoking AI response streamed in real time.
-- **Free software** — MIT licensed.
+- **Free software** — GPLv3.
 
 ### Requirements
 
