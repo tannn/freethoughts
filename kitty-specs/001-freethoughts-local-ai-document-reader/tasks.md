@@ -228,12 +228,12 @@ This document breaks down the FreeThoughts implementation into work packages and
 **Estimated Lines**: ~350
 
 **Included Subtasks**:
-- [ ] T048: Handle corrupted/unreadable files with error alert
-- [ ] T049: Detect and handle PDFs with no selectable text (mockup #13)
-- [ ] T050: Show AI unavailable message when Foundation Models not supported (mockup #12)
-- [ ] T051: Implement all keyboard shortcuts per mockup table
-- [ ] T052: Add smooth animations (sidebar collapse, scroll-to-anchor)
-- [ ] T053: Handle large documents gracefully (progressive loading message)
+- [x] T048: Handle corrupted/unreadable files with error alert
+- [x] T049: Detect and handle PDFs with no selectable text (mockup #13)
+- [x] T050: Show AI unavailable message when Foundation Models not supported (mockup #12)
+- [x] T051: Implement all keyboard shortcuts per mockup table
+- [x] T052: Add smooth animations (sidebar collapse, scroll-to-anchor)
+- [x] T053: Handle large documents gracefully (progressive loading message)
 
 **Success Criteria**:
 - Errors display user-friendly messages
