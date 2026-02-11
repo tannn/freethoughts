@@ -1,6 +1,14 @@
 import ComposableArchitecture
 import Foundation
 
+struct AnchorRequest: Equatable, Identifiable {
+    let id = UUID()
+    let page: Int?
+    let start: Int
+    let end: Int
+    let selectedText: String
+}
+
 @Reducer
 struct DocumentFeature {
     @ObservableState
@@ -13,6 +21,7 @@ struct DocumentFeature {
         var zoomLevel: Double = 1.0
         var currentSelection: TextSelection?
         var showSelectionPopover: Bool = false
+        var scrollToAnchorRequest: AnchorRequest?
     }
 
     enum Action {
@@ -27,6 +36,8 @@ struct DocumentFeature {
         case dismissPopover
         case addNoteFromSelection
         case requestProvocationFromSelection
+        case scrollToAnchor(page: Int?, start: Int, end: Int, selectedText: String)
+        case clearHighlight
     }
 
     @Dependency(\.documentClient) var documentClient
@@ -101,6 +112,21 @@ struct DocumentFeature {
             case .requestProvocationFromSelection:
                 state.showSelectionPopover = false
                 // Provocation request will be handled by WP07/WP08
+                return .none
+
+            case .scrollToAnchor(let page, let start, let end, let selectedText):
+                let request = AnchorRequest(page: page, start: start, end: end, selectedText: selectedText)
+                state.scrollToAnchorRequest = request
+                if let page {
+                    state.currentPage = page + 1
+                }
+                return .run { send in
+                    try await Task.sleep(for: .seconds(2))
+                    await send(.clearHighlight)
+                }
+
+            case .clearHighlight:
+                state.scrollToAnchorRequest = nil
                 return .none
             }
         }

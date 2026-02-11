@@ -3,27 +3,38 @@ import SwiftUI
 struct NoteCard: View {
     let note: NoteItem
     let isEditing: Bool
+    @Binding var draftText: String
     let onTap: () -> Void
     let onEdit: () -> Void
     let onSave: (String) -> Void
+    let onCancel: () -> Void
     let onDelete: () -> Void
     let onProvocation: () -> Void
 
-    @State private var editText: String = ""
-    @State private var showDeleteConfirmation = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(action: onTap) {
-                Text(truncatedExcerpt)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+            // Header: excerpt + page indicator
+            HStack(spacing: 6) {
+                Button(action: onTap) {
+                    Text(truncatedExcerpt)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+
+                if let page = note.anchorPage {
+                    Text("p.\(page + 1)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(.quaternary, in: Capsule())
+                }
             }
-            .buttonStyle(.plain)
+            .padding(8)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
 
             if isEditing {
                 editingView
@@ -34,17 +45,6 @@ struct NoteCard: View {
         .padding(12)
         .background(.background, in: RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-        .confirmationDialog(
-            "Delete Note",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                onDelete()
-            }
-        } message: {
-            Text("This action cannot be undone.")
-        }
     }
 
     private var truncatedExcerpt: String {
@@ -61,7 +61,6 @@ struct NoteCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    editText = note.content
                     onEdit()
                 }
 
@@ -82,30 +81,46 @@ struct NoteCard: View {
 
     private var editingView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextEditor(text: $editText)
+            TextEditor(text: $draftText)
                 .font(.body)
-                .frame(minHeight: 60)
+                .frame(minHeight: 60, maxHeight: 200)
                 .scrollContentBackground(.hidden)
-                .padding(4)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                .padding(8)
+                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.accentColor, lineWidth: 1)
+                )
 
             HStack {
                 Button("Delete", role: .destructive) {
-                    showDeleteConfirmation = true
+                    onDelete()
                 }
                 .font(.caption)
 
                 Spacer()
 
+                Button("Cancel") {
+                    onCancel()
+                }
+                .font(.caption)
+
                 Button("Done") {
-                    onSave(editText)
+                    onSave(draftText)
                 }
                 .font(.caption)
                 .buttonStyle(.borderedProminent)
             }
         }
-        .onAppear {
-            editText = note.content
+        .onExitCommand {
+            onCancel()
+        }
+        .onKeyPress(.delete, phases: .down) { keyPress in
+            if keyPress.modifiers.contains(.command) {
+                onDelete()
+                return .handled
+            }
+            return .ignored
         }
     }
 }

@@ -6,6 +6,7 @@ struct SelectableTextView: NSViewRepresentable {
     @Binding var selection: String?
     @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
+    var scrollToRange: NSRange?
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -32,6 +33,28 @@ struct SelectableTextView: NSViewRepresentable {
         if textView.textStorage?.string != attributedString.string {
             textView.textStorage?.setAttributedString(attributedString)
         }
+
+        // Handle scroll-to-range for note navigation
+        if let range = scrollToRange,
+           range != context.coordinator.lastScrolledRange,
+           let textStorage = textView.textStorage,
+           range.location + range.length <= textStorage.length {
+            context.coordinator.lastScrolledRange = range
+
+            // Scroll to the range
+            textView.scrollRangeToVisible(range)
+
+            // Add temporary highlight
+            let highlightColor = NSColor.controlAccentColor.withAlphaComponent(0.3)
+            textStorage.addAttribute(.backgroundColor, value: highlightColor, range: range)
+
+            // Remove highlight after delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                guard let storage = textView.textStorage,
+                      range.location + range.length <= storage.length else { return }
+                storage.removeAttribute(.backgroundColor, range: range)
+            }
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -40,6 +63,7 @@ struct SelectableTextView: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: SelectableTextView
+        var lastScrolledRange: NSRange?
 
         init(_ parent: SelectableTextView) {
             self.parent = parent

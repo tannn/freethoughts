@@ -11,6 +11,8 @@ struct NotesFeature {
         var noteCreationSelection: TextSelection?
         var noteCreationContent: String = ""
         var editingNoteId: UUID?
+        var editingDraftText: String = ""
+        var confirmingDeleteNoteId: UUID?
     }
 
     enum Action {
@@ -21,11 +23,15 @@ struct NotesFeature {
         case updateNoteContent(String)
         case saveNote
         case noteSaved(NoteItem)
+        case requestDeleteNote(UUID)
+        case confirmDeleteNote
+        case cancelDeleteNote
         case deleteNote(UUID)
         case noteDeleted(UUID)
         case startEditing(UUID)
         case stopEditing
         case updateNoteText(UUID, String)
+        case updateDraftText(String)
         case navigateToNote(UUID)
     }
 
@@ -42,7 +48,12 @@ struct NotesFeature {
                 }
 
             case .notesLoaded(let notes):
-                state.notes = notes.sorted { $0.anchorStart < $1.anchorStart }
+                state.notes = notes.sorted { note1, note2 in
+                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
+                        if page1 != page2 { return page1 < page2 }
+                    }
+                    return note1.anchorStart < note2.anchorStart
+                }
                 return .none
 
             case .startNoteCreation(let selection):
@@ -86,7 +97,28 @@ struct NotesFeature {
 
             case .noteSaved(let note):
                 state.notes.append(note)
-                state.notes.sort { $0.anchorStart < $1.anchorStart }
+                state.notes.sort { note1, note2 in
+                    if let page1 = note1.anchorPage, let page2 = note2.anchorPage {
+                        if page1 != page2 { return page1 < page2 }
+                    }
+                    return note1.anchorStart < note2.anchorStart
+                }
+                return .none
+
+            case .requestDeleteNote(let id):
+                state.confirmingDeleteNoteId = id
+                return .none
+
+            case .confirmDeleteNote:
+                guard let id = state.confirmingDeleteNoteId else { return .none }
+                state.confirmingDeleteNoteId = nil
+                return .run { send in
+                    try await notesClient.deleteNote(id)
+                    await send(.noteDeleted(id))
+                }
+
+            case .cancelDeleteNote:
+                state.confirmingDeleteNoteId = nil
                 return .none
 
             case .deleteNote(let id):
@@ -97,14 +129,26 @@ struct NotesFeature {
 
             case .noteDeleted(let id):
                 state.notes.removeAll { $0.id == id }
+                if state.editingNoteId == id {
+                    state.editingNoteId = nil
+                    state.editingDraftText = ""
+                }
                 return .none
 
             case .startEditing(let id):
                 state.editingNoteId = id
+                if let note = state.notes.first(where: { $0.id == id }) {
+                    state.editingDraftText = note.content
+                }
                 return .none
 
             case .stopEditing:
                 state.editingNoteId = nil
+                state.editingDraftText = ""
+                return .none
+
+            case .updateDraftText(let text):
+                state.editingDraftText = text
                 return .none
 
             case .updateNoteText(let id, let text):

@@ -57,6 +57,16 @@ struct DocumentView: View {
         }
     }
 
+    /// Convert the current anchor request to an NSRange for text renderers
+    private var textScrollToRange: NSRange? {
+        guard let request = store.scrollToAnchorRequest,
+              request.page == nil else {
+            return nil
+        }
+        let length = max(0, request.end - request.start)
+        return NSRange(location: request.start, length: length)
+    }
+
     private func updateSelection() {
         guard let document = store.document else { return }
 
@@ -98,7 +108,8 @@ struct DocumentView: View {
                 ),
                 selection: $pdfSelection,
                 selectionRect: $selectionRect,
-                zoomLevel: store.zoomLevel
+                zoomLevel: store.zoomLevel,
+                scrollToAnchor: store.scrollToAnchorRequest
             )
 
         case .text(let content):
@@ -107,14 +118,16 @@ struct DocumentView: View {
                     content: content,
                     selection: $textSelection,
                     selectionRange: $selectionRange,
-                    selectionRect: $selectionRect
+                    selectionRect: $selectionRect,
+                    scrollToRange: textScrollToRange
                 )
             } else {
                 PlainTextRenderer(
                     content: content,
                     selection: $textSelection,
                     selectionRange: $selectionRange,
-                    selectionRect: $selectionRect
+                    selectionRect: $selectionRect,
+                    scrollToRange: textScrollToRange
                 )
             }
         }

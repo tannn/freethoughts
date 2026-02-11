@@ -31,6 +31,12 @@ struct FreeThoughtsApp: App {
                 }
                 .keyboardShortcut("o", modifiers: .command)
             }
+            CommandGroup(after: .sidebar) {
+                Button("Toggle Notes Sidebar") {
+                    store.send(.toggleSidebar)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+            }
         }
     }
 }

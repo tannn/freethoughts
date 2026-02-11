@@ -10,6 +10,7 @@ struct AppFeature {
         var document: DocumentFeature.State = .init()
         var notes: NotesFeature.State = .init()
         var provocation: ProvocationFeature.State = .init()
+        var isSidebarCollapsed: Bool = false
     }
 
     enum Action {
@@ -19,6 +20,7 @@ struct AppFeature {
         case onAppear
         case openFilePicker
         case fileSelected(URL)
+        case toggleSidebar
     }
 
     var body: some ReducerOf<Self> {
@@ -73,6 +75,21 @@ struct AppFeature {
                 if let selection = state.document.currentSelection {
                     return .send(.notes(.startNoteCreation(selection)))
                 }
+                return .none
+
+            case .notes(.navigateToNote(let noteId)):
+                guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
+                    return .none
+                }
+                return .send(.document(.scrollToAnchor(
+                    page: note.anchorPage,
+                    start: note.anchorStart,
+                    end: note.anchorEnd,
+                    selectedText: note.selectedText
+                )))
+
+            case .toggleSidebar:
+                state.isSidebarCollapsed.toggle()
                 return .none
 
             case .document, .notes, .provocation:

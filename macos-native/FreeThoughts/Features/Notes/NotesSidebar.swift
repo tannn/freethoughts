@@ -3,6 +3,7 @@ import ComposableArchitecture
 
 struct NotesSidebar: View {
     @Bindable var store: StoreOf<NotesFeature>
+    var onToggleCollapse: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +21,14 @@ struct NotesSidebar: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
+
+                if let onToggleCollapse {
+                    Button(action: onToggleCollapse) {
+                        Image(systemName: "sidebar.left")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
             }
             .padding()
 
@@ -35,6 +44,10 @@ struct NotesSidebar: View {
                             NoteCard(
                                 note: note,
                                 isEditing: store.editingNoteId == note.id,
+                                draftText: Binding(
+                                    get: { store.editingDraftText },
+                                    set: { store.send(.updateDraftText($0)) }
+                                ),
                                 onTap: {
                                     store.send(.navigateToNote(note.id))
                                 },
@@ -45,20 +58,50 @@ struct NotesSidebar: View {
                                     store.send(.updateNoteText(note.id, text))
                                     store.send(.stopEditing)
                                 },
+                                onCancel: {
+                                    store.send(.stopEditing)
+                                },
                                 onDelete: {
-                                    store.send(.deleteNote(note.id))
+                                    store.send(.requestDeleteNote(note.id))
                                 },
                                 onProvocation: {
                                     // Handled in WP08
                                 }
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    store.send(.requestDeleteNote(note.id))
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .padding()
                 }
+                .onTapGesture {
+                    if let editingId = store.editingNoteId {
+                        store.send(.updateNoteText(editingId, store.editingDraftText))
+                        store.send(.stopEditing)
+                    }
+                }
             }
         }
         .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
+        .confirmationDialog(
+            "Delete Note",
+            isPresented: Binding(
+                get: { store.confirmingDeleteNoteId != nil },
+                set: { if !$0 { store.send(.cancelDeleteNote) } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                store.send(.confirmDeleteNote)
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
     }
 
     private var emptyState: some View {
