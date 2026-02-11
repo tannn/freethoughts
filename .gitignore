@@ -24,3 +24,4 @@ MEMORY.md
 .kittify/.dashboard
 # Excluded via sparse-checkout
 kitty-specs/
+!kitty-specs/
