@@ -11,8 +11,6 @@ struct NoteCard: View {
     let onDelete: () -> Void
     let onProvocation: () -> Void
 
-    @State private var showDeleteConfirmation = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header: excerpt + page indicator
@@ -47,17 +45,6 @@ struct NoteCard: View {
         .padding(12)
         .background(.background, in: RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-        .confirmationDialog(
-            "Delete Note",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                onDelete()
-            }
-        } message: {
-            Text("This action cannot be undone.")
-        }
     }
 
     private var truncatedExcerpt: String {
@@ -107,7 +94,7 @@ struct NoteCard: View {
 
             HStack {
                 Button("Delete", role: .destructive) {
-                    showDeleteConfirmation = true
+                    onDelete()
                 }
                 .font(.caption)
 
@@ -130,7 +117,7 @@ struct NoteCard: View {
         }
         .onKeyPress(.delete, phases: .down) { keyPress in
             if keyPress.modifiers.contains(.command) {
-                showDeleteConfirmation = true
+                onDelete()
                 return .handled
             }
             return .ignored

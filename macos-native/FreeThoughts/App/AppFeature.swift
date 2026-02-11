@@ -54,7 +54,8 @@ struct AppFeature {
                 return .send(.document(.scrollToAnchor(
                     page: note.anchorPage,
                     start: note.anchorStart,
-                    end: note.anchorEnd
+                    end: note.anchorEnd,
+                    selectedText: note.selectedText
                 )))
 
             case .toggleSidebar:

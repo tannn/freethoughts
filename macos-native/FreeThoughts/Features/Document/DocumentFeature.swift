@@ -6,6 +6,7 @@ struct AnchorRequest: Equatable, Identifiable {
     let page: Int?
     let start: Int
     let end: Int
+    let selectedText: String
 }
 
 @Reducer
@@ -35,7 +36,7 @@ struct DocumentFeature {
         case dismissPopover
         case addNoteFromSelection
         case requestProvocationFromSelection
-        case scrollToAnchor(page: Int?, start: Int, end: Int)
+        case scrollToAnchor(page: Int?, start: Int, end: Int, selectedText: String)
         case clearHighlight
     }
 
@@ -113,8 +114,8 @@ struct DocumentFeature {
                 // Provocation request will be handled by WP07/WP08
                 return .none
 
-            case .scrollToAnchor(let page, let start, let end):
-                let request = AnchorRequest(page: page, start: start, end: end)
+            case .scrollToAnchor(let page, let start, let end, let selectedText):
+                let request = AnchorRequest(page: page, start: start, end: end, selectedText: selectedText)
                 state.scrollToAnchorRequest = request
                 if let page {
                     state.currentPage = page + 1

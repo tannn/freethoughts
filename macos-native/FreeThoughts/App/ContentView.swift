@@ -25,6 +25,18 @@ struct ContentView: View {
                     textSelection: $textSelection
                 )
                 .frame(minWidth: 500)
+                .overlay {
+                    if store.notes.editingNoteId != nil {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if let editingId = store.notes.editingNoteId {
+                                    store.send(.notes(.updateNoteText(editingId, store.notes.editingDraftText)))
+                                    store.send(.notes(.stopEditing))
+                                }
+                            }
+                    }
+                }
             }
             .navigationSplitViewStyle(.balanced)
             .opacity(store.isSidebarCollapsed ? 1 : 1) // keep detail visible

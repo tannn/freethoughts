@@ -62,7 +62,7 @@ struct NotesSidebar: View {
                                     store.send(.stopEditing)
                                 },
                                 onDelete: {
-                                    store.send(.deleteNote(note.id))
+                                    store.send(.requestDeleteNote(note.id))
                                 },
                                 onProvocation: {
                                     // Handled in WP08
@@ -70,7 +70,7 @@ struct NotesSidebar: View {
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
-                                    store.send(.deleteNote(note.id))
+                                    store.send(.requestDeleteNote(note.id))
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -89,6 +89,20 @@ struct NotesSidebar: View {
             }
         }
         .frame(minWidth: 250, idealWidth: 280, maxWidth: 350)
+        .confirmationDialog(
+            "Delete Note",
+            isPresented: Binding(
+                get: { store.confirmingDeleteNoteId != nil },
+                set: { if !$0 { store.send(.cancelDeleteNote) } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                store.send(.confirmDeleteNote)
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
     }
 
     private var emptyState: some View {

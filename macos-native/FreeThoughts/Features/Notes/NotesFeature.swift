@@ -12,6 +12,7 @@ struct NotesFeature {
         var noteCreationContent: String = ""
         var editingNoteId: UUID?
         var editingDraftText: String = ""
+        var confirmingDeleteNoteId: UUID?
     }
 
     enum Action {
@@ -22,6 +23,9 @@ struct NotesFeature {
         case updateNoteContent(String)
         case saveNote
         case noteSaved(NoteItem)
+        case requestDeleteNote(UUID)
+        case confirmDeleteNote
+        case cancelDeleteNote
         case deleteNote(UUID)
         case noteDeleted(UUID)
         case startEditing(UUID)
@@ -99,6 +103,22 @@ struct NotesFeature {
                     }
                     return note1.anchorStart < note2.anchorStart
                 }
+                return .none
+
+            case .requestDeleteNote(let id):
+                state.confirmingDeleteNoteId = id
+                return .none
+
+            case .confirmDeleteNote:
+                guard let id = state.confirmingDeleteNoteId else { return .none }
+                state.confirmingDeleteNoteId = nil
+                return .run { send in
+                    try await notesClient.deleteNote(id)
+                    await send(.noteDeleted(id))
+                }
+
+            case .cancelDeleteNote:
+                state.confirmingDeleteNoteId = nil
                 return .none
 
             case .deleteNote(let id):

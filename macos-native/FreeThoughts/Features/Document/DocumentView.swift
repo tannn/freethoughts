@@ -108,7 +108,7 @@ struct DocumentView: View {
                 ),
                 selection: $pdfSelection,
                 selectionRect: $selectionRect,
-                scrollToPage: store.scrollToAnchorRequest?.page
+                scrollToAnchor: store.scrollToAnchorRequest
             )
 
         case .text(let content):
