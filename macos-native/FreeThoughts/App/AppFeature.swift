@@ -141,6 +141,15 @@ struct AppFeature {
                 state.provocation.isAIAvailable = available
                 return .none
 
+            case .provocation(.provocationSaved):
+                if let path = state.notes.currentDocumentPath, !path.isEmpty {
+                    return .send(.notes(.loadNotes(documentPath: path)))
+                }
+                if let document = state.document.document {
+                    return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+                }
+                return .none
+
             case .document, .notes, .provocation:
                 return .none
             }
