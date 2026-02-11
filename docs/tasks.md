@@ -14,8 +14,8 @@ Important: Update the tasks progress while progressing. When starting a new task
 - generating a provocation from selected text doesn't appear on side bar, probably because noteId is nil?
 
 ### 02
-- **Status:** [ ] Not started
-- when text is highlighted and overlay appears, I must click to exit the overlay before I can highlight new text. If I try to select new text while the overlay is present, nothing happens. Let’s modify this behavior so the user can immediately highlight new text 
+- **Status:** [x] Fixed
+- when text is highlighted and overlay appears, I must click to exit the overlay before I can highlight new text. If I try to select new text while the overlay is present, nothing happens. Let's modify this behavior so the user can immediately highlight new text
 
 ### 03
 - **Status:** [ ] Not started

@@ -26,14 +26,6 @@ struct DocumentView: View {
                 }
             }
 
-            if store.showSelectionPopover {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        store.send(.dismissPopover)
-                    }
-            }
-
             if store.showSelectionPopover,
                let selection = store.currentSelection {
                 selectionPopoverOverlay(selection: selection)
