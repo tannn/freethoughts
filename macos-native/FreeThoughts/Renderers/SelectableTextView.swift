@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftUI
 import AppKit
 
 struct SelectableTextView: NSViewRepresentable {
@@ -40,7 +41,9 @@ struct SelectableTextView: NSViewRepresentable {
            range.location + range.length <= textStorage.length {
             context.coordinator.lastScrolledRange = range
 
-            textView.scrollRangeToVisible(range)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                textView.scrollRangeToVisible(range)
+            }
 
             let highlightColor = NSColor.controlAccentColor.withAlphaComponent(0.3)
             textStorage.addAttribute(.backgroundColor, value: highlightColor, range: range)

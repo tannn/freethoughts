@@ -8,6 +8,9 @@ struct NotesSidebar: View {
     let generatingNoteId: UUID?
     let currentResponse: String
     let selectedPromptName: String
+    let isAIAvailable: Bool
+    let aiAvailabilityChecked: Bool
+    let hasSelectableText: Bool
     var onToggleCollapse: (() -> Void)?
     let onNoteProvocation: (UUID, UUID) -> Void
     let onCancelGeneration: () -> Void
@@ -40,6 +43,18 @@ struct NotesSidebar: View {
 
             Divider()
 
+            if !isAIAvailable && aiAvailabilityChecked {
+                AIUnavailableView()
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+            }
+
+            if !hasSelectableText {
+                noTextWarning
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+            }
+
             if store.notes.isEmpty {
                 emptyState
             } else {
@@ -57,6 +72,7 @@ struct NotesSidebar: View {
                                 isGenerating: isGenerating && generatingNoteId == note.id,
                                 currentResponse: currentResponse,
                                 selectedPromptName: selectedPromptName,
+                                isAIAvailable: isAIAvailable,
                                 onTap: {
                                     store.send(.navigateToNote(note.id))
                                 },
@@ -78,6 +94,7 @@ struct NotesSidebar: View {
                                 },
                                 onCancelGeneration: onCancelGeneration
                             )
+                            .transition(.opacity.combined(with: .move(edge: .trailing)))
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     store.send(.requestDeleteNote(note.id))
@@ -88,6 +105,7 @@ struct NotesSidebar: View {
                         }
                     }
                     .padding()
+                    .animation(.easeOut(duration: 0.15), value: store.notes.count)
                 }
                 .onTapGesture {
                     if let editingId = store.editingNoteId {
@@ -131,5 +149,24 @@ struct NotesSidebar: View {
 
             Spacer()
         }
+    }
+
+    private var noTextWarning: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "info.circle")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            Text("No selectable text detected")
+                .font(.headline)
+
+            Text("This document appears to be a scanned image. Notes cannot be anchored to text.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 }

@@ -6,6 +6,7 @@ import AppKit
 struct DocumentView: View {
     @Bindable var store: StoreOf<DocumentFeature>
     @Binding var textSelection: String?
+    let isAIAvailable: Bool
     @State private var pdfSelection: PDFSelection?
     @State private var selectionRect: CGRect?
     @State private var selectionRange: NSRange?
@@ -15,10 +16,13 @@ struct DocumentView: View {
             Group {
                 if store.isLoading {
                     loadingView
+                        .transition(.opacity)
                 } else if let document = store.document {
                     documentContent(document)
+                        .transition(.opacity)
                 } else {
                     emptyView
+                        .transition(.opacity)
                 }
             }
 
@@ -55,6 +59,7 @@ struct DocumentView: View {
         .onChange(of: selectionRange) { _, _ in
             updateSelection()
         }
+        .animation(.easeInOut(duration: 0.2), value: store.isLoading)
     }
 
     private var textScrollToRange: NSRange? {
@@ -154,7 +159,8 @@ struct DocumentView: View {
                 },
                 onDismiss: {
                     store.send(.dismissPopover)
-                }
+                },
+                isAIAvailable: isAIAvailable
             )
             .position(x: popoverX, y: popoverY)
         }
@@ -168,7 +174,13 @@ struct DocumentView: View {
             Text("Loading document...")
                 .foregroundStyle(.secondary)
                 .padding(.top)
+            if let size = store.loadingFileSize {
+                Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
+        .transition(.opacity)
     }
 
     private var emptyView: some View {

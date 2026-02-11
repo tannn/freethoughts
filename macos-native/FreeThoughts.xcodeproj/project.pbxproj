@@ -17,6 +17,9 @@
 		A1B2C3D4E5F60718293A4B84 /* Provocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B7A /* Provocation.swift */; };
 		A1B2C3D4E5F60718293A4B85 /* ProvocationPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */; };
 		A1B2C3D4E5F60718293A4B86 /* DataContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B7C /* DataContainer.swift */; };
+		E9A6B7C8D9E0F12345678901 /* AIUnavailableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A6B7C8D9E0F12345678902 /* AIUnavailableView.swift */; };
+		E9A6B7C8D9E0F12345678903 /* AnchorRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A6B7C8D9E0F12345678904 /* AnchorRequest.swift */; };
+		E9A6B7C8D9E0F12345678905 /* KeyPressModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A6B7C8D9E0F12345678906 /* KeyPressModifier.swift */; };
 		A1B2C3D4E5F60718293A4B89 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60718293A4B88 /* ComposableArchitecture */; };
 		B1B2C3D4E5F60718293A4B11 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B01 /* Document.swift */; };
 		B1B2C3D4E5F60718293A4B12 /* DocumentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */; };
@@ -80,6 +83,9 @@
 		F1B2C3D4E5F60718293A4B03 /* NotesSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSidebar.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B04 /* NoteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCard.swift; sourceTree = "<group>"; };
 		F1B2C3D4E5F60718293A4B05 /* NoteCreationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCreationSheet.swift; sourceTree = "<group>"; };
+		E9A6B7C8D9E0F12345678902 /* AIUnavailableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUnavailableView.swift; sourceTree = "<group>"; };
+		E9A6B7C8D9E0F12345678904 /* AnchorRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorRequest.swift; sourceTree = "<group>"; };
+		E9A6B7C8D9E0F12345678906 /* KeyPressModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyPressModifier.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +128,7 @@
 				A1B2C3D4E5F60718293A4B73 /* FreeThoughtsApp.swift */,
 				A1B2C3D4E5F60718293A4B74 /* ContentView.swift */,
 				A1B2C3D4E5F60718293A4B75 /* AppFeature.swift */,
+				E9A6B7C8D9E0F12345678906 /* KeyPressModifier.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -169,6 +176,7 @@
 				E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */,
 				E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */,
 				E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */,
+				E9A6B7C8D9E0F12345678902 /* AIUnavailableView.swift */,
 			);
 			path = Provocation;
 			sourceTree = "<group>";
@@ -184,6 +192,7 @@
 				E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */,
 				E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */,
 				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
+				E9A6B7C8D9E0F12345678904 /* AnchorRequest.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -293,6 +302,7 @@
 				A1B2C3D4E5F60718293A4B7D /* FreeThoughtsApp.swift in Sources */,
 				A1B2C3D4E5F60718293A4B7E /* ContentView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B7F /* AppFeature.swift in Sources */,
+				E9A6B7C8D9E0F12345678905 /* KeyPressModifier.swift in Sources */,
 				A1B2C3D4E5F60718293A4B80 /* DocumentFeature.swift in Sources */,
 				B1B2C3D4E5F60718293A4B12 /* DocumentClient.swift in Sources */,
 				B1B2C3D4E5F60718293A4B16 /* DocumentView.swift in Sources */,
@@ -303,6 +313,7 @@
 				F1B2C3D4E5F60718293A4B15 /* NoteCreationSheet.swift in Sources */,
 				A1B2C3D4E5F60718293A4B82 /* ProvocationFeature.swift in Sources */,
 				B1B2C3D4E5F60718293A4B11 /* Document.swift in Sources */,
+				E9A6B7C8D9E0F12345678903 /* AnchorRequest.swift in Sources */,
 				F1B2C3D4E5F60718293A4B11 /* NoteItem.swift in Sources */,
 				A1B2C3D4E5F60718293A4B83 /* Note.swift in Sources */,
 				A1B2C3D4E5F60718293A4B84 /* Provocation.swift in Sources */,
@@ -323,6 +334,7 @@
 				E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */,
 				E1B2C3D4E5F60718293A4B1B /* ProvocationLoadingView.swift in Sources */,
 				E1B2C3D4E5F60718293A4B1D /* ProvocationResponseView.swift in Sources */,
+				E9A6B7C8D9E0F12345678901 /* AIUnavailableView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

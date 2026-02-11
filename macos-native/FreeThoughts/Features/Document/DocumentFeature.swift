@@ -1,14 +1,6 @@
 import ComposableArchitecture
 import Foundation
 
-struct AnchorRequest: Equatable, Identifiable {
-    let id = UUID()
-    let page: Int?
-    let start: Int
-    let end: Int
-    let selectedText: String
-}
-
 @Reducer
 struct DocumentFeature {
     @ObservableState
@@ -16,12 +8,14 @@ struct DocumentFeature {
         var document: Document?
         var isLoading: Bool = false
         var error: String?
+        var loadingFileSize: Int?
         var currentPage: Int = 1
         var totalPages: Int = 1
         var zoomLevel: Double = 1.0
         var currentSelection: TextSelection?
         var showSelectionPopover: Bool = false
         var scrollToAnchorRequest: AnchorRequest?
+        var hasSelectableText: Bool = true
     }
 
     enum Action {
@@ -48,6 +42,7 @@ struct DocumentFeature {
             case .openDocument(let url):
                 state.isLoading = true
                 state.error = nil
+                state.loadingFileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue
                 state.currentSelection = nil
                 state.showSelectionPopover = false
                 return .run { send in
@@ -62,25 +57,34 @@ struct DocumentFeature {
             case .documentLoaded(let document):
                 state.document = document
                 state.isLoading = false
+                state.loadingFileSize = nil
                 state.currentPage = 1
                 if case .pdf(let pdfDoc) = document.content {
                     state.totalPages = pdfDoc.pageCount
+                    state.hasSelectableText = (0..<pdfDoc.pageCount).contains { pageIndex in
+                        guard let page = pdfDoc.page(at: pageIndex) else { return false }
+                        return page.string?.isEmpty == false
+                    }
                 } else {
                     state.totalPages = 1
+                    state.hasSelectableText = true
                 }
                 return .none
 
             case .documentLoadFailed(let error):
                 state.isLoading = false
                 state.error = error
+                state.loadingFileSize = nil
                 return .none
 
             case .closeDocument:
                 state.document = nil
+                state.loadingFileSize = nil
                 state.currentPage = 1
                 state.totalPages = 1
                 state.currentSelection = nil
                 state.showSelectionPopover = false
+                state.hasSelectableText = true
                 return .none
 
             case .setPage(let page):
