@@ -110,8 +110,15 @@ struct DocumentFeature {
                 return .none
 
             case .selectionChanged(let selection):
+                // Only update popover visibility when the selection content actually changes.
+                // This prevents the same selection from re-triggering the popover after it was
+                // dismissed by a user action (e.g. adding a note or generating a provocation).
+                let isSameContent = selection?.text == state.currentSelection?.text &&
+                                    selection?.range == state.currentSelection?.range
                 state.currentSelection = selection
-                state.showSelectionPopover = selection != nil && !state.isNavigatingToAnchor
+                if !isSameContent {
+                    state.showSelectionPopover = selection != nil && !state.isNavigatingToAnchor
+                }
                 return .none
 
             case .dismissPopover:
