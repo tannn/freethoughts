@@ -1,9 +1,13 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: "planned"
+lane: "doing"
 dependencies: []
+base_branch: 001-freethoughts-local-ai-document-reader-WP07
+base_commit: c83248952611adef995aa8c42ed91209ca24c231
+created_at: '2026-02-11T05:37:38.265706+00:00'
 subtasks: [T042, T043, T044, T045, T046, T047]
+shell_pid: "23445"
 history:
 - date: '2026-02-09'
   action: created
