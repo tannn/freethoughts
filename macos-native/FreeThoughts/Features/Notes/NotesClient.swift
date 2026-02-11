@@ -20,7 +20,9 @@ extension NotesClient: DependencyKey {
                 let predicate = #Predicate<Note> { note in
                     note.documentPath == documentPath
                 }
-                let descriptor = FetchDescriptor(predicate: predicate, sortBy: [SortDescriptor(\.anchorStart)])
+                let descriptor = FetchDescriptor(predicate: predicate, sortBy: [
+                    SortDescriptor(\.anchorStart)
+                ])
                 return try context.fetch(descriptor).map { NoteItem(from: $0) }
             },
             saveNote: { noteItem in

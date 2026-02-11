@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Challenge",
+        "promptTemplate": "Consider this text:\n\n\"{selection}\"\n\nFrom the document context:\n\n{context}\n\nChallenge the main assumptions or claims made here. What might be wrong, incomplete, or deserving of skepticism? What counterarguments could be made?",
+        "sortOrder": 1
+    },
+    {
+        "name": "Expand",
+        "promptTemplate": "Consider this text:\n\n\"{selection}\"\n\nFrom the document context:\n\n{context}\n\nWhat are the broader implications of this idea? What connections can you draw to other fields or concepts? How might this extend or apply in unexpected ways?",
+        "sortOrder": 2
+    },
+    {
+        "name": "Simplify",
+        "promptTemplate": "Consider this text:\n\n\"{selection}\"\n\nFrom the document context:\n\n{context}\n\nExplain the core idea here in simpler terms. What is the essential point being made? Strip away jargon and complexity to reveal the fundamental insight.",
+        "sortOrder": 3
+    },
+    {
+        "name": "Question",
+        "promptTemplate": "Consider this text:\n\n\"{selection}\"\n\nFrom the document context:\n\n{context}\n\nWhat questions does this raise? What would you want to investigate further? What remains unclear or unexplained?",
+        "sortOrder": 4
+    }
+]

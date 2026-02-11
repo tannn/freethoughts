@@ -41,14 +41,10 @@ struct SelectableTextView: NSViewRepresentable {
            range.location + range.length <= textStorage.length {
             context.coordinator.lastScrolledRange = range
 
-            // Scroll to the range
             textView.scrollRangeToVisible(range)
 
-            // Add temporary highlight
             let highlightColor = NSColor.controlAccentColor.withAlphaComponent(0.3)
             textStorage.addAttribute(.backgroundColor, value: highlightColor, range: range)
-
-            // Remove highlight after delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 guard let storage = textView.textStorage,
                       range.location + range.length <= storage.length else { return }

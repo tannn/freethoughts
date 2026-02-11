@@ -94,7 +94,6 @@ struct ContentView: View {
         }
         .ignoresSafeArea()
     }
-
     private var collapsedIndicator: some View {
         VStack {
             Button {

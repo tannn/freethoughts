@@ -11,6 +11,8 @@ struct AppFeature {
         var notes: NotesFeature.State = .init()
         var provocation: ProvocationFeature.State = .init()
         var isSidebarCollapsed: Bool = false
+        var isAIAvailable: Bool = false
+        var aiAvailabilityChecked: Bool = false
     }
 
     enum Action {
@@ -21,7 +23,11 @@ struct AppFeature {
         case openFilePicker
         case fileSelected(URL)
         case toggleSidebar
+        case checkAIAvailability
+        case aiAvailabilityResult(Bool)
     }
+
+    @Dependency(\.foundationModelsClient) var foundationModelsClient
 
     var body: some ReducerOf<Self> {
         Scope(state: \.document, action: \.document) {
@@ -37,6 +43,21 @@ struct AppFeature {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                return .merge(
+                    .send(.checkAIAvailability),
+                    .send(.provocation(.seedDefaultPrompts))
+                )
+
+            case .document(.documentLoaded(let document)):
+                return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+
+            case .document(.closeDocument):
+                return .send(.notes(.loadNotes(documentPath: "")))
+
+            case .document(.addNoteFromSelection):
+                if let selection = state.document.currentSelection {
+                    return .send(.notes(.startNoteCreation(selection)))
+                }
                 return .none
 
             case .openFilePicker:
@@ -65,18 +86,6 @@ struct AppFeature {
             case .fileSelected(let url):
                 return .send(.document(.openDocument(url)))
 
-            case .document(.documentLoaded(let document)):
-                return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
-
-            case .document(.closeDocument):
-                return .send(.notes(.loadNotes(documentPath: "")))
-
-            case .document(.addNoteFromSelection):
-                if let selection = state.document.currentSelection {
-                    return .send(.notes(.startNoteCreation(selection)))
-                }
-                return .none
-
             case .notes(.navigateToNote(let noteId)):
                 guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
                     return .none
@@ -90,6 +99,18 @@ struct AppFeature {
 
             case .toggleSidebar:
                 state.isSidebarCollapsed.toggle()
+                return .none
+
+            case .checkAIAvailability:
+                return .run { send in
+                    let available = await foundationModelsClient.isAvailable()
+                    await send(.aiAvailabilityResult(available))
+                }
+
+            case .aiAvailabilityResult(let available):
+                state.isAIAvailable = available
+                state.aiAvailabilityChecked = true
+                state.provocation.isAIAvailable = available
                 return .none
 
             case .document, .notes, .provocation:
