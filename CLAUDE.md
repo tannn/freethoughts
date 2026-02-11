@@ -11,11 +11,6 @@ See also: .kittify/AGENTS.md
 
 Focus on macOS app development, ignore files in `electron` directory
 
-When building xcode project skipMacroValidation may be needed:
-```
-xcodebuild -project macos-native/FreeThoughts.xcodeproj -scheme FreeThoughts -configuration Debug build -skipMacroValidation 2>&1
-```
-
 ## Git / Worktrees 
 When working in git worktrees, always verify the current directory with `pwd` before and after any git operations (checkout, rebase, merge). Never use `git checkout` in a worktree — use the worktree's directory directly.
 
