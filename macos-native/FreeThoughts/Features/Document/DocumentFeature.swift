@@ -17,6 +17,11 @@ struct DocumentFeature {
         var scrollToAnchorRequest: AnchorRequest?
         var isNavigatingToAnchor: Bool = false
         var hasSelectableText: Bool = true
+
+        // Tracks the selection that was active when the popover was explicitly dismissed,
+        // so re-renders that re-fire the same selection don't flash the popover back.
+        var dismissedSelectionText: String?
+        var dismissedSelectionRange: TextSelection.SelectionRange?
     }
 
     enum Action {
@@ -110,27 +115,39 @@ struct DocumentFeature {
                 return .none
 
             case .selectionChanged(let selection):
-                // Only update popover visibility when the selection content actually changes.
-                // This prevents the same selection from re-triggering the popover after it was
-                // dismissed by a user action (e.g. adding a note or generating a provocation).
-                let isSameContent = selection?.text == state.currentSelection?.text &&
-                                    selection?.range == state.currentSelection?.range
                 state.currentSelection = selection
-                if !isSameContent {
-                    state.showSelectionPopover = selection != nil && !state.isNavigatingToAnchor
+                if let selection {
+                    let isDismissed = selection.text == state.dismissedSelectionText &&
+                                      selection.range == state.dismissedSelectionRange
+                    if isDismissed {
+                        // Same selection that was dismissed — don't re-show popover
+                    } else {
+                        // Genuinely new selection — clear dismissed state and show popover
+                        state.dismissedSelectionText = nil
+                        state.dismissedSelectionRange = nil
+                        state.showSelectionPopover = !state.isNavigatingToAnchor
+                    }
+                } else {
+                    state.showSelectionPopover = false
                 }
                 return .none
 
             case .dismissPopover:
                 state.showSelectionPopover = false
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .addNoteFromSelection:
                 state.showSelectionPopover = false
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .requestProvocationFromSelection:
                 state.showSelectionPopover = false
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .scrollToAnchor(let page, let start, let end, let selectedText):
