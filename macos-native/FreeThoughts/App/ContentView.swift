@@ -20,31 +20,42 @@ struct ContentView: View {
         filePickerWatcherView
             .onKeyPress(keyCode: 31, modifiers: .command) {
                 store.send(.openFilePicker)
+                return true
             }
             .onKeyPress(keyCode: 45, modifiers: [.command, .shift]) {
                 store.send(.toggleSidebar)
+                return true
             }
             .onKeyPress(keyCode: 45, modifiers: .command) {
                 if store.document.currentSelection != nil {
                     store.send(.document(.addNoteFromSelection))
+                    return true
                 }
+                return false
             }
             .onKeyPress(keyCode: 35, modifiers: [.command, .shift]) {
                 if store.document.currentSelection != nil {
                     store.send(.document(.requestProvocationFromSelection))
+                    return true
                 }
+                return false
             }
             .onKeyPress(keyCode: 43, modifiers: .command) {
                 store.send(.openSettings)
+                return true
             }
             .onKeyPress(keyCode: 53) {
                 if store.showProvocationPicker {
                     store.send(.dismissProvocationPicker)
+                    return true
                 } else if store.notes.isCreatingNote {
                     store.send(.notes(.cancelNoteCreation))
+                    return true
                 } else if store.showSettings {
                     store.send(.closeSettings)
+                    return true
                 }
+                return false
             }
     }
 

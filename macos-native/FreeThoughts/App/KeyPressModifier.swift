@@ -4,7 +4,7 @@ import AppKit
 struct KeyPressModifier: ViewModifier {
     let keyCode: UInt16
     let modifiers: NSEvent.ModifierFlags
-    let action: () -> Void
+    let action: () -> Bool
 
     func body(content: Content) -> some View {
         content.background(KeyPressMonitor(keyCode: keyCode, modifiers: modifiers, action: action))
@@ -14,7 +14,7 @@ struct KeyPressModifier: ViewModifier {
 private struct KeyPressMonitor: NSViewRepresentable {
     let keyCode: UInt16
     let modifiers: NSEvent.ModifierFlags
-    let action: () -> Void
+    let action: () -> Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(keyCode: keyCode, modifiers: modifiers, action: action)
@@ -30,10 +30,10 @@ private struct KeyPressMonitor: NSViewRepresentable {
     final class Coordinator {
         private let keyCode: UInt16
         private let modifiers: NSEvent.ModifierFlags
-        private let action: () -> Void
+        private let action: () -> Bool
         private var monitor: Any?
 
-        init(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, action: @escaping () -> Void) {
+        init(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, action: @escaping () -> Bool) {
             self.keyCode = keyCode
             self.modifiers = modifiers
             self.action = action
@@ -45,8 +45,8 @@ private struct KeyPressMonitor: NSViewRepresentable {
                 guard let self else { return event }
                 let eventModifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
                 if event.keyCode == self.keyCode, eventModifiers == self.modifiers {
-                    self.action()
-                    return nil
+                    let handled = self.action()
+                    return handled ? nil : event
                 }
                 return event
             }
@@ -61,7 +61,7 @@ private struct KeyPressMonitor: NSViewRepresentable {
 }
 
 extension View {
-    func onKeyPress(keyCode: UInt16, modifiers: NSEvent.ModifierFlags = [], perform action: @escaping () -> Void) -> some View {
+    func onKeyPress(keyCode: UInt16, modifiers: NSEvent.ModifierFlags = [], perform action: @escaping () -> Bool) -> some View {
         modifier(KeyPressModifier(keyCode: keyCode, modifiers: modifiers, action: action))
     }
 }

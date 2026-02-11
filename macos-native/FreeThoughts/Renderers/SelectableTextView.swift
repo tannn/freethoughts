@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftUI
 import AppKit
 
 struct SelectableTextView: NSViewRepresentable {
