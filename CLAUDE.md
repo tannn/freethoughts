@@ -25,3 +25,10 @@ When given review feedback to fix, read the review feedback carefully and enumer
 
 ## General Behavior 
 Minimize exploratory codebase reading when the user provides specific instructions or feedback. Start from the specific files and issues mentioned, and expand only if needed.
+
+## Memory
+Read and populate `MEMORY.md` with repo specific-info as helpful context for other session. 
+
+## Development
+Use swift-expert agent when applicable.
+When given a bug report, first investigate. Create a plan to fix the bug before implementing.
