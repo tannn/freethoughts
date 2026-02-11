@@ -25,3 +25,4 @@ MEMORY.md
 # Excluded via sparse-checkout
 kitty-specs/
 !kitty-specs/
+macos-native/FreeThoughts.xcodeproj/project.xcworkspace/
