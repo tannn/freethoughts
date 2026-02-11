@@ -1,7 +1,7 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "doing"
+lane: "done"
 dependencies: [WP05]
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
@@ -448,3 +448,4 @@ if store.isSidebarCollapsed {
 - 2026-02-11T04:41:47Z – GitHub-Copilot – shell_pid=96875 – lane=doing – Started review via workflow command
 - 2026-02-11T04:44:16Z – GitHub-Copilot – shell_pid=96875 – lane=planned – Moved to planned
 - 2026-02-11T04:54:25Z – GitHub-Copilot – shell_pid=7419 – lane=doing – Started implementation via workflow command
+- 2026-02-11T05:14:44Z – GitHub-Copilot – shell_pid=7419 – lane=done – Marked done per request; rebase isolation pending
