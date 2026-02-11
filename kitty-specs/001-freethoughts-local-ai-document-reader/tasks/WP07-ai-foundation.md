@@ -1,14 +1,14 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "planned"
+lane: "doing"
 dependencies: []
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
 created_at: '2026-02-10T18:52:41.213719+00:00'
 subtasks: [T036, T037, T038, T039, T040, T041]
-shell_pid: "81359"
-agent: "GitHub Copilot"
+shell_pid: "90910"
+agent: "claude-opus"
 review_status: "has_feedback"
 reviewed_by: "Tanner"
 history:
@@ -660,3 +660,4 @@ struct ProvocationFeature {
 - 2026-02-10T23:36:30Z – claude-opus – shell_pid=77100 – lane=for_review – Fixed review feedback: (1) Added ProvocationPromptItem and ProvocationItem value types for TCA state (follows NoteItem pattern from WP05), (2) Real FoundationModels integration with #if canImport, SystemLanguageModel, LanguageModelSession, @available(macOS 26.0) guard. Build succeeds.
 - 2026-02-10T23:38:00Z – GitHub Copilot – shell_pid=81359 – lane=doing – Started review via workflow command
 - 2026-02-10T23:42:25Z – GitHub Copilot – shell_pid=81359 – lane=planned – Moved to planned
+- 2026-02-11T04:28:37Z – claude-opus – shell_pid=90910 – lane=doing – Started implementation via workflow command
