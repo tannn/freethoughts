@@ -1,7 +1,7 @@
 ---
 work_package_id: WP06
 title: Notes Polish
-lane: "doing"
+lane: "planned"
 dependencies: [WP05]
 base_branch: main
 base_commit: 6946f54996547120b25bdc1558e276f1ae2bf9c7
@@ -446,3 +446,4 @@ if store.isSidebarCollapsed {
 - 2026-02-11T04:39:59Z – claude-opus – shell_pid=96110 – lane=doing – Started implementation via workflow command
 - 2026-02-11T04:41:00Z – claude-opus – shell_pid=96110 – lane=for_review – Fix: clear editingNoteId and editingDraftText in noteDeleted when the deleted note matches the currently-edited note. Build succeeds.
 - 2026-02-11T04:41:47Z – GitHub-Copilot – shell_pid=96875 – lane=doing – Started review via workflow command
+- 2026-02-11T04:44:16Z – GitHub-Copilot – shell_pid=96875 – lane=planned – Moved to planned
