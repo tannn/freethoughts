@@ -2,7 +2,7 @@
 work_package_id: WP05
 title: Notes Core
 lane: "done"
-dependencies: []
+dependencies: [WP04]
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3
 created_at: '2026-02-10T18:41:07.276374+00:00'

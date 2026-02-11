@@ -2,7 +2,7 @@
 work_package_id: WP09
 title: Error Handling & Polish
 lane: "planned"
-dependencies: []
+dependencies: [WP06, WP08]
 subtasks: [T048, T049, T050, T051, T052, T053]
 history:
 - date: '2026-02-09'

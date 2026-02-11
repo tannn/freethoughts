@@ -2,7 +2,7 @@
 work_package_id: WP08
 title: AI Provocations UI
 lane: "done"
-dependencies: "[]"
+dependencies: "[WP07, WP05]"
 base_branch: 001-freethoughts-local-ai-document-reader-WP07
 base_commit: c83248952611adef995aa8c42ed91209ca24c231
 created_at: '2026-02-11T05:37:38.265706+00:00'
