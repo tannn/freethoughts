@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: AI Foundation
-lane: "doing"
+lane: "planned"
 dependencies: [WP05]
 base_branch: 001-freethoughts-local-ai-document-reader-WP01
 base_commit: abbaef5abf77d4d016429b797f2f6fe104ac4e9e
@@ -663,3 +663,4 @@ struct ProvocationFeature {
 - 2026-02-11T04:28:37Z – claude-opus – shell_pid=90910 – lane=doing – Started implementation via workflow command
 - 2026-02-11T04:37:26Z – claude-opus – shell_pid=90910 – lane=for_review – Fixed: (1) Restored full DocumentFeature and ContentView from main, (2) Fixed double context in generate() - now accepts single prompt, (3) Updated Xcode project with both main and WP07 files, (4) Updated WP07 dependencies to [WP05]. Build succeeds.
 - 2026-02-11T04:41:17Z – GitHub-Copilot – shell_pid=96587 – lane=doing – Started review via workflow command
+- 2026-02-11T04:44:00Z – GitHub-Copilot – shell_pid=96587 – lane=planned – Moved to planned
