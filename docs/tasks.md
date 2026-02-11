@@ -10,8 +10,8 @@ Important: Update the tasks progress while progressing. When starting a new task
 # Bugs
 
 ### 01
-- **Status:** [ ] Not started
-- generating a provocation from selected text doesn’t appear on side bar, probably because noteId is nil? 
+- **Status:** [x] Fixed
+- generating a provocation from selected text doesn't appear on side bar, probably because noteId is nil?
 
 ### 02
 - **Status:** [ ] Not started

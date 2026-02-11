@@ -42,6 +42,7 @@ struct AppFeature {
     }
 
     @Dependency(\.foundationModelsClient) var foundationModelsClient
+    @Dependency(\.notesClient) var notesClient
 
     var body: some ReducerOf<Self> {
         Scope(state: \.document, action: \.document) {
@@ -112,14 +113,30 @@ struct AppFeature {
                 )
                 state.showProvocationPicker = true
 
+                // Create a note to anchor the provocation so it appears in the sidebar
+                let noteItem = NoteItem(
+                    documentPath: selection.documentPath,
+                    anchorStart: selection.range.startOffset,
+                    anchorEnd: selection.range.endOffset,
+                    anchorPage: selection.range.page,
+                    selectedText: selection.text,
+                    content: ""
+                )
+
                 let request = ProvocationFeature.ProvocationRequest(
                     sourceType: .textSelection,
                     sourceText: selection.text,
                     context: state.provocationContext,
                     documentPath: selection.documentPath,
-                    noteId: nil
+                    noteId: noteItem.id
                 )
-                return .send(.provocation(.requestProvocation(request)))
+                return .merge(
+                    .run { send in
+                        let saved = try await notesClient.saveNote(noteItem)
+                        await send(.notes(.noteSaved(saved)))
+                    },
+                    .send(.provocation(.requestProvocation(request)))
+                )
 
             case .notes(.navigateToNote(let noteId)):
                 guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
