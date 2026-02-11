@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Notes Core
-lane: "doing"
+lane: "done"
 dependencies: []
 base_branch: main
 base_commit: b2555c95ab8a23d580ca2941c45d291b59f2a6d3

@@ -1,7 +1,7 @@
 ---
 work_package_id: WP09
 title: Error Handling & Polish
-lane: "doing"
+lane: "planned"
 dependencies: []
 subtasks: [T048, T049, T050, T051, T052, T053]
 history:

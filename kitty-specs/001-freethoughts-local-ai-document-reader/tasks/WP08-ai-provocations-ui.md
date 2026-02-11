@@ -1,7 +1,7 @@
 ---
 work_package_id: WP08
 title: AI Provocations UI
-lane: "doing"
+lane: "planned"
 dependencies: []
 subtasks: [T042, T043, T044, T045, T046, T047]
 history:
