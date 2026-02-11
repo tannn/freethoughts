@@ -25,6 +25,7 @@ struct ProvocationResponseView: View {
                 .font(.body)
                 .italic()
                 .foregroundStyle(.primary)
+                .textSelection(.enabled)
                 .animation(.easeIn(duration: 0.05), value: response)
 
             // Streaming indicator
