@@ -10,6 +10,7 @@ subtasks: [T048, T049, T050, T051, T052, T053]
 shell_pid: "53428"
 agent: "OpenCode"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'

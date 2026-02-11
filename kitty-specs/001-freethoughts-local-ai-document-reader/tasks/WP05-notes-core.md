@@ -10,6 +10,7 @@ subtasks: [T025, T026, T027, T028, T029, T030]
 shell_pid: "61932"
 agent: "copilot"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
@@ -697,3 +698,4 @@ case .document(.closeDocument):
 - 2026-02-10T19:28:40Z – copilot – shell_pid=61932 – lane=doing – Started review via workflow command
 - 2026-02-10T19:30:57Z – copilot – shell_pid=61932 – lane=done – Review passed: notes core matches spec, no issues found
 - 2026-02-10T23:00:49Z – copilot – shell_pid=61932 – lane=doing – Automated: start implementation
+- 2026-02-11T07:54:08Z – OpenCode – shell_pid=53428 – lane=done

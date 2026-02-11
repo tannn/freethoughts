@@ -10,6 +10,7 @@ subtasks: [T020, T021, T022, T023, T024]
 shell_pid: "49195"
 agent: "claude-opus"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
@@ -475,3 +476,4 @@ struct DocumentView: View {
 - 2026-02-10T18:39:55Z – claude-opus – shell_pid=49195 – lane=doing – Started review via workflow command
 - 2026-02-10T18:43:15Z – claude-opus – shell_pid=49195 – lane=done – Review passed: All 5 subtasks implemented correctly. TextSelection model clean with PDF/text range variants. SelectionPopover matches spec UI. Selection tracking works across all renderers via NSTextViewDelegate and PDFView notifications. Popover positioning uses correct screen-to-local coordinate conversion. Escape and click-outside dismissal both implemented with proper cleanup.
 - 2026-02-10T23:00:49Z – claude-opus – shell_pid=49195 – lane=doing – Automated: start implementation
+- 2026-02-11T07:54:08Z – OpenCode – shell_pid=53428 – lane=done

@@ -10,6 +10,7 @@ subtasks: [T015, T016, T017, T018, T019]
 shell_pid: "32221"
 agent: "github-copilot"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'

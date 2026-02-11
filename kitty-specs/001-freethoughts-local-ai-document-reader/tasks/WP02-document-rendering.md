@@ -10,6 +10,7 @@ subtasks: [T008, T009, T010, T011, T012, T013, T014]
 shell_pid: "21867"
 agent: "github-copilot"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
@@ -710,3 +711,4 @@ struct DocumentView: View {
 - 2026-02-10T10:28:59Z – github-copilot – shell_pid=21867 – lane=doing – Started review via workflow command
 - 2026-02-10T10:31:10Z – github-copilot – shell_pid=21867 – lane=done – Review passed: addressed markdown parsing, text selection, ASCII arrow; no new issues
 - 2026-02-10T23:00:49Z – github-copilot – shell_pid=21867 – lane=doing – Automated: start implementation
+- 2026-02-11T07:54:08Z – OpenCode – shell_pid=53428 – lane=done

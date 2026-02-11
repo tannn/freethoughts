@@ -10,6 +10,7 @@ subtasks: [T036, T037, T038, T039, T040, T041]
 shell_pid: "21439"
 agent: "gpt-5.2-codex"
 review_status: "has_feedback"
+assignee: opencode
 reviewed_by: "Tanner"
 history:
 - date: '2026-02-09'
