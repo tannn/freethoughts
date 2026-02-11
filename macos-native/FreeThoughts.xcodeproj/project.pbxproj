@@ -27,6 +27,7 @@
 		B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */; };
 		D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */; };
 		D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */; };
+		C1B2C3D4E5F60718293A4B01 /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		B1B2C3D4E5F60718293A4B07 /* SelectableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextView.swift; sourceTree = "<group>"; };
 		D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSelection.swift; sourceTree = "<group>"; };
 		D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionPopover.swift; sourceTree = "<group>"; };
+		C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +115,8 @@
 				B1B2C3D4E5F60718293A4B02 /* DocumentClient.swift */,
 				B1B2C3D4E5F60718293A4B06 /* DocumentView.swift */,
 				D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */,
+				D1B2C3D4E5F60718293A4B02 /* SelectionPopover.swift */,
+				C1B2C3D4E5F60718293A4B02 /* StatusBar.swift */,
 			);
 			path = Document;
 			sourceTree = "<group>";
@@ -140,6 +144,7 @@
 				A1B2C3D4E5F60718293A4B79 /* Note.swift */,
 				A1B2C3D4E5F60718293A4B7A /* Provocation.swift */,
 				A1B2C3D4E5F60718293A4B7B /* ProvocationPrompt.swift */,
+				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
 				D1B2C3D4E5F60718293A4B01 /* TextSelection.swift */,
 			);
 			path = Models;
@@ -263,6 +268,7 @@
 				B1B2C3D4E5F60718293A4B17 /* SelectableTextView.swift in Sources */,
 				D1B2C3D4E5F60718293A4B11 /* TextSelection.swift in Sources */,
 				D1B2C3D4E5F60718293A4B12 /* SelectionPopover.swift in Sources */,
+				C1B2C3D4E5F60718293A4B01 /* StatusBar.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
