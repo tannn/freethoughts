@@ -5,26 +5,10 @@ import UniformTypeIdentifiers
 import PDFKit
 
 @Reducer
-struct TabFeature {
-    typealias State = TabItem
-
-    enum Action {
-        case document(DocumentFeature.Action)
-    }
-
-    var body: some ReducerOf<Self> {
-        Scope(state: \.document, action: \.document) {
-            DocumentFeature()
-        }
-    }
-}
-
-@Reducer
 struct AppFeature {
     @ObservableState
     struct State: Equatable {
-        var tabs: IdentifiedArrayOf<TabItem> = []
-        var selectedTabID: UUID?
+        var document: DocumentFeature.State = .init()
         var notes: NotesFeature.State = .init()
         var provocation: ProvocationFeature.State = .init()
         var isSidebarCollapsed: Bool = false
@@ -33,21 +17,13 @@ struct AppFeature {
         var showSettings: Bool = false
         var showFilePicker: Bool = false
 
-        var activeTab: TabItem? {
-            guard let id = selectedTabID else { return nil }
-            return tabs[id: id]
-        }
-
         var activeDocumentPath: String? {
-            activeTab?.document.document?.canonicalPath
+            document.document?.canonicalPath
         }
     }
 
     enum Action {
-        case tab(IdentifiedActionOf<TabFeature>)
-        case selectTab(UUID)
-        case closeTab(UUID)
-        case closeCurrentTab
+        case document(DocumentFeature.Action)
         case notes(NotesFeature.Action)
         case provocation(ProvocationFeature.Action)
         case onAppear
@@ -66,6 +42,9 @@ struct AppFeature {
     @Dependency(\.notesClient) var notesClient
 
     var body: some ReducerOf<Self> {
+        Scope(state: \.document, action: \.document) {
+            DocumentFeature()
+        }
         Scope(state: \.notes, action: \.notes) {
             NotesFeature()
         }
@@ -81,37 +60,27 @@ struct AppFeature {
                     .send(.provocation(.seedDefaultPrompts))
                 )
 
-            // MARK: - Tab document actions
+            // MARK: - Document actions
 
-            case .tab(.element(id: let id, action: .document(.documentLoaded(let doc)))):
-                state.tabs[id: id]?.title = doc.fileName
-                if id == state.selectedTabID {
-                    return .send(.notes(.loadNotes(documentPath: doc.canonicalPath)))
-                }
-                return .none
+            case .document(.documentLoaded(let doc)):
+                return .send(.notes(.loadNotes(documentPath: doc.canonicalPath)))
 
-            case .tab(.element(id: let id, action: .document(.closeDocument))):
-                return .send(.closeTab(id))
-
-            case .tab(.element(id: let id, action: .document(.addNoteFromSelection))):
-                guard id == state.selectedTabID,
-                      let selection = state.tabs[id: id]?.document.currentSelection else {
+            case .document(.addNoteFromSelection):
+                guard let selection = state.document.currentSelection else {
                     return .none
                 }
                 return .send(.notes(.startNoteCreation(selection)))
 
-            case .tab(.element(id: _, action: .document(.requestProvocationFromSelection))):
+            case .document(.requestProvocationFromSelection):
                 return .none
 
-            case .tab(.element(id: let id, action: .document(.generateProvocationFromSelection(let promptId)))):
-                guard id == state.selectedTabID,
-                      let tab = state.tabs[id: id],
-                      let selection = tab.document.currentSelection else {
+            case .document(.generateProvocationFromSelection(let promptId)):
+                guard let selection = state.document.currentSelection else {
                     return .none
                 }
 
                 let context = getContext(
-                    from: tab.document.document,
+                    from: state.document.document,
                     around: selection
                 )
 
@@ -141,67 +110,26 @@ struct AppFeature {
                     .send(.provocation(.startGeneration))
                 )
 
-            case .tab:
+            case .document:
                 return .none
 
-            // MARK: - Tab management
+            // MARK: - File selection
 
             case .fileSelected(let url):
-                let canonicalPath = url.standardizedFileURL.path
-                if let existingTab = state.tabs.first(where: { $0.document.document?.canonicalPath == canonicalPath }) {
-                    return .send(.selectTab(existingTab.id))
-                }
-                let tab = TabItem()
-                state.tabs.append(tab)
-                state.selectedTabID = tab.id
-                return .send(.tab(.element(id: tab.id, action: .document(.openDocument(url)))))
-
-            case .selectTab(let id):
-                guard state.tabs[id: id] != nil else { return .none }
-                state.selectedTabID = id
-                if let path = state.tabs[id: id]?.document.document?.canonicalPath {
-                    return .send(.notes(.loadNotes(documentPath: path)))
-                }
-                return .send(.notes(.loadNotes(documentPath: "")))
-
-            case .closeTab(let id):
-                guard state.tabs[id: id] != nil else { return .none }
-                let wasSelected = state.selectedTabID == id
-                let removedIndex = state.tabs.index(id: id)!
-                state.tabs.remove(id: id)
-
-                if wasSelected {
-                    if state.tabs.isEmpty {
-                        state.selectedTabID = nil
-                    } else {
-                        let newIndex = min(removedIndex, state.tabs.count - 1)
-                        state.selectedTabID = state.tabs[newIndex].id
-                    }
-                }
-
-                if let selectedID = state.selectedTabID,
-                   let path = state.tabs[id: selectedID]?.document.document?.canonicalPath {
-                    return .send(.notes(.loadNotes(documentPath: path)))
-                }
-                return .send(.notes(.loadNotes(documentPath: "")))
-
-            case .closeCurrentTab:
-                guard let id = state.selectedTabID else { return .none }
-                return .send(.closeTab(id))
+                return .send(.document(.openDocument(url)))
 
             // MARK: - Notes
 
             case .notes(.navigateToNote(let noteId)):
-                guard let note = state.notes.notes.first(where: { $0.id == noteId }),
-                      let tabID = state.selectedTabID else {
+                guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
                     return .none
                 }
-                return .send(.tab(.element(id: tabID, action: .document(.scrollToAnchor(
+                return .send(.document(.scrollToAnchor(
                     page: note.anchorPage,
                     start: note.anchorStart,
                     end: note.anchorEnd,
                     selectedText: note.selectedText
-                )))))
+                )))
 
             case .requestNoteProvocation(let noteId, let promptId):
                 guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
@@ -291,9 +219,6 @@ struct AppFeature {
             case .notes, .provocation:
                 return .none
             }
-        }
-        .forEach(\.tabs, action: \.tab) {
-            TabFeature()
         }
     }
 

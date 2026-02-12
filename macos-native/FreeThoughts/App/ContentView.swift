@@ -3,7 +3,9 @@ import UniformTypeIdentifiers
 import ComposableArchitecture
 
 struct ContentView: View {
-    @Bindable var store: StoreOf<AppFeature>
+    @State var store = Store(initialState: AppFeature.State()) {
+        AppFeature()
+    }
     @State private var textSelection: String?
     @State private var isDropTargeted = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -11,6 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         finalView
+            .focusedValue(\.appStore, store)
     }
 
     private var finalView: some View {
@@ -22,7 +25,6 @@ struct ContentView: View {
         static let o: UInt16 = 31
         static let n: UInt16 = 45
         static let p: UInt16 = 35
-        static let w: UInt16 = 13
         static let comma: UInt16 = 43
         static let escape: UInt16 = 53
     }
@@ -33,31 +35,22 @@ struct ContentView: View {
                 store.send(.openFilePicker)
                 return true
             }
-            .onKeyPress(keyCode: KeyCode.w, modifiers: .command) { // Cmd+W: Close tab
-                if store.selectedTabID != nil {
-                    store.send(.closeCurrentTab)
-                    return true
-                }
-                return false
-            }
             .onKeyPress(keyCode: KeyCode.n, modifiers: [.command, .shift]) { // Cmd+Shift+N: Toggle sidebar
                 store.send(.toggleSidebar)
                 return true
             }
             .onKeyPress(keyCode: KeyCode.n, modifiers: .command) { // Cmd+N: Add note from selection
-                guard let id = store.selectedTabID,
-                      store.tabs[id: id]?.document.currentSelection != nil else {
+                guard store.document.currentSelection != nil else {
                     return false
                 }
-                store.send(.tab(.element(id: id, action: .document(.addNoteFromSelection))))
+                store.send(.document(.addNoteFromSelection))
                 return true
             }
             .onKeyPress(keyCode: KeyCode.p, modifiers: [.command, .shift]) { // Cmd+Shift+P: Provocation from selection
-                guard let id = store.selectedTabID,
-                      store.tabs[id: id]?.document.currentSelection != nil else {
+                guard store.document.currentSelection != nil else {
                     return false
                 }
-                store.send(.tab(.element(id: id, action: .document(.requestProvocationFromSelection))))
+                store.send(.document(.requestProvocationFromSelection))
                 return true
             }
             .onKeyPress(keyCode: KeyCode.comma, modifiers: .command) { // Cmd+,: Settings
@@ -91,22 +84,13 @@ struct ContentView: View {
             .alert(
                 "Unable to Open Document",
                 isPresented: Binding(
-                    get: {
-                        guard let id = store.selectedTabID else { return false }
-                        return store.tabs[id: id]?.document.error != nil
-                    },
-                    set: {
-                        if !$0, let id = store.selectedTabID {
-                            store.send(.tab(.element(id: id, action: .document(.clearError))))
-                        }
-                    }
+                    get: { store.document.error != nil },
+                    set: { if !$0 { store.send(.document(.clearError)) } }
                 ),
-                presenting: store.selectedTabID.flatMap { id in store.tabs[id: id]?.document.error }
+                presenting: store.document.error
             ) { _ in
                 Button("OK") {
-                    if let id = store.selectedTabID {
-                        store.send(.tab(.element(id: id, action: .document(.clearError))))
-                    }
+                    store.send(.document(.clearError))
                 }
             } message: { error in
                 Text(error)
@@ -178,8 +162,7 @@ struct ContentView: View {
     }
 
     private var documentTitle: String {
-        guard let id = store.selectedTabID else { return "FreeThoughts" }
-        return store.tabs[id: id]?.title ?? "FreeThoughts"
+        store.document.document?.fileName ?? "FreeThoughts"
     }
 
     private var baseView: some View {
@@ -189,9 +172,6 @@ struct ContentView: View {
             .animation(.easeOut(duration: 0.2), value: store.isSidebarCollapsed)
             .onChange(of: store.isSidebarCollapsed) { _, collapsed in
                 columnVisibility = collapsed ? .detailOnly : .all
-            }
-            .onChange(of: store.selectedTabID) { _, _ in
-                textSelection = nil
             }
             .onAppear {
                 store.send(.onAppear)
@@ -231,7 +211,7 @@ struct ContentView: View {
             selectedPromptName: selectedPromptName,
             isAIAvailable: store.isAIAvailable,
             aiAvailabilityChecked: store.aiAvailabilityChecked,
-            hasSelectableText: store.activeTab?.document.hasSelectableText ?? true,
+            hasSelectableText: store.document.hasSelectableText,
             onNoteProvocation: { noteId, promptId in
                 store.send(.requestNoteProvocation(noteId: noteId, promptId: promptId))
             },
@@ -243,23 +223,22 @@ struct ContentView: View {
 
     private var detailView: some View {
         VStack(spacing: 0) {
-            if store.selectedTabID != nil {
-                activeDocumentView
+            if store.document.document != nil || store.document.isLoading {
+                DocumentView(
+                    store: store.scope(state: \.document, action: \.document),
+                    textSelection: $textSelection,
+                    isAIAvailable: store.isAIAvailable,
+                    availablePrompts: store.provocation.availablePrompts
+                )
             } else {
                 emptyView
             }
 
-            if !store.tabs.isEmpty {
+            if store.document.document != nil {
                 StatusBar(
-                    tabs: Array(store.tabs),
-                    selectedTabID: store.selectedTabID,
-                    activeDocument: store.activeTab?.document,
-                    onSelectTab: { id in store.send(.selectTab(id)) },
-                    onCloseTab: { id in store.send(.closeTab(id)) },
+                    activeDocument: store.document,
                     onZoom: { zoom in
-                        if let id = store.selectedTabID {
-                            store.send(.tab(.element(id: id, action: .document(.setZoom(zoom)))))
-                        }
+                        store.send(.document(.setZoom(zoom)))
                     }
                 )
             }
@@ -288,21 +267,6 @@ struct ContentView: View {
                 )
                 .padding(.bottom, 48)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-    }
-
-    private var activeDocumentView: some View {
-        ZStack {
-            ForEach(store.scope(state: \.tabs, action: \.tab)) { tabStore in
-                if tabStore.id == store.selectedTabID {
-                    DocumentView(
-                        store: tabStore.scope(state: \.document, action: \.document),
-                        textSelection: $textSelection,
-                        isAIAvailable: store.isAIAvailable,
-                        availablePrompts: store.provocation.availablePrompts
-                    )
-                }
             }
         }
     }
@@ -409,9 +373,5 @@ private struct SettingsView: View {
 }
 
 #Preview {
-    ContentView(
-        store: Store(initialState: AppFeature.State()) {
-            AppFeature()
-        }
-    )
+    ContentView()
 }
