@@ -21,6 +21,14 @@ struct FreeThoughtsApp: App {
                     store.send(.openFilePicker)
                 }
                 .keyboardShortcut("o", modifiers: .command)
+
+                Divider()
+
+                Button("Close Tab") {
+                    store.send(.closeCurrentTab)
+                }
+                .keyboardShortcut("w", modifiers: .command)
+                .disabled(store.selectedTabID == nil)
             }
             CommandGroup(after: .sidebar) {
                 Button("Toggle Notes Sidebar") {
