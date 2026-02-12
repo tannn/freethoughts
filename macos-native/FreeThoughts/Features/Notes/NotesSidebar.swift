@@ -11,7 +11,6 @@ struct NotesSidebar: View {
     let isAIAvailable: Bool
     let aiAvailabilityChecked: Bool
     let hasSelectableText: Bool
-    var onToggleCollapse: (() -> Void)?
     let onNoteProvocation: (UUID, UUID) -> Void
     let onCancelGeneration: () -> Void
 
@@ -32,13 +31,6 @@ struct NotesSidebar: View {
                     .padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
 
-                if let onToggleCollapse {
-                    Button(action: onToggleCollapse) {
-                        Image(systemName: "sidebar.left")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                }
             }
             .padding()
 

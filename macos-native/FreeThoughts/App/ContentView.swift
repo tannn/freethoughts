@@ -227,9 +227,6 @@ struct ContentView: View {
             isAIAvailable: store.isAIAvailable,
             aiAvailabilityChecked: store.aiAvailabilityChecked,
             hasSelectableText: store.document.hasSelectableText,
-            onToggleCollapse: {
-                store.send(.toggleSidebar)
-            },
             onNoteProvocation: { noteId, promptId in
                 store.send(.requestNoteProvocation(noteId: noteId, promptId: promptId))
             },
