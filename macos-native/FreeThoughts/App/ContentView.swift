@@ -243,19 +243,25 @@ struct ContentView: View {
 
     private var detailView: some View {
         VStack(spacing: 0) {
-            if !store.tabs.isEmpty {
-                TabBar(
-                    tabs: Array(store.tabs),
-                    selectedTabID: store.selectedTabID,
-                    onSelect: { id in store.send(.selectTab(id)) },
-                    onClose: { id in store.send(.closeTab(id)) }
-                )
-            }
-
             if store.selectedTabID != nil {
                 activeDocumentView
             } else {
                 emptyView
+            }
+
+            if !store.tabs.isEmpty {
+                StatusBar(
+                    tabs: Array(store.tabs),
+                    selectedTabID: store.selectedTabID,
+                    activeDocument: store.activeTab?.document,
+                    onSelectTab: { id in store.send(.selectTab(id)) },
+                    onCloseTab: { id in store.send(.closeTab(id)) },
+                    onZoom: { zoom in
+                        if let id = store.selectedTabID {
+                            store.send(.tab(.element(id: id, action: .document(.setZoom(zoom)))))
+                        }
+                    }
+                )
             }
         }
         .frame(minWidth: 500)
@@ -280,7 +286,7 @@ struct ContentView: View {
                         store.send(.provocation(.clearResponse))
                     }
                 )
-                .padding(.bottom, 20)
+                .padding(.bottom, 48)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
