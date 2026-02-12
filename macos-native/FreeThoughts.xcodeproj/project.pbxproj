@@ -42,7 +42,6 @@
 		E1B2C3D4E5F60718293A4B15 /* DefaultPrompts.json in Resources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */; };
 		E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */; };
 		E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */; };
-		E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */; };
 		E1B2C3D4E5F60718293A4B1B /* ProvocationLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */; };
 		E1B2C3D4E5F60718293A4B1D /* ProvocationResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */; };
 /* End PBXBuildFile section */
@@ -80,7 +79,6 @@
 		E1B2C3D4E5F60718293A4B05 /* DefaultPrompts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DefaultPrompts.json; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B06 /* ProvocationPromptItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationPromptItem.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B07 /* ProvocationItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationItem.swift; sourceTree = "<group>"; };
-		E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationStylePicker.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationLoadingView.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvocationResponseView.swift; sourceTree = "<group>"; };
 		E9A6B7C8D9E0F12345678902 /* AIUnavailableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUnavailableView.swift; sourceTree = "<group>"; };
@@ -174,7 +172,6 @@
 				F1B2C3D4E5F60718293A4C01 /* FoundationModelsClient.swift */,
 				F1B2C3D4E5F60718293A4C02 /* PromptsClient.swift */,
 				F1B2C3D4E5F60718293A4C03 /* PromptSeeder.swift */,
-				E1B2C3D4E5F60718293A4B18 /* ProvocationStylePicker.swift */,
 				E1B2C3D4E5F60718293A4B1A /* ProvocationLoadingView.swift */,
 				E1B2C3D4E5F60718293A4B1C /* ProvocationResponseView.swift */,
 				E9A6B7C8D9E0F12345678902 /* AIUnavailableView.swift */,
@@ -331,7 +328,6 @@
 				F1B2C3D4E5F60718293A4C13 /* PromptSeeder.swift in Sources */,
 				E1B2C3D4E5F60718293A4B16 /* ProvocationPromptItem.swift in Sources */,
 				E1B2C3D4E5F60718293A4B17 /* ProvocationItem.swift in Sources */,
-				E1B2C3D4E5F60718293A4B19 /* ProvocationStylePicker.swift in Sources */,
 				E1B2C3D4E5F60718293A4B1B /* ProvocationLoadingView.swift in Sources */,
 				E1B2C3D4E5F60718293A4B1D /* ProvocationResponseView.swift in Sources */,
 				E9A6B7C8D9E0F12345678901 /* AIUnavailableView.swift in Sources */,

@@ -16,11 +16,6 @@ struct AppFeature {
         var aiAvailabilityChecked: Bool = false
         var showSettings: Bool = false
         var showFilePicker: Bool = false
-
-        // Provocation UI state
-        var showProvocationPicker: Bool = false
-        var provocationSourceText: String = ""
-        var provocationContext: String = ""
     }
 
     enum Action {
@@ -34,8 +29,6 @@ struct AppFeature {
         case checkAIAvailability
         case aiAvailabilityResult(Bool)
         case requestNoteProvocation(noteId: UUID, promptId: UUID)
-        case dismissProvocationPicker
-        case generateFromPicker
         case openSettings
         case closeSettings
         case closeFilePicker
@@ -102,18 +95,19 @@ struct AppFeature {
                 return .send(.document(.openDocument(url)))
 
             case .document(.requestProvocationFromSelection):
+                // DocumentFeature handles the overlay transition to provocation styles mode
+                return .none
+
+            case .document(.generateProvocationFromSelection(let promptId)):
                 guard let selection = state.document.currentSelection else {
                     return .none
                 }
 
-                state.provocationSourceText = selection.text
-                state.provocationContext = getContext(
+                let context = getContext(
                     from: state.document.document,
                     around: selection
                 )
-                state.showProvocationPicker = true
 
-                // Create a note to anchor the provocation so it appears in the sidebar
                 let noteItem = NoteItem(
                     documentPath: selection.documentPath,
                     anchorStart: selection.range.startOffset,
@@ -126,7 +120,7 @@ struct AppFeature {
                 let request = ProvocationFeature.ProvocationRequest(
                     sourceType: .textSelection,
                     sourceText: selection.text,
-                    context: state.provocationContext,
+                    context: context,
                     documentPath: selection.documentPath,
                     noteId: noteItem.id
                 )
@@ -135,7 +129,9 @@ struct AppFeature {
                         let saved = try await notesClient.saveNote(noteItem)
                         await send(.notes(.noteSaved(saved)))
                     },
-                    .send(.provocation(.requestProvocation(request)))
+                    .send(.provocation(.selectPrompt(promptId))),
+                    .send(.provocation(.requestProvocation(request))),
+                    .send(.provocation(.startGeneration))
                 )
 
             case .notes(.navigateToNote(let noteId)):
@@ -168,14 +164,6 @@ struct AppFeature {
                     .send(.provocation(.requestProvocation(request))),
                     .send(.provocation(.startGeneration))
                 )
-
-            case .dismissProvocationPicker:
-                state.showProvocationPicker = false
-                return .send(.provocation(.clearResponse))
-
-            case .generateFromPicker:
-                state.showProvocationPicker = false
-                return .send(.provocation(.startGeneration))
 
             case .toggleSidebar:
                 state.isSidebarCollapsed.toggle()

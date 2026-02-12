@@ -55,10 +55,7 @@ struct ContentView: View {
                 return true
             }
             .onKeyPress(keyCode: KeyCode.escape) { // Escape: Dismiss modals
-                if store.showProvocationPicker {
-                    store.send(.dismissProvocationPicker)
-                    return true
-                } else if store.notes.isCreatingNote {
+                if store.notes.isCreatingNote {
                     store.send(.notes(.cancelNoteCreation))
                     return true
                 } else if store.showSettings {
@@ -150,21 +147,6 @@ struct ContentView: View {
                 )
             }
             .sheet(isPresented: Binding(
-                get: { store.showProvocationPicker },
-                set: { if !$0 { store.send(.dismissProvocationPicker) } }
-            )) {
-                ProvocationStylePicker(
-                    store: store.scope(state: \.provocation, action: \.provocation),
-                    sourceText: store.provocationSourceText,
-                    onCancel: {
-                        store.send(.dismissProvocationPicker)
-                    },
-                    onGenerate: {
-                        store.send(.generateFromPicker)
-                    }
-                )
-            }
-            .sheet(isPresented: Binding(
                 get: { store.showSettings },
                 set: { if !$0 { store.send(.closeSettings) } }
             )) {
@@ -240,7 +222,8 @@ struct ContentView: View {
         DocumentView(
             store: store.scope(state: \.document, action: \.document),
             textSelection: $textSelection,
-            isAIAvailable: store.isAIAvailable
+            isAIAvailable: store.isAIAvailable,
+            availablePrompts: store.provocation.availablePrompts
         )
         .frame(minWidth: 500)
         .overlay {
