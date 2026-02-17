@@ -100,15 +100,17 @@ struct AppFeature {
                     documentPath: selection.documentPath,
                     noteId: noteItem.id
                 )
-                return .merge(
-                    .run { send in
+                return .run { send in
+                    do {
                         let saved = try await notesClient.saveNote(noteItem)
                         await send(.notes(.noteSaved(saved)))
-                    },
-                    .send(.provocation(.selectPrompt(promptId))),
-                    .send(.provocation(.requestProvocation(request))),
-                    .send(.provocation(.startGeneration))
-                )
+                    } catch {
+                        return
+                    }
+                    await send(.provocation(.selectPrompt(promptId)))
+                    await send(.provocation(.requestProvocation(request)))
+                    await send(.provocation(.startGeneration))
+                }
 
             case .document:
                 return .none

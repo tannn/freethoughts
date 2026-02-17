@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import ComposableArchitecture
 
 struct ContentView: View {
-    @State var store = Store(initialState: AppFeature.State()) {
+    @Bindable var store = Store(initialState: AppFeature.State()) {
         AppFeature()
     }
     @State private var textSelection: String?
