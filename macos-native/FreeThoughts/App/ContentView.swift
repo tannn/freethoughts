@@ -3,7 +3,9 @@ import UniformTypeIdentifiers
 import ComposableArchitecture
 
 struct ContentView: View {
-    @Bindable var store: StoreOf<AppFeature>
+    @Bindable var store = Store(initialState: AppFeature.State()) {
+        AppFeature()
+    }
     @State private var textSelection: String?
     @State private var isDropTargeted = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -11,6 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         finalView
+            .focusedSceneValue(\.appStore, store)
     }
 
     private var finalView: some View {
@@ -37,28 +40,25 @@ struct ContentView: View {
                 return true
             }
             .onKeyPress(keyCode: KeyCode.n, modifiers: .command) { // Cmd+N: Add note from selection
-                if store.document.currentSelection != nil {
-                    store.send(.document(.addNoteFromSelection))
-                    return true
+                guard store.document.currentSelection != nil else {
+                    return false
                 }
-                return false
+                store.send(.document(.addNoteFromSelection))
+                return true
             }
             .onKeyPress(keyCode: KeyCode.p, modifiers: [.command, .shift]) { // Cmd+Shift+P: Provocation from selection
-                if store.document.currentSelection != nil {
-                    store.send(.document(.requestProvocationFromSelection))
-                    return true
+                guard store.document.currentSelection != nil else {
+                    return false
                 }
-                return false
+                store.send(.document(.requestProvocationFromSelection))
+                return true
             }
             .onKeyPress(keyCode: KeyCode.comma, modifiers: .command) { // Cmd+,: Settings
                 store.send(.openSettings)
                 return true
             }
             .onKeyPress(keyCode: KeyCode.escape) { // Escape: Dismiss modals
-                if store.showProvocationPicker {
-                    store.send(.dismissProvocationPicker)
-                    return true
-                } else if store.notes.isCreatingNote {
+                if store.notes.isCreatingNote {
                     store.send(.notes(.cancelNoteCreation))
                     return true
                 } else if store.showSettings {
@@ -132,7 +132,7 @@ struct ContentView: View {
             ) { result in
                 switch result {
                 case .success(let url):
-                    store.send(.document(.openDocument(url)))
+                    store.send(.fileSelected(url))
                 case .failure:
                     break
                 }
@@ -150,21 +150,6 @@ struct ContentView: View {
                 )
             }
             .sheet(isPresented: Binding(
-                get: { store.showProvocationPicker },
-                set: { if !$0 { store.send(.dismissProvocationPicker) } }
-            )) {
-                ProvocationStylePicker(
-                    store: store.scope(state: \.provocation, action: \.provocation),
-                    sourceText: store.provocationSourceText,
-                    onCancel: {
-                        store.send(.dismissProvocationPicker)
-                    },
-                    onGenerate: {
-                        store.send(.generateFromPicker)
-                    }
-                )
-            }
-            .sheet(isPresented: Binding(
                 get: { store.showSettings },
                 set: { if !$0 { store.send(.closeSettings) } }
             )) {
@@ -176,8 +161,13 @@ struct ContentView: View {
             }
     }
 
+    private var documentTitle: String {
+        store.document.document?.fileName ?? "FreeThoughts"
+    }
+
     private var baseView: some View {
         mainLayout
+            .navigationTitle(documentTitle)
             .frame(minWidth: 800, minHeight: 600)
             .animation(.easeOut(duration: 0.2), value: store.isSidebarCollapsed)
             .onChange(of: store.isSidebarCollapsed) { _, collapsed in
@@ -222,9 +212,6 @@ struct ContentView: View {
             isAIAvailable: store.isAIAvailable,
             aiAvailabilityChecked: store.aiAvailabilityChecked,
             hasSelectableText: store.document.hasSelectableText,
-            onToggleCollapse: {
-                store.send(.toggleSidebar)
-            },
             onNoteProvocation: { noteId, promptId in
                 store.send(.requestNoteProvocation(noteId: noteId, promptId: promptId))
             },
@@ -235,11 +222,27 @@ struct ContentView: View {
     }
 
     private var detailView: some View {
-        DocumentView(
-            store: store.scope(state: \.document, action: \.document),
-            textSelection: $textSelection,
-            isAIAvailable: store.isAIAvailable
-        )
+        VStack(spacing: 0) {
+            if store.document.document != nil || store.document.isLoading {
+                DocumentView(
+                    store: store.scope(state: \.document, action: \.document),
+                    textSelection: $textSelection,
+                    isAIAvailable: store.isAIAvailable,
+                    availablePrompts: store.provocation.availablePrompts
+                )
+            } else {
+                emptyView
+            }
+
+            if store.document.document != nil {
+                StatusBar(
+                    activeDocument: store.document,
+                    onZoom: { zoom in
+                        store.send(.document(.setZoom(zoom)))
+                    }
+                )
+            }
+        }
         .frame(minWidth: 500)
         .overlay {
             if store.notes.editingNoteId != nil {
@@ -262,7 +265,7 @@ struct ContentView: View {
                         store.send(.provocation(.clearResponse))
                     }
                 )
-                .padding(.bottom, 20)
+                .padding(.bottom, 48)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -300,6 +303,35 @@ struct ContentView: View {
         }
         .ignoresSafeArea()
     }
+
+    private var emptyView: some View {
+        VStack(spacing: 20) {
+            HStack(spacing: 16) {
+                Image(systemName: "doc.fill")
+                Image(systemName: "text.alignleft")
+                Image(systemName: "doc.plaintext")
+            }
+            .font(.system(size: 32))
+            .foregroundStyle(.tertiary)
+
+            VStack(spacing: 8) {
+                Text("Open a Document")
+                    .font(.title2)
+                    .fontWeight(.medium)
+
+                Text("Drop a file here or use File -> Open (⌘ O)")
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("Supports: PDF, Markdown, Plain Text")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .padding(.top, 8)
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var collapsedIndicator: some View {
         VStack {
             Button {
@@ -341,9 +373,5 @@ private struct SettingsView: View {
 }
 
 #Preview {
-    ContentView(
-        store: Store(initialState: AppFeature.State()) {
-            AppFeature()
-        }
-    )
+    ContentView()
 }

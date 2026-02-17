@@ -17,10 +17,9 @@ struct AppFeature {
         var showSettings: Bool = false
         var showFilePicker: Bool = false
 
-        // Provocation UI state
-        var showProvocationPicker: Bool = false
-        var provocationSourceText: String = ""
-        var provocationContext: String = ""
+        var activeDocumentPath: String? {
+            document.document?.canonicalPath
+        }
     }
 
     enum Action {
@@ -34,14 +33,13 @@ struct AppFeature {
         case checkAIAvailability
         case aiAvailabilityResult(Bool)
         case requestNoteProvocation(noteId: UUID, promptId: UUID)
-        case dismissProvocationPicker
-        case generateFromPicker
         case openSettings
         case closeSettings
         case closeFilePicker
     }
 
     @Dependency(\.foundationModelsClient) var foundationModelsClient
+    @Dependency(\.notesClient) var notesClient
 
     var body: some ReducerOf<Self> {
         Scope(state: \.document, action: \.document) {
@@ -62,64 +60,67 @@ struct AppFeature {
                     .send(.provocation(.seedDefaultPrompts))
                 )
 
-            case .document(.documentLoaded(let document)):
-                return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+            // MARK: - Document actions
 
-            case .document(.closeDocument):
-                return .send(.notes(.loadNotes(documentPath: "")))
+            case .document(.documentLoaded(let doc)):
+                return .send(.notes(.loadNotes(documentPath: doc.canonicalPath)))
 
             case .document(.addNoteFromSelection):
-                if let selection = state.document.currentSelection {
-                    return .send(.notes(.startNoteCreation(selection)))
+                guard let selection = state.document.currentSelection else {
+                    return .none
                 }
-                return .none
-
-            case .openFilePicker:
-                return .run { send in
-                    let url = await MainActor.run { () -> URL? in
-                        let panel = NSOpenPanel()
-                        panel.allowsMultipleSelection = false
-                        panel.canChooseDirectories = false
-                        var types: [UTType] = [.pdf, .plainText]
-                        if let mdType = UTType(filenameExtension: "md") {
-                            types.append(mdType)
-                        }
-                        panel.allowedContentTypes = types
-
-                        let response = panel.runModal()
-                        if response == .OK {
-                            return panel.url
-                        }
-                        return nil
-                    }
-                    if let url {
-                        await send(.fileSelected(url))
-                    }
-                }
-
-            case .fileSelected(let url):
-                return .send(.document(.openDocument(url)))
+                return .send(.notes(.startNoteCreation(selection)))
 
             case .document(.requestProvocationFromSelection):
+                return .none
+
+            case .document(.generateProvocationFromSelection(let promptId)):
                 guard let selection = state.document.currentSelection else {
                     return .none
                 }
 
-                state.provocationSourceText = selection.text
-                state.provocationContext = getContext(
+                let context = getContext(
                     from: state.document.document,
                     around: selection
                 )
-                state.showProvocationPicker = true
+
+                let noteItem = NoteItem(
+                    documentPath: selection.documentPath,
+                    anchorStart: selection.range.startOffset,
+                    anchorEnd: selection.range.endOffset,
+                    anchorPage: selection.range.page,
+                    selectedText: selection.text,
+                    content: ""
+                )
 
                 let request = ProvocationFeature.ProvocationRequest(
                     sourceType: .textSelection,
                     sourceText: selection.text,
-                    context: state.provocationContext,
+                    context: context,
                     documentPath: selection.documentPath,
-                    noteId: nil
+                    noteId: noteItem.id
                 )
-                return .send(.provocation(.requestProvocation(request)))
+                return .run { send in
+                    do {
+                        let saved = try await notesClient.saveNote(noteItem)
+                        await send(.notes(.noteSaved(saved)))
+                    } catch {
+                        return
+                    }
+                    await send(.provocation(.selectPrompt(promptId)))
+                    await send(.provocation(.requestProvocation(request)))
+                    await send(.provocation(.startGeneration))
+                }
+
+            case .document:
+                return .none
+
+            // MARK: - File selection
+
+            case .fileSelected(let url):
+                return .send(.document(.openDocument(url)))
+
+            // MARK: - Notes
 
             case .notes(.navigateToNote(let noteId)):
                 guard let note = state.notes.notes.first(where: { $0.id == noteId }) else {
@@ -152,13 +153,32 @@ struct AppFeature {
                     .send(.provocation(.startGeneration))
                 )
 
-            case .dismissProvocationPicker:
-                state.showProvocationPicker = false
-                return .send(.provocation(.clearResponse))
+            // MARK: - File picker
 
-            case .generateFromPicker:
-                state.showProvocationPicker = false
-                return .send(.provocation(.startGeneration))
+            case .openFilePicker:
+                return .run { send in
+                    let url = await MainActor.run { () -> URL? in
+                        let panel = NSOpenPanel()
+                        panel.allowsMultipleSelection = false
+                        panel.canChooseDirectories = false
+                        var types: [UTType] = [.pdf, .plainText]
+                        if let mdType = UTType(filenameExtension: "md") {
+                            types.append(mdType)
+                        }
+                        panel.allowedContentTypes = types
+
+                        let response = panel.runModal()
+                        if response == .OK {
+                            return panel.url
+                        }
+                        return nil
+                    }
+                    if let url {
+                        await send(.fileSelected(url))
+                    }
+                }
+
+            // MARK: - UI
 
             case .toggleSidebar:
                 state.isSidebarCollapsed.toggle()
@@ -176,6 +196,8 @@ struct AppFeature {
                 state.showFilePicker = false
                 return .none
 
+            // MARK: - AI
+
             case .checkAIAvailability:
                 return .run { send in
                     let available = await foundationModelsClient.isAvailable()
@@ -191,12 +213,12 @@ struct AppFeature {
                 if let path = state.notes.currentDocumentPath, !path.isEmpty {
                     return .send(.notes(.loadNotes(documentPath: path)))
                 }
-                if let document = state.document.document {
-                    return .send(.notes(.loadNotes(documentPath: document.canonicalPath)))
+                if let path = state.activeDocumentPath {
+                    return .send(.notes(.loadNotes(documentPath: path)))
                 }
                 return .none
 
-            case .document, .notes, .provocation:
+            case .notes, .provocation:
                 return .none
             }
         }

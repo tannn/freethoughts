@@ -42,7 +42,21 @@ struct TextSelection: Equatable {
             return nil
         }
 
-        let range = SelectionRange.pdf(page: pageIndex, start: 0, end: string.count)
+        var startOffset = 0
+        var endOffset = string.count
+        let selectionRange = pdfSelection.range(at: 0, on: firstPage)
+        if selectionRange.location != NSNotFound {
+            startOffset = selectionRange.location
+            endOffset = selectionRange.location + selectionRange.length
+        } else if let pageString = firstPage.string {
+            let nsRange = (pageString as NSString).range(of: string, options: [])
+            if nsRange.location != NSNotFound {
+                startOffset = nsRange.location
+                endOffset = nsRange.location + nsRange.length
+            }
+        }
+
+        let range = SelectionRange.pdf(page: pageIndex, start: startOffset, end: endOffset)
 
         return TextSelection(
             text: string,

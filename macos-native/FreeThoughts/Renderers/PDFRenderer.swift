@@ -121,6 +121,15 @@ struct PDFRenderer: NSViewRepresentable {
 
         func selectionChanged(_ notification: Notification) {
             guard let pdfView = notification.object as? PDFView else { return }
+
+            // Dismiss popover on right-click; don't show popover for right-click selection
+            if let event = NSApp.currentEvent,
+               event.type == .rightMouseDown || event.type == .rightMouseUp {
+                parent.selection = nil
+                parent.selectionRect = nil
+                return
+            }
+
             if let selection = pdfView.currentSelection,
                let string = selection.string,
                !string.isEmpty,

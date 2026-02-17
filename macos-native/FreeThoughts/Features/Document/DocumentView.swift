@@ -7,6 +7,7 @@ struct DocumentView: View {
     @Bindable var store: StoreOf<DocumentFeature>
     @Binding var textSelection: String?
     let isAIAvailable: Bool
+    let availablePrompts: [ProvocationPromptItem]
     @State private var pdfSelection: PDFSelection?
     @State private var selectionRect: CGRect?
     @State private var selectionRange: NSRange?
@@ -24,14 +25,6 @@ struct DocumentView: View {
                     emptyView
                         .transition(.opacity)
                 }
-            }
-
-            if store.showSelectionPopover {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        store.send(.dismissPopover)
-                    }
             }
 
             if store.showSelectionPopover,
@@ -146,11 +139,16 @@ struct DocumentView: View {
         OverlayPositioningView(selection: selection) {
             SelectionPopover(
                 selection: selection,
+                mode: store.popoverMode,
+                availablePrompts: availablePrompts,
                 onAddNote: {
                     store.send(.addNoteFromSelection)
                 },
                 onProvocation: {
                     store.send(.requestProvocationFromSelection)
+                },
+                onSelectStyle: { promptId in
+                    store.send(.generateProvocationFromSelection(promptId: promptId))
                 },
                 onDismiss: {
                     store.send(.dismissPopover)

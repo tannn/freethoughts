@@ -3,6 +3,11 @@ import Foundation
 
 @Reducer
 struct DocumentFeature {
+    enum PopoverMode: Equatable {
+        case actions
+        case provocationStyles
+    }
+
     @ObservableState
     struct State: Equatable {
         var document: Document?
@@ -14,8 +19,15 @@ struct DocumentFeature {
         var zoomLevel: Double = 1.0
         var currentSelection: TextSelection?
         var showSelectionPopover: Bool = false
+        var popoverMode: PopoverMode = .actions
         var scrollToAnchorRequest: AnchorRequest?
+        var isNavigatingToAnchor: Bool = false
         var hasSelectableText: Bool = true
+
+        // Tracks the selection that was active when the popover was explicitly dismissed,
+        // so re-renders that re-fire the same selection don't flash the popover back.
+        var dismissedSelectionText: String?
+        var dismissedSelectionRange: TextSelection.SelectionRange?
     }
 
     enum Action {
@@ -31,6 +43,7 @@ struct DocumentFeature {
         case dismissPopover
         case addNoteFromSelection
         case requestProvocationFromSelection
+        case generateProvocationFromSelection(promptId: UUID)
         case scrollToAnchor(page: Int?, start: Int, end: Int, selectedText: String)
         case clearHighlight
     }
@@ -93,6 +106,7 @@ struct DocumentFeature {
                 state.totalPages = 1
                 state.currentSelection = nil
                 state.showSelectionPopover = false
+                state.popoverMode = .actions
                 state.hasSelectableText = true
                 return .cancel(id: CancelID.highlightTimer)
 
@@ -110,24 +124,56 @@ struct DocumentFeature {
 
             case .selectionChanged(let selection):
                 state.currentSelection = selection
-                state.showSelectionPopover = selection != nil
+                if let selection {
+                    let isDismissed = selection.text == state.dismissedSelectionText &&
+                                      selection.range == state.dismissedSelectionRange
+                    if isDismissed {
+                        // Same selection that was dismissed — don't re-show popover
+                    } else {
+                        // Genuinely new selection — clear dismissed state and show popover
+                        state.dismissedSelectionText = nil
+                        state.dismissedSelectionRange = nil
+                        state.popoverMode = .actions
+                        state.showSelectionPopover = !state.isNavigatingToAnchor
+                    }
+                } else {
+                    state.showSelectionPopover = false
+                    state.popoverMode = .actions
+                }
                 return .none
 
             case .dismissPopover:
                 state.showSelectionPopover = false
+                state.popoverMode = .actions
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .addNoteFromSelection:
                 state.showSelectionPopover = false
+                state.popoverMode = .actions
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .requestProvocationFromSelection:
+                state.popoverMode = .provocationStyles
+                state.showSelectionPopover = true
+                state.dismissedSelectionText = nil
+                state.dismissedSelectionRange = nil
+                return .none
+
+            case .generateProvocationFromSelection:
                 state.showSelectionPopover = false
+                state.popoverMode = .actions
+                state.dismissedSelectionText = state.currentSelection?.text
+                state.dismissedSelectionRange = state.currentSelection?.range
                 return .none
 
             case .scrollToAnchor(let page, let start, let end, let selectedText):
                 let request = AnchorRequest(page: page, start: start, end: end, selectedText: selectedText)
                 state.scrollToAnchorRequest = request
+                state.isNavigatingToAnchor = true
                 if let page {
                     state.currentPage = page + 1
                 }
@@ -139,6 +185,7 @@ struct DocumentFeature {
 
             case .clearHighlight:
                 state.scrollToAnchorRequest = nil
+                state.isNavigatingToAnchor = false
                 return .none
             }
         }

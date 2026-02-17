@@ -19,10 +19,6 @@ struct ProvocationLoadingView: View {
                 .progressViewStyle(.linear)
                 .frame(width: 150)
 
-            Text("\(promptName) style")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-
             Button("Cancel") {
                 onCancel()
             }

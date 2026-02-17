@@ -2,68 +2,60 @@ import SwiftUI
 import ComposableArchitecture
 
 struct StatusBar: View {
-    let store: StoreOf<DocumentFeature>
+    let activeDocument: DocumentFeature.State
+    let onZoom: (Double) -> Void
 
     var body: some View {
-        HStack {
-            if let document = store.document,
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            documentInfo(activeDocument)
+        }
+        .font(.caption)
+        .frame(height: 28)
+        .background(.bar)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+    }
+
+    // MARK: - Document info
+
+    @ViewBuilder
+    private func documentInfo(_ doc: DocumentFeature.State) -> some View {
+        HStack(spacing: 6) {
+            if let document = doc.document,
                case .pdf = document.content {
-                Text("Page \(store.currentPage) of \(store.totalPages)")
+                Text("Page \(doc.currentPage)/\(doc.totalPages)")
                     .monospacedDigit()
+                    .foregroundStyle(.secondary)
 
                 Divider()
                     .frame(height: 12)
             }
 
-            Spacer()
-
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Button {
-                    store.send(.setZoom(store.zoomLevel - 0.25))
+                    onZoom(doc.zoomLevel - 0.25)
                 } label: {
                     Image(systemName: "minus.magnifyingglass")
                 }
                 .buttonStyle(.plain)
-                .disabled(store.zoomLevel <= 0.25)
+                .disabled(doc.zoomLevel <= 0.25)
 
-                Text("\(Int(store.zoomLevel * 100))%")
+                Text("\(Int(doc.zoomLevel * 100))%")
                     .monospacedDigit()
-                    .frame(width: 45)
+                    .frame(width: 36)
 
                 Button {
-                    store.send(.setZoom(store.zoomLevel + 0.25))
+                    onZoom(doc.zoomLevel + 0.25)
                 } label: {
                     Image(systemName: "plus.magnifyingglass")
                 }
                 .buttonStyle(.plain)
-                .disabled(store.zoomLevel >= 4.0)
+                .disabled(doc.zoomLevel >= 4.0)
             }
-
-            Divider()
-                .frame(height: 12)
-
-            if let document = store.document {
-                HStack(spacing: 4) {
-                    Image(systemName: documentIcon(for: document.type))
-                    Text(document.type.displayName)
-                }
-                .foregroundStyle(.secondary)
-            } else {
-                Text("Ready")
-                    .foregroundStyle(.tertiary)
-            }
+            .foregroundStyle(.secondary)
         }
-        .font(.caption)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(.bar)
-    }
-
-    private func documentIcon(for type: Document.DocumentType) -> String {
-        switch type {
-        case .pdf: return "doc.fill"
-        case .markdown: return "text.alignleft"
-        case .plainText: return "doc.plaintext"
-        }
+        .padding(.horizontal, 10)
     }
 }

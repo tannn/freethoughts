@@ -35,7 +35,7 @@ struct NotesFeature {
         case startEditing(UUID)
         case stopEditing
         case updateNoteText(UUID, String)
-        case noteUpdateFailed(UUID, String, String)
+        case noteUpdateFailed(UUID, String, Date, String)
         case updateDraftText(String)
         case navigateToNote(UUID)
         case dismissError
@@ -186,15 +186,16 @@ struct NotesFeature {
                         do {
                             try await notesClient.updateNote(noteId, text)
                         } catch {
-                            await send(.noteUpdateFailed(noteId, previousContent, error.localizedDescription))
+                            await send(.noteUpdateFailed(noteId, previousContent, previousUpdatedAt, error.localizedDescription))
                         }
                     }
                 }
                 return .none
 
-            case .noteUpdateFailed(let id, let previousContent, let error):
+            case .noteUpdateFailed(let id, let previousContent, let previousUpdatedAt, let error):
                 if let index = state.notes.firstIndex(where: { $0.id == id }) {
                     state.notes[index].content = previousContent
+                    state.notes[index].updatedAt = previousUpdatedAt
                 }
                 state.error = error
                 return .none
