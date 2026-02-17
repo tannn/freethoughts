@@ -19,9 +19,9 @@
 - AppKit: More control but verbose, less modern
 - SwiftUI + AppKit hybrid: Considered for PDF but PDFKit integrates via NSViewRepresentable
 
-### 2. Architecture: TCA (The Composable Architecture)
+### 2. Architecture: MVVM [Model (data), View (UI), and ViewModel (presentation logic)]
 
-**Decision**: Use TCA for state management and feature composition
+**Decision**: Use MVVM design pattern to separate concerns during development
 
 **Rationale**:
 - Excellent testability - reducers are pure functions
@@ -31,7 +31,7 @@
 - Active community and maintenance (Point-Free)
 
 **Alternatives Considered**:
-- MVVM: Simpler but less structured, harder to test side effects
+- TCA: Complex and less common
 - Simple @Observable: Too lightweight for app complexity
 - Redux-like custom: Reinventing TCA
 

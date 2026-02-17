@@ -13,7 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         finalView
-            .focusedValue(\.appStore, store)
+            .focusedSceneValue(\.appStore, store)
     }
 
     private var finalView: some View {
@@ -319,7 +319,7 @@ struct ContentView: View {
                     .font(.title2)
                     .fontWeight(.medium)
 
-                Text("Drop a file here or use File -> Open")
+                Text("Drop a file here or use File -> Open (⌘ O)")
                     .foregroundStyle(.secondary)
             }
 

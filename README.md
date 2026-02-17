@@ -1,4 +1,5 @@
 # Free Your Thoughts
+![macOS](https://img.shields.io/badge/macOS-blue) ![License](https://img.shields.io/badge/license-GPLv3-green)
 
 A native macOS document reader for reading, annotating, and thinking with AI — entirely offline and private.
 
