@@ -13,8 +13,7 @@ struct PDFRenderer: NSViewRepresentable {
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
         pdfView.document = document
-        pdfView.autoScales = false
-        pdfView.scaleFactor = zoomLevel
+        pdfView.autoScales = true
         pdfView.displayMode = .singlePageContinuous
         pdfView.displayDirection = .vertical
         pdfView.delegate = context.coordinator
@@ -27,6 +26,7 @@ struct PDFRenderer: NSViewRepresentable {
 
         if pdfView.document !== document {
             pdfView.document = document
+            pdfView.autoScales = true
         }
 
         // Only update scale factor if it's significantly different to avoid fighting with user gestures
