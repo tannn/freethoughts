@@ -34,7 +34,13 @@ struct NoteCard: View {
                     .accessibilityLabel(isSelected ? "Deselect note" : "Select note")
                 }
 
-                Button(action: onTap) {
+                Button(action: {
+                    if let onToggleSelection {
+                        onToggleSelection()
+                    } else {
+                        onTap()
+                    }
+                }) {
                     Text(truncatedExcerpt)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -42,7 +48,6 @@ struct NoteCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.plain)
-                .disabled(onToggleSelection != nil)
 
                 if let page = note.anchorPage {
                     Text("p.\(page + 1)")
@@ -73,11 +78,21 @@ struct NoteCard: View {
             } else if !isCollapsed && onToggleSelection != nil {
                 // In select mode: show content read-only
                 contentViewReadOnly
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onToggleSelection?()
+                    }
             }
         }
         .padding(12)
         .background(.background, in: RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let onToggleSelection {
+                onToggleSelection()
+            }
+        }
     }
 
     private var truncatedExcerpt: String {
