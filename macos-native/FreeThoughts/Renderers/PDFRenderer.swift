@@ -13,7 +13,7 @@ struct PDFRenderer: NSViewRepresentable {
     func makeNSView(context: Context) -> PDFView {
         let pdfView = PDFView()
         pdfView.document = document
-        pdfView.autoScales = true
+        pdfView.autoScales = false
         pdfView.displayMode = .singlePageContinuous
         pdfView.displayDirection = .vertical
         pdfView.delegate = context.coordinator
@@ -26,13 +26,29 @@ struct PDFRenderer: NSViewRepresentable {
 
         if pdfView.document !== document {
             pdfView.document = document
-            pdfView.autoScales = true
         }
 
-        // Only update scale factor if it's significantly different to avoid fighting with user gestures
-        let scaleDifference = abs(pdfView.scaleFactor - zoomLevel)
-        if scaleDifference > 0.01 {
-            pdfView.scaleFactor = zoomLevel
+        // Apply fit-to-width scale the first time each document is displayed.
+        // Uses the view's actual bounds (available by the time updateNSView runs) to
+        // compute the scale that fills the view width with one PDF page. This avoids
+        // fighting with the old zoomLevel in TCA state (carried over from prior documents).
+        if context.coordinator.lastFitDocument !== document {
+            if let firstPage = document.page(at: 0), pdfView.bounds.width > 0 {
+                let pageWidth = firstPage.bounds(for: .cropBox).width
+                if pageWidth > 0 {
+                    let fitScale = Double(pdfView.bounds.width) / Double(pageWidth)
+                    let clamped = max(0.25, min(4.0, fitScale))
+                    pdfView.scaleFactor = clamped
+                    onZoomChange?(clamped)
+                    context.coordinator.lastFitDocument = document
+                }
+            }
+        } else {
+            // Same document: apply explicit zoom changes from state (zoom controls, etc.)
+            let scaleDifference = abs(pdfView.scaleFactor - zoomLevel)
+            if scaleDifference > 0.01 {
+                pdfView.scaleFactor = zoomLevel
+            }
         }
 
         if let anchor = scrollToAnchor,
@@ -77,6 +93,7 @@ struct PDFRenderer: NSViewRepresentable {
     class Coordinator: NSObject, PDFViewDelegate {
         var parent: PDFRenderer
         var lastScrolledAnchorId: UUID?
+        var lastFitDocument: PDFDocument?
         private var observers: [NSObjectProtocol] = []
 
         init(_ parent: PDFRenderer) {
