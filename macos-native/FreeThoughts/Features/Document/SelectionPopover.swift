@@ -37,16 +37,18 @@ struct SelectionPopover: View {
             Button {
                 onAddNote()
             } label: {
-                VStack(spacing: 4) {
-                    Image(systemName: "note.text.badge.plus")
-                        .font(.title2)
-                    Text("Note")
-                        .font(.caption)
+                ZStack {
+                    Rectangle().fill(Color.primary.opacity(0.001))
+                    VStack(spacing: 4) {
+                        Image(systemName: "note.text.badge.plus")
+                            .font(.title2)
+                        Text("Note")
+                            .font(.caption)
+                    }
                 }
                 .frame(width: 60, height: 50)
             }
             .buttonStyle(.plain)
-            .contentShape(Rectangle())
 
             if isAIAvailable {
                 Divider()
@@ -55,16 +57,18 @@ struct SelectionPopover: View {
                 Button {
                     onProvocation()
                 } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "sparkles")
-                            .font(.title2)
-                        Text("AI")
-                            .font(.caption)
+                    ZStack {
+                        Rectangle().fill(Color.primary.opacity(0.001))
+                        VStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .font(.title2)
+                            Text("AI")
+                                .font(.caption)
+                        }
                     }
                     .frame(width: 60, height: 50)
                 }
                 .buttonStyle(.plain)
-                .contentShape(Rectangle())
             }
         }
     }
@@ -75,17 +79,19 @@ struct SelectionPopover: View {
                 Button {
                     onSelectStyle(prompt.id)
                 } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: prompt.icon)
-                            .font(.title3)
-                        Text(prompt.name)
-                            .font(.caption2)
-                            .fontWeight(.medium)
+                    ZStack {
+                        Rectangle().fill(Color.primary.opacity(0.001))
+                        VStack(spacing: 4) {
+                            Image(systemName: prompt.icon)
+                                .font(.title3)
+                            Text(prompt.name)
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                        }
                     }
                     .frame(width: 64, height: 48)
                 }
                 .buttonStyle(.plain)
-                .contentShape(Rectangle())
             }
         }
     }

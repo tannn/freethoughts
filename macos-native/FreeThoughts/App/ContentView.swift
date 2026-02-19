@@ -256,19 +256,6 @@ struct ContentView: View {
                     }
             }
         }
-        .overlay(alignment: .bottom) {
-            if store.provocation.isGenerating,
-               store.provocation.pendingRequest?.sourceType == .textSelection {
-                ProvocationLoadingView(
-                    promptName: selectedPromptName,
-                    onCancel: {
-                        store.send(.provocation(.clearResponse))
-                    }
-                )
-                .padding(.bottom, 48)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
     }
 
     private var selectedPromptName: String {

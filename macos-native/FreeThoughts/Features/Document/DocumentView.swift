@@ -233,6 +233,7 @@ private struct OverlayPositioningView<Content: View>: View {
             let popoverY = min(localRect.maxY + 30, geometry.size.height - 40)
 
             content
+                .contentShape(Rectangle())
                 .position(x: popoverX, y: popoverY)
         }
     }

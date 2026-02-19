@@ -3,6 +3,9 @@ import SwiftUI
 struct NoteCard: View {
     let note: NoteItem
     let isEditing: Bool
+    let isCollapsed: Bool
+    let isSelected: Bool
+    let onToggleSelection: (() -> Void)?
     @Binding var draftText: String
     let availablePrompts: [ProvocationPromptItem]
     let isGenerating: Bool
@@ -16,12 +19,28 @@ struct NoteCard: View {
     let onDelete: () -> Void
     let onSelectPrompt: (UUID) -> Void
     let onCancelGeneration: () -> Void
+    let onToggleCollapse: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header: excerpt + page indicator
+            // Header: excerpt + page indicator + collapse chevron
             HStack(spacing: 6) {
-                Button(action: onTap) {
+                if let onToggleSelection {
+                    Button(action: onToggleSelection) {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isSelected ? "Deselect note" : "Select note")
+                }
+
+                Button(action: {
+                    if let onToggleSelection {
+                        onToggleSelection()
+                    } else {
+                        onTap()
+                    }
+                }) {
                     Text(truncatedExcerpt)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -38,19 +57,42 @@ struct NoteCard: View {
                         .padding(.vertical, 2)
                         .background(.quaternary, in: Capsule())
                 }
+
+                Button(action: onToggleCollapse) {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isCollapsed ? "Expand note" : "Collapse note")
             }
             .padding(8)
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
 
-            if isEditing {
-                editingView
-            } else {
-                contentView
+            if !isCollapsed && onToggleSelection == nil {
+                if isEditing {
+                    editingView
+                } else {
+                    contentView
+                }
+            } else if !isCollapsed && onToggleSelection != nil {
+                // In select mode: show content read-only
+                contentViewReadOnly
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onToggleSelection?()
+                    }
             }
         }
         .padding(12)
         .background(.background, in: RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let onToggleSelection {
+                onToggleSelection()
+            }
+        }
     }
 
     private var truncatedExcerpt: String {
@@ -117,6 +159,12 @@ struct NoteCard: View {
                 }
             }
         }
+    }
+
+    private var contentViewReadOnly: some View {
+        Text(note.content.isEmpty ? "No content" : note.content)
+            .foregroundStyle(note.content.isEmpty ? .tertiary : .primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var latestProvocation: ProvocationItem? {
