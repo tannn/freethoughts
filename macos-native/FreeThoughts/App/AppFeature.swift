@@ -4,42 +4,72 @@ import AppKit
 import UniformTypeIdentifiers
 import PDFKit
 
+/// Root TCA reducer that owns the three top-level features — Document, Notes, and Provocation —
+/// and coordinates cross-feature effects such as navigating to a note's source anchor or
+/// triggering AI provocation from a text selection.
 @Reducer
 struct AppFeature {
+    /// Top-level application state.
     @ObservableState
     struct State: Equatable {
+        /// State for the currently open document (loading, content, selection, zoom, etc.).
         var document: DocumentFeature.State = .init()
+        /// State for the notes sidebar (list, editing, search, bulk-delete, etc.).
         var notes: NotesFeature.State = .init()
+        /// State for AI provocation generation (prompts, streaming response, errors).
         var provocation: ProvocationFeature.State = .init()
+        /// When `true` the notes sidebar is hidden and only the document pane is shown.
         var isSidebarCollapsed: Bool = false
+        /// Whether Apple Foundation Models is available on the current device.
         var isAIAvailable: Bool = false
+        /// Set to `true` once the AI availability check has completed (to avoid a flash of the
+        /// unavailability warning before the check finishes).
         var aiAvailabilityChecked: Bool = false
+        /// Controls presentation of the Settings sheet.
         var showSettings: Bool = false
+        /// Signals the view to open the native file-picker panel.
         var showFilePicker: Bool = false
 
+        /// Canonical file-system path of the document currently open, or `nil` when no document is loaded.
         var activeDocumentPath: String? {
             document.document?.canonicalPath
         }
     }
 
+    /// Actions handled by the root reducer.
     enum Action {
+        /// Forwarded to `DocumentFeature`.
         case document(DocumentFeature.Action)
+        /// Forwarded to `NotesFeature`.
         case notes(NotesFeature.Action)
+        /// Forwarded to `ProvocationFeature`.
         case provocation(ProvocationFeature.Action)
+        /// Sent when the main window first appears; kicks off AI availability check and prompt seeding.
         case onAppear
+        /// Opens the native NSOpenPanel to pick a document file.
         case openFilePicker
+        /// Sent after the user selects a file URL from the picker.
         case fileSelected(URL)
+        /// Toggles the notes sidebar collapsed/expanded state.
         case toggleSidebar
+        /// Initiates the asynchronous Foundation Models availability check.
         case checkAIAvailability
+        /// Delivers the result of the AI availability check.
         case aiAvailabilityResult(Bool)
+        /// Requests AI provocation for an existing note using the specified prompt.
         case requestNoteProvocation(noteId: UUID, promptId: UUID)
+        /// Opens the Settings sheet.
         case openSettings
+        /// Closes the Settings sheet.
         case closeSettings
+        /// Clears the file-picker signal after the view has consumed it.
         case closeFilePicker
     }
 
     @Dependency(\.foundationModelsClient) var foundationModelsClient
     @Dependency(\.notesClient) var notesClient
+
+    // MARK: - Reducer
 
     var body: some ReducerOf<Self> {
         Scope(state: \.document, action: \.document) {
@@ -226,6 +256,8 @@ struct AppFeature {
 
     // MARK: - Helpers
 
+    /// Extracts up to 250 characters of surrounding context from the document around a text
+    /// selection. Used to give the AI model richer context when generating a provocation.
     private func getContext(from document: Document?, around selection: TextSelection) -> String {
         guard let document else { return selection.text }
 

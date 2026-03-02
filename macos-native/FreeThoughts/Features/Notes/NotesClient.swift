@@ -2,11 +2,17 @@ import ComposableArchitecture
 import SwiftData
 import Foundation
 
+/// TCA dependency client that bridges the Notes domain to the SwiftData persistence layer.
+/// Each method creates its own `ModelContext` to satisfy Swift Concurrency's `Sendable` rules.
 @DependencyClient
 struct NotesClient {
+    /// Loads all notes anchored to the given document path, sorted by `anchorStart`.
     var loadNotes: @Sendable (_ documentPath: String) async throws -> [NoteItem]
+    /// Persists a new `NoteItem` and returns the saved copy.
     var saveNote: @Sendable (_ note: NoteItem) async throws -> NoteItem
+    /// Updates the body content of an existing note by its ID.
     var updateNote: @Sendable (_ id: UUID, _ content: String) async throws -> Void
+    /// Permanently deletes a note by its ID.
     var deleteNote: @Sendable (_ id: UUID) async throws -> Void
 }
 

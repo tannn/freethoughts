@@ -1,11 +1,21 @@
 import SwiftUI
 import AppKit
 
+/// `NSViewRepresentable` that wraps an `NSTextView` inside an `NSScrollView` to provide
+/// selectable, rich-text rendering for Markdown and plain-text documents.
+///
+/// Reports text selections back through bindings and handles scroll-to-range navigation
+/// with a temporary highlight animation for note anchor navigation.
 struct SelectableTextView: NSViewRepresentable {
+    /// The attributed string to display.
     let attributedString: NSAttributedString
+    /// Bound to the selected plain-text string, or `nil` when there is no selection.
     @Binding var selection: String?
+    /// Bound to the character range of the current selection.
     @Binding var selectionRange: NSRange?
+    /// Bound to the selection's bounding rect in text-view coordinates.
     @Binding var selectionRect: CGRect?
+    /// When non-`nil`, the text view scrolls to this range and briefly highlights it.
     var scrollToRange: NSRange?
 
     func makeNSView(context: Context) -> NSScrollView {

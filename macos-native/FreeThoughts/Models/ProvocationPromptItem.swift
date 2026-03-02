@@ -1,9 +1,15 @@
 import Foundation
 
+/// Value-type projection of `ProvocationPrompt` used in TCA state.
+///
+/// Adds an `icon` computed property that maps well-known prompt names to SF Symbol names
+/// for display in the selection popover and notes sidebar.
 struct ProvocationPromptItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var name: String
+    /// The Handlebars-style template string (e.g. `"Challenge this: {selection}"`).
     var promptTemplate: String
+    /// `true` for the built-in prompts shipped with the app.
     var isBuiltIn: Bool
     var sortOrder: Int
     var createdAt: Date

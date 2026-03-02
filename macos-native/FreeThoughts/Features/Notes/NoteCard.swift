@@ -1,20 +1,38 @@
 import SwiftUI
 
+/// A card view representing a single note. Shows a truncated excerpt header, optional page
+/// badge, and the note body. Switches between read-only, content, and inline-edit layouts,
+/// and embeds `ProvocationLoadingView` / `ProvocationResponseView` when AI generation is active.
 struct NoteCard: View {
+    /// The note to display.
     let note: NoteItem
+    /// Whether the note is currently being edited inline.
     let isEditing: Bool
+    /// Bound to the draft text being typed during inline editing.
     @Binding var draftText: String
+    /// Prompt styles available for the AI generation menu.
     let availablePrompts: [ProvocationPromptItem]
+    /// Whether AI generation is currently streaming for this card.
     let isGenerating: Bool
+    /// The partial AI response text currently being streamed.
     let currentResponse: String
+    /// Display name of the prompt being used for generation.
     let selectedPromptName: String
+    /// Whether the AI feature is available on the current device.
     let isAIAvailable: Bool
+    /// Called when the user taps the excerpt header to navigate to the anchor.
     let onTap: () -> Void
+    /// Called when the user taps the note body to enter edit mode.
     let onEdit: () -> Void
+    /// Called with the final text when the user confirms their edits.
     let onSave: (String) -> Void
+    /// Called when the user cancels an in-progress edit.
     let onCancel: () -> Void
+    /// Called when the user confirms note deletion.
     let onDelete: () -> Void
+    /// Called with the selected prompt ID when the user requests AI provocation.
     let onSelectPrompt: (UUID) -> Void
+    /// Called when the user cancels an in-progress AI generation.
     let onCancelGeneration: () -> Void
 
     var body: some View {

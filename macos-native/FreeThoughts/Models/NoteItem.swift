@@ -1,5 +1,9 @@
 import Foundation
 
+/// Value-type projection of `Note` used in TCA state.
+///
+/// Mirrors all fields of the SwiftData `Note` model and includes a snapshot of any
+/// associated `ProvocationItem` values. Constructed via `init(from:)` in client closures.
 struct NoteItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var documentPath: String

@@ -2,9 +2,16 @@ import ComposableArchitecture
 import Foundation
 import PDFKit
 
+/// TCA dependency client for document I/O.
+///
+/// `liveValue` validates the file, checks size limits, then dispatches content parsing
+/// to a detached `Task` to avoid blocking the main actor.
 @DependencyClient
 struct DocumentClient {
+    /// Loads and parses a document from the file system.
+    /// Throws a typed `DocumentError` for known failure cases.
     var loadDocument: @Sendable (_ url: URL) async throws -> Document
+    /// Extracts the full plain-text content from a document, if available.
     var getTextContent: @Sendable (_ document: Document) async -> String?
 }
 
@@ -80,12 +87,19 @@ extension DocumentClient: DependencyKey {
     )
 }
 
+/// Typed errors thrown by `DocumentClient.loadDocument`.
 enum DocumentError: Error, LocalizedError {
+    /// The file's extension is not supported (not PDF, Markdown, or plain text).
     case unsupportedFormat
+    /// A generic failure while reading or decoding the file.
     case loadFailed
+    /// The file does not exist at the given path.
     case fileNotFound
+    /// The app does not have read permission for the file.
     case accessDenied
+    /// The file is corrupt and cannot be parsed (e.g. a damaged PDF).
     case corrupted
+    /// The file exceeds the 100 MB size limit.
     case fileTooLarge
 
     var errorDescription: String? {

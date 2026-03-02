@@ -1,6 +1,10 @@
 import Foundation
 import PDFKit
 
+/// Value-type representation of an open document.
+///
+/// `@unchecked Sendable` is required because `PDFDocument` is a reference type that does not
+/// conform to `Sendable`; callers must ensure cross-actor access is properly guarded.
 struct Document: Identifiable, Equatable, @unchecked Sendable {
     let id: UUID
     let url: URL
@@ -15,11 +19,13 @@ struct Document: Identifiable, Equatable, @unchecked Sendable {
         url.standardizedFileURL.path
     }
 
+    /// The supported file formats the app can open.
     enum DocumentType: String, CaseIterable {
         case pdf
         case markdown
         case plainText
 
+        /// A localised display string for the document type.
         var displayName: String {
             switch self {
             case .pdf: return "PDF"
@@ -28,6 +34,7 @@ struct Document: Identifiable, Equatable, @unchecked Sendable {
             }
         }
 
+        /// Infers the document type from the file URL's extension, or returns `nil` for unsupported formats.
         static func from(url: URL) -> DocumentType? {
             switch url.pathExtension.lowercased() {
             case "pdf":
@@ -42,8 +49,11 @@ struct Document: Identifiable, Equatable, @unchecked Sendable {
         }
     }
 
+    /// The parsed content of a document.
     enum DocumentContent: Equatable {
+        /// A loaded `PDFDocument` object.
         case pdf(PDFDocument)
+        /// The full plain or Markdown text string.
         case text(String)
 
         static func == (lhs: DocumentContent, rhs: DocumentContent) -> Bool {

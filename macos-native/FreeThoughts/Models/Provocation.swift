@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 
+/// SwiftData model for an AI-generated provocation associated with a note or text selection.
+/// Not used directly in TCA state — use `ProvocationItem` (a value-type projection) instead.
 @Model
 final class Provocation {
     @Attribute(.unique) var id: UUID

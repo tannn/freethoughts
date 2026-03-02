@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 
+/// SwiftData model for a user note anchored to a text range in a document.
+/// Not used directly in TCA state — use `NoteItem` (a value-type projection) instead.
 @Model
 final class Note {
     @Attribute(.unique) var id: UUID

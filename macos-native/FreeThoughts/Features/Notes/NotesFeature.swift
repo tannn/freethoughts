@@ -1,43 +1,78 @@
 import ComposableArchitecture
 import Foundation
 
+/// TCA reducer for the notes sidebar. Manages loading, creating, editing, and deleting
+/// per-document notes, plus in-place inline editing with optimistic state and rollback.
 @Reducer
 struct NotesFeature {
+    /// Notes sidebar state.
     @ObservableState
     struct State: Equatable {
+        /// All notes loaded for the current document, sorted by anchor position.
         var notes: [NoteItem] = []
+        /// The canonical file-system path of the document whose notes are loaded.
         var currentDocumentPath: String?
+        /// `true` while the new-note creation sheet is presented.
         var isCreatingNote: Bool = false
+        /// The text selection that triggered note creation; provides the anchor for the new note.
         var noteCreationSelection: TextSelection?
+        /// Draft body text being typed in the note-creation sheet.
         var noteCreationContent: String = ""
+        /// The ID of the note currently open for inline editing, or `nil`.
         var editingNoteId: UUID?
+        /// The draft content for the note being edited in-line.
         var editingDraftText: String = ""
+        /// When set, a delete-confirmation alert is shown for this note ID.
         var confirmingDeleteNoteId: UUID?
+        /// Human-readable error message to display in an alert, or `nil`.
         var error: String?
     }
 
+    /// Actions handled by `NotesFeature`.
     enum Action {
+        /// Load notes for the given document path from the persistence layer.
         case loadNotes(documentPath: String)
+        /// Delivers the loaded notes array.
         case notesLoaded([NoteItem])
+        /// Delivers a localised error string when loading fails.
         case notesLoadFailed(String)
+        /// Opens the note-creation sheet anchored to the given text selection.
         case startNoteCreation(TextSelection)
+        /// Dismisses the note-creation sheet without saving.
         case cancelNoteCreation
+        /// Updates the draft body text in the creation sheet.
         case updateNoteContent(String)
+        /// Persists the note being created and dismisses the sheet.
         case saveNote
+        /// Delivers the persisted `NoteItem` after a successful save.
         case noteSaved(NoteItem)
+        /// Delivers a localised error string when saving fails.
         case noteSaveFailed(String)
+        /// Shows a delete-confirmation alert for the given note ID.
         case requestDeleteNote(UUID)
+        /// Confirmed: delete the note currently awaiting confirmation.
         case confirmDeleteNote
+        /// Dismissed: clear the pending confirmation without deleting.
         case cancelDeleteNote
+        /// Directly deletes a note by ID (bypasses confirmation; used internally).
         case deleteNote(UUID)
+        /// Removes the deleted note from state.
         case noteDeleted(UUID)
+        /// Delivers a localised error when deletion fails.
         case noteDeleteFailed(UUID, String)
+        /// Enters inline-edit mode for the given note, seeding the draft with its current content.
         case startEditing(UUID)
+        /// Exits inline-edit mode and clears the draft.
         case stopEditing
+        /// Persists an updated note body; rolls back on failure.
         case updateNoteText(UUID, String)
+        /// Rolls back optimistic state update after a persistence failure.
         case noteUpdateFailed(UUID, String, Date, String)
+        /// Updates the in-memory draft while the user types (before `stopEditing`).
         case updateDraftText(String)
+        /// Tells `AppFeature` to scroll the document to this note's anchor.
         case navigateToNote(UUID)
+        /// Clears the current error.
         case dismissError
     }
 
@@ -212,6 +247,7 @@ struct NotesFeature {
 }
 
 extension Array where Element == NoteItem {
+    /// Returns the array sorted by document anchor position: page first, then character offset.
     func sortedByAnchor() -> [NoteItem] {
         sorted { note1, note2 in
             if let page1 = note1.anchorPage, let page2 = note2.anchorPage {

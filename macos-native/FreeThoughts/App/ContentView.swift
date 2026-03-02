@@ -2,6 +2,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 import ComposableArchitecture
 
+/// Root view for the FreeThoughts window. Creates the `AppFeature` store, wires keyboard
+/// shortcuts, manages file-import and sheet presentation, and composes the split-view layout
+/// of the document pane and notes sidebar.
 struct ContentView: View {
     @Bindable var store = Store(initialState: AppFeature.State()) {
         AppFeature()

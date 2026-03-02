@@ -1,16 +1,26 @@
 import Foundation
 import PDFKit
 
+/// Captures a user's text selection in either a PDF page or a text document.
+/// Stored in TCA state and passed to `NoteItem` / `ProvocationRequest` to anchor content.
 struct TextSelection: Equatable {
+    /// The raw selected string.
     let text: String
+    /// Canonical path of the source document.
     let documentPath: String
+    /// The character-level range of the selection within the document.
     let range: SelectionRange
+    /// The bounding rect of the selection in the renderer's coordinate space (NSView coordinates).
     let rect: CGRect
 
+    /// Describes where a selection falls in the document.
     enum SelectionRange: Equatable {
+        /// A selection within a PDF page.  `page` is 0-based.
         case pdf(page: Int, start: Int, end: Int)
+        /// A selection within a plain-text or Markdown string.
         case text(start: Int, end: Int)
 
+        /// The start character offset, regardless of selection type.
         var startOffset: Int {
             switch self {
             case .pdf(_, let start, _): return start
@@ -18,6 +28,7 @@ struct TextSelection: Equatable {
             }
         }
 
+        /// The end character offset, regardless of selection type.
         var endOffset: Int {
             switch self {
             case .pdf(_, _, let end): return end
@@ -25,6 +36,7 @@ struct TextSelection: Equatable {
             }
         }
 
+        /// The 0-based PDF page index, or `nil` for text-document selections.
         var page: Int? {
             switch self {
             case .pdf(let page, _, _): return page
@@ -33,6 +45,8 @@ struct TextSelection: Equatable {
         }
     }
 
+    /// Constructs a `TextSelection` from a `PDFSelection` and its bounding rect in view coordinates.
+    /// Returns `nil` if the selection string is empty or the page cannot be identified.
     static func from(pdfSelection: PDFSelection, documentPath: String, rect: CGRect) -> TextSelection? {
         guard let string = pdfSelection.string, !string.isEmpty else { return nil }
 
@@ -66,6 +80,8 @@ struct TextSelection: Equatable {
         )
     }
 
+    /// Constructs a `TextSelection` from a plain-text selection with a known character range.
+    /// Returns `nil` if `text` is empty or `start`/`end` are invalid.
     static func from(text: String, documentPath: String, rect: CGRect, start: Int, end: Int) -> TextSelection? {
         guard !text.isEmpty, start >= 0, end >= start else { return nil }
 

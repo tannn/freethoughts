@@ -1,10 +1,14 @@
 import SwiftUI
 
+/// Renders a plain-text string using a monospaced system font with selectable text.
+/// Delegates rendering and selection tracking to `SelectableTextView`.
 struct PlainTextRenderer: View {
+    /// The raw text content to display.
     let content: String
     @Binding var selection: String?
     @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
+    /// When non-`nil`, the view scrolls to and highlights this character range.
     var scrollToRange: NSRange?
 
     var body: some View {

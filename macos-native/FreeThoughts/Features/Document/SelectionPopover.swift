@@ -1,13 +1,26 @@
 import SwiftUI
 
+/// Floating action popover that appears near a text selection.
+///
+/// In `.actions` mode it shows "Add Note" and (when AI is available) "AI" buttons.
+/// In `.provocationStyles` mode it shows a grid of prompt-style buttons for the user to choose
+/// which AI provocation style to apply to the selection.
 struct SelectionPopover: View {
+    /// The text selection this popover is anchored to.
     let selection: TextSelection
+    /// Controls whether action buttons or the prompt-style grid is shown.
     let mode: DocumentFeature.PopoverMode
+    /// Prompt styles available for the AI grid view.
     let availablePrompts: [ProvocationPromptItem]
+    /// Called when the user taps "Add Note".
     let onAddNote: () -> Void
+    /// Called when the user taps "AI" to enter provocation-style selection.
     let onProvocation: () -> Void
+    /// Called when the user picks a prompt style from the grid, passing its ID.
     let onSelectStyle: (UUID) -> Void
+    /// Called when the popover should be dismissed without taking an action.
     let onDismiss: () -> Void
+    /// When `false` the AI button is hidden.
     let isAIAvailable: Bool
 
     private let gridColumns = [

@@ -1,8 +1,12 @@
 import SwiftUI
 import ComposableArchitecture
 
+/// Thin footer bar that displays page number (PDFs) and zoom controls.
+/// Reads directly from `DocumentFeature.State` to stay in sync without extra bindings.
 struct StatusBar: View {
+    /// A snapshot of the document feature state used to derive display values.
     let activeDocument: DocumentFeature.State
+    /// Called when the user presses a zoom button, passing the new desired zoom level.
     let onZoom: (Double) -> Void
 
     var body: some View {

@@ -1,13 +1,25 @@
 import SwiftUI
 import PDFKit
 
+/// `NSViewRepresentable` wrapper around `PDFView` that integrates PDFKit with SwiftUI and TCA.
+///
+/// Handles page synchronisation, zoom-level changes, text-selection reporting, and
+/// scroll-to-anchor navigation. Uses a `Coordinator` to observe `PDFView` notifications
+/// and propagate changes back to the SwiftUI bindings.
 struct PDFRenderer: NSViewRepresentable {
+    /// The `PDFDocument` to display.
     let document: PDFDocument
+    /// Two-way binding for the current 1-based page number.
     @Binding var currentPage: Int
+    /// Two-way binding for the active `PDFSelection`, or `nil` when deselected.
     @Binding var selection: PDFSelection?
+    /// Two-way binding for the selection's bounding rect in `PDFView` coordinates.
     @Binding var selectionRect: CGRect?
+    /// Desired zoom scale factor (1.0 = 100 %).
     var zoomLevel: Double
+    /// When non-`nil`, the renderer scrolls to the specified anchor and highlights the text.
     var scrollToAnchor: AnchorRequest?
+    /// Called when the user pinch-zooms or the scale changes programmatically, passing the new scale.
     var onZoomChange: ((Double) -> Void)?
 
     func makeNSView(context: Context) -> PDFView {

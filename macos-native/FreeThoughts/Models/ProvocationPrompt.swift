@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 
+/// SwiftData model for a user-defined or built-in provocation prompt style.
+/// Not used directly in TCA state — use `ProvocationPromptItem` instead.
 @Model
 final class ProvocationPrompt {
     @Attribute(.unique) var id: UUID
