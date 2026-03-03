@@ -36,3 +36,5 @@ kitty-specs/
 macos-native/FreeThoughts.xcodeproj/project.xcworkspace/
 
 .agent-cache.json
+# Nightshift plan artifacts (keep out of version control)
+.nightshift-plan
