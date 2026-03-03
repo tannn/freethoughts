@@ -1,0 +1,17 @@
+name: Xcode Build
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build FreeThoughts
+        run: xcodebuild -project FreeThoughts.xcodeproj -scheme FreeThoughts -configuration Debug -destination "generic/platform=macOS" -skipMacroValidation
+        working-directory: macos-native
