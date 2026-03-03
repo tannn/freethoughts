@@ -4,8 +4,6 @@ struct ProvocationLoadingView: View {
     let promptName: String
     let onCancel: () -> Void
 
-    @State private var progress: Double = 0
-
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -15,7 +13,7 @@ struct ProvocationLoadingView: View {
             }
             .foregroundStyle(.secondary)
 
-            ProgressView(value: progress)
+            ProgressView()
                 .progressViewStyle(.linear)
                 .frame(width: 150)
 
@@ -28,10 +26,5 @@ struct ProvocationLoadingView: View {
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .onAppear {
-            withAnimation(.linear(duration: 10)) {
-                progress = 0.9
-            }
-        }
     }
 }

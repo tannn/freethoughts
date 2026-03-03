@@ -34,3 +34,5 @@ MEMORY.md
 kitty-specs/
 !kitty-specs/
 macos-native/FreeThoughts.xcodeproj/project.xcworkspace/
+
+.agent-cache.json
