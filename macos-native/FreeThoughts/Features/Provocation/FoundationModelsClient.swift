@@ -4,9 +4,17 @@ import Foundation
 import FoundationModels
 #endif
 
+/// TCA dependency client wrapping Apple Foundation Models (`FoundationModels` framework).
+///
+/// `liveValue` is compiled conditionally — on macOS 26+ with Apple Silicon it uses
+/// `SystemLanguageModel` and `LanguageModelSession`; on other platforms it returns
+/// `false` for availability and throws `FoundationModelsError.notAvailable` on generation.
 @DependencyClient
 struct FoundationModelsClient {
+    /// Returns `true` if the on-device language model is available and ready.
     var isAvailable: @Sendable () async -> Bool = { false }
+    /// Streams response chunks for the given prompt as an `AsyncThrowingStream`.
+    /// Each yielded `String` is the latest full partial response (not a delta).
     var generate: @Sendable (_ prompt: String) async throws -> AsyncThrowingStream<String, Error>
 }
 
@@ -69,8 +77,11 @@ extension FoundationModelsClient: DependencyKey {
     )
 }
 
+/// Typed errors thrown by `FoundationModelsClient.generate`.
 enum FoundationModelsError: Error, LocalizedError {
+    /// The on-device language model is not available (wrong OS version or non-Apple-Silicon Mac).
     case notAvailable
+    /// Generation started but failed with the given reason.
     case generationFailed(String)
 
     var errorDescription: String? {

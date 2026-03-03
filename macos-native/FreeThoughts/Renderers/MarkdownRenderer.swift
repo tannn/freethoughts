@@ -1,10 +1,17 @@
 import SwiftUI
 
+/// Renders a Markdown string as a selectable attributed text view.
+///
+/// Parses the Markdown synchronously in `init` using `AttributedString` with
+/// `.full` syntax interpretation, then delegates rendering and selection tracking
+/// to `SelectableTextView`.
 struct MarkdownRenderer: View {
+    /// The raw Markdown content string to display.
     let content: String
     @Binding var selection: String?
     @Binding var selectionRange: NSRange?
     @Binding var selectionRect: CGRect?
+    /// When non-`nil`, the view scrolls to and highlights this character range.
     var scrollToRange: NSRange?
 
     @State private var attributedContent: NSAttributedString?

@@ -1,6 +1,8 @@
 import SwiftUI
 import ComposableArchitecture
 
+/// Modal sheet for creating a new note anchored to a text selection. Displays the selected
+/// text for context and provides a `TextEditor` for the note body.
 struct NoteCreationSheet: View {
     @Bindable var store: StoreOf<NotesFeature>
     @FocusState private var isFocused: Bool

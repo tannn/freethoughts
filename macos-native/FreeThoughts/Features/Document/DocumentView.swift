@@ -3,6 +3,9 @@ import ComposableArchitecture
 import PDFKit
 import AppKit
 
+/// The main document-rendering view. Switches between `PDFRenderer`, `MarkdownRenderer`, and
+/// `PlainTextRenderer` based on the loaded document type, and overlays the `SelectionPopover`
+/// whenever the user has an active text selection.
 struct DocumentView: View {
     @Bindable var store: StoreOf<DocumentFeature>
     @Binding var textSelection: String?

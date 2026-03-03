@@ -1,5 +1,7 @@
 import Foundation
 
+/// Value-type projection of `Provocation` used in TCA state.
+/// Constructed via `init(from:)` in `PromptsClient` closures after saving to SwiftData.
 struct ProvocationItem: Equatable, Identifiable, Sendable {
     var id: UUID
     var documentPath: String

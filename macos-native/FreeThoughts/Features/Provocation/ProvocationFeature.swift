@@ -2,44 +2,78 @@ import ComposableArchitecture
 import Foundation
 import os
 
+/// TCA reducer that manages on-device AI provocation generation via Apple Foundation Models.
+///
+/// Responsible for seeding the default prompt library on first launch, streaming incremental
+/// response chunks from the model, and persisting the finished response via `PromptsClient`.
 @Reducer
 struct ProvocationFeature {
     private enum CancelID { case generation }
 
+    /// Provocation feature state.
     @ObservableState
     struct State: Equatable {
+        /// Whether Apple Foundation Models is available on the current device/OS.
         var isAIAvailable: Bool = false
+        /// The list of provocation prompt styles loaded from persistence.
         var availablePrompts: [ProvocationPromptItem] = []
+        /// The ID of the currently selected prompt style.
         var selectedPromptId: UUID?
+        /// `true` while a generation stream is active.
         var isGenerating: Bool = false
+        /// The accumulated streaming response text (may be partial while generating).
         var currentResponse: String = ""
+        /// The pending provocation request awaiting generation or save.
         var pendingRequest: ProvocationRequest?
+        /// Human-readable error message to surface in an alert, or `nil`.
         var error: String?
     }
 
+    /// Describes the input to an AI provocation request.
     struct ProvocationRequest: Equatable {
+        /// Whether the source is a direct text selection or an existing note.
         let sourceType: Provocation.SourceType
+        /// The primary text to provoke on (selection text or note body).
         let sourceText: String
+        /// Surrounding context from the document, used to enrich the prompt.
         let context: String
+        /// Canonical path of the source document, stored with the persisted provocation.
         let documentPath: String
+        /// The note ID to associate the provocation with, if any.
         let noteId: UUID?
     }
 
+    /// Actions handled by `ProvocationFeature`.
     enum Action {
+        /// Seeds default prompts from `DefaultPrompts.json` on first launch.
         case seedDefaultPrompts
+        /// Sent after default prompts have been successfully saved to disk.
         case promptsSeeded
+        /// Loads the available prompt styles from persistence.
         case loadPrompts
+        /// Delivers the loaded prompt list.
         case promptsLoaded([ProvocationPromptItem])
+        /// Sets the active prompt style.
         case selectPrompt(UUID)
+        /// Updates the AI availability flag (forwarded from `AppFeature`).
         case setAIAvailability(Bool)
+        /// Stages a provocation request for generation.
         case requestProvocation(ProvocationRequest)
+        /// Begins streaming generation for the current pending request.
         case startGeneration
+        /// Delivers an incremental response chunk from the model stream.
         case responseChunk(String)
+        /// Sent when the model stream completes successfully.
         case generationComplete
+        /// Sent when generation fails, carrying a localised error description.
         case generationFailed(String)
+        /// Persists the completed provocation response.
         case saveProvocation
+        /// Delivers the persisted `ProvocationItem` after a successful save.
         case provocationSaved(ProvocationItem)
+        /// Cancels any in-progress generation and clears response state.
         case clearResponse
+        /// Dismisses the current error alert.
         case dismissError
     }
 

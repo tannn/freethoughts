@@ -1,17 +1,30 @@
 import SwiftUI
 import ComposableArchitecture
 
+/// Sidebar view that lists all notes for the currently open document. Wraps each note in a
+/// `NoteCard` and handles inline editing, swipe-to-delete, and the delete-confirmation dialog.
 struct NotesSidebar: View {
+    /// The notes feature store, providing the list and editing state.
     @Bindable var store: StoreOf<NotesFeature>
+    /// Read-only view into the provocation store for the available prompt list.
     let provocationStore: StoreOf<ProvocationFeature>
+    /// Whether an AI generation is currently streaming.
     let isGenerating: Bool
+    /// The ID of the note for which generation is in progress, or `nil`.
     let generatingNoteId: UUID?
+    /// The current partial AI response text being streamed.
     let currentResponse: String
+    /// Display name of the prompt style currently generating.
     let selectedPromptName: String
+    /// Whether Apple Foundation Models is available for AI actions.
     let isAIAvailable: Bool
+    /// `true` once the AI availability check has completed.
     let aiAvailabilityChecked: Bool
+    /// `false` when the document has no extractable text (scanned PDF).
     let hasSelectableText: Bool
+    /// Called when the user requests AI provocation for a note, passing note ID and prompt ID.
     let onNoteProvocation: (UUID, UUID) -> Void
+    /// Called when the user cancels an in-progress AI generation.
     let onCancelGeneration: () -> Void
 
     var body: some View {

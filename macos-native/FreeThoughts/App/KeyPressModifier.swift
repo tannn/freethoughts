@@ -1,9 +1,16 @@
 import SwiftUI
 import AppKit
 
+/// A SwiftUI `ViewModifier` that intercepts a specific key-down event (identified by raw
+/// `keyCode` and optional modifier flags) using an `NSEvent` local monitor. The `action`
+/// closure returns `true` if the event was handled — causing it to be consumed — or `false`
+/// to let it propagate normally.
 struct KeyPressModifier: ViewModifier {
+    /// The hardware key code to intercept (e.g. `31` for "O").
     let keyCode: UInt16
+    /// The modifier flags that must be held for the press to match (e.g. `.command`).
     let modifiers: NSEvent.ModifierFlags
+    /// Called when the matching key combination is pressed. Return `true` to consume the event.
     let action: () -> Bool
 
     func body(content: Content) -> some View {
@@ -61,6 +68,12 @@ private struct KeyPressMonitor: NSViewRepresentable {
 }
 
 extension View {
+    /// Attaches a raw key-press handler to a view.
+    ///
+    /// - Parameters:
+    ///   - keyCode: The hardware key code to listen for.
+    ///   - modifiers: Required modifier flags (defaults to none).
+    ///   - action: Called on a matching key-down event. Return `true` to consume it.
     func onKeyPress(keyCode: UInt16, modifiers: NSEvent.ModifierFlags = [], perform action: @escaping () -> Bool) -> some View {
         modifier(KeyPressModifier(keyCode: keyCode, modifiers: modifiers, action: action))
     }
