@@ -1,10 +1,14 @@
 import ComposableArchitecture
 import Foundation
+import os
 
 /// TCA reducer for the notes sidebar. Manages loading, creating, editing, and deleting
 /// per-document notes, plus in-place inline editing with optimistic state and rollback.
 @Reducer
 struct NotesFeature {
+    private static let logger = Logger(subsystem: "com.freethoughts", category: "NotesFeature")
+    private static let deleteFailedMessage = "Unable to delete note. Please try again."
+
     /// Notes sidebar state.
     @ObservableState
     struct State: Equatable {
@@ -189,12 +193,26 @@ struct NotesFeature {
                 return .none
 
             case .requestDeleteNote(let id):
+                state.confirmingDeleteNoteId = id
+                return .none
+
+            case .confirmDeleteNote:
+                guard let id = state.confirmingDeleteNoteId else { return .none }
+                state.confirmingDeleteNoteId = nil
+                return .send(.deleteNote(id))
+
+            case .cancelDeleteNote:
+                state.confirmingDeleteNoteId = nil
+                return .none
+
+            case .deleteNote(let id):
                 return .run { send in
                     do {
                         try await notesClient.deleteNote(id)
                         await send(.noteDeleted(id))
                     } catch {
-                        await send(.noteDeleteFailed(id, error.localizedDescription))
+                        NotesFeature.logger.error("Failed to delete note \(id): \(error)")
+                        await send(.noteDeleteFailed(id, NotesFeature.deleteFailedMessage))
                     }
                 }
 
@@ -346,7 +364,8 @@ struct NotesFeature {
                                     try await notesClient.deleteNote(id)
                                     await send(.noteDeleted(id))
                                 } catch {
-                                    await send(.noteDeleteFailed(id, error.localizedDescription))
+                                    NotesFeature.logger.error("Failed to delete note \(id): \(error)")
+                                    await send(.noteDeleteFailed(id, NotesFeature.deleteFailedMessage))
                                 }
                             }
                         }
@@ -376,7 +395,8 @@ struct NotesFeature {
                                     await send(.noteDeleted(id))
                                     return true
                                 } catch {
-                                    await send(.noteDeleteFailed(id, error.localizedDescription))
+                                    NotesFeature.logger.error("Failed to delete note \(id): \(error)")
+                                    await send(.noteDeleteFailed(id, NotesFeature.deleteFailedMessage))
                                     return false
                                 }
                             }
