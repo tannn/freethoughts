@@ -189,6 +189,26 @@ struct NotesFeature {
                 return .none
 
             case .requestDeleteNote(let id):
+                state.confirmingDeleteNoteId = id
+                return .none
+
+            case .confirmDeleteNote:
+                guard let id = state.confirmingDeleteNoteId else { return .none }
+                state.confirmingDeleteNoteId = nil
+                return .run { send in
+                    do {
+                        try await notesClient.deleteNote(id)
+                        await send(.noteDeleted(id))
+                    } catch {
+                        await send(.noteDeleteFailed(id, error.localizedDescription))
+                    }
+                }
+
+            case .cancelDeleteNote:
+                state.confirmingDeleteNoteId = nil
+                return .none
+
+            case .deleteNote(let id):
                 return .run { send in
                     do {
                         try await notesClient.deleteNote(id)
